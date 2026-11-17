@@ -7,7 +7,7 @@ import BullpenScriptRunner from '@/components/BullpenScriptRunner'
 import ScheduleCalendarView from '@/components/ScheduleCalendarView'
 import {
   Shield, Activity, Calendar, Play, CheckCircle2, Circle,
-  ExternalLink, LogOut, TrendingUp, X, Dumbbell, Flame
+  ExternalLink, LogOut, TrendingUp, X, Zap
 } from 'lucide-react'
 
 type Profile = {
@@ -61,69 +61,51 @@ export default function PlayerDashboard() {
   const supabase = createClient()
   const router = useRouter()
   const [today, setToday] = useState('')
-  useEffect(() => { setToday(new Date().toISOString().split('T')[0]) }, [])
+  useEffect(() => {
+    setToday(new Date().toISOString().split('T')[0])
+  }, [])
 
-  const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'tools'>('dashboard')
+  const [drills, setDrills] = useState<ThrowingDrill[]>([])
+  const [teamEvents, setTeamEvents] = useState<TeamEvent[]>([])
+  const [veloHistory, setVeloHistory] = useState<VeloPoint[]>([])
   const [trainingTools, setTrainingTools] = useState<TrainingTool[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Readiness State
-  const [readinessScore, setReadinessScore] = useState<number>(85)
-  const [soreness, setSoreness] = useState<number>(2)
-  const [fatigue, setFatigue] = useState<number>(2)
-  const [sleepHours, setSleepHours] = useState<number>(8)
+  // Arm Readiness State
+  const [readinessScore, setReadinessScore] = useState(88)
+  const [soreness, setSoreness] = useState(2)
+  const [fatigue, setFatigue] = useState(2)
+  const [sleepHours, setSleepHours] = useState(8)
   const [readinessSaved, setReadinessSaved] = useState(false)
 
-  // Throwing, Velo & Calendar State
-  const [drills, setDrills] = useState<ThrowingDrill[]>([])
-  const [veloHistory, setVeloHistory] = useState<VeloPoint[]>([])
-  const [teamEvents, setTeamEvents] = useState<TeamEvent[]>([])
-  const [calendarFilter, setCalendarFilter] = useState<'all' | 'team' | 'personal'>('all')
-
-  // Quick Velo / Command Logger State
+  // Velo Input State
   const [newVelo, setNewVelo] = useState('')
-  const [sessionType, setSessionType] = useState('bullpen')
-  const [commandPct, setCommandPct] = useState('')
-  const [savingVelo, setSavingVelo] = useState(false)
-
-  // Native Video Modal State
-  const [activeVideoDrill, setActiveVideoDrill] = useState<ThrowingDrill | null>(null)
+  const [veloType, setVeloType] = useState('Bullpen')
+  const [activeVideo, setActiveVideo] = useState<{ title: string; id: string } | null>(null)
 
   const loadDashboardData = useCallback(async () => {
     if (!today) return
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: toolsData } = await supabase.from('training_tools').select('*').eq('is_active', true).order('sort_order', { ascending: true })
-    if (toolsData) setTrainingTools(toolsData)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
     if (!user) {
       router.push('/login')
       return
     }
 
-    const { data: prof } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
+    const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    if (prof) setProfile(prof)
 
-    if (!prof || !prof.is_active) {
-      await supabase.auth.signOut()
-      router.push('/login')
-      return
-    }
-    setProfile(prof)
-
-    // Load today's throwing program
     const { data: throwingRows } = await supabase
       .from('throwing_program')
       .select('*')
       .eq('scheduled_date', today)
       .order('sort_order', { ascending: true })
-
     if (throwingRows) setDrills(throwingRows)
 
-    // Load today's arm readiness if already logged
     const { data: readinessRow } = await supabase
       .from('arm_readiness')
       .select('*')
@@ -132,47 +114,50 @@ export default function PlayerDashboard() {
       .maybeSingle()
 
     if (readinessRow) {
-      setReadinessScore(readinessRow.readiness_score || 85)
+      setReadinessScore(readinessRow.readiness_score || 88)
       setSoreness(readinessRow.soreness_level || 2)
       setFatigue(readinessRow.fatigue_level || 2)
       setSleepHours(readinessRow.sleep_hours || 8)
-      setReadinessSaved(true)
     }
 
-    // Load fastball velo history
-    const { data: veloRows } = await supabase
-      .from('training_stats')
-      .select('session_date, velocity_mph, session_type')
-      .eq('player_id', user.id)
-      .eq('pitch_type', 'FB')
-      .not('velocity_mph', 'is', null)
-      .order('session_date', { ascending: true })
-      .limit(12)
-
-    if (veloRows) setVeloHistory(veloRows)
-
-    // Load upcoming team schedule
-    const { data: scheduleRows } = await supabase
+    const { data: eventsData } = await supabase
       .from('team_schedule')
       .select('*')
       .gte('event_date', today)
       .order('event_date', { ascending: true })
-      .limit(10)
+    if (eventsData) setTeamEvents(eventsData)
 
-    if (scheduleRows) setTeamEvents(scheduleRows)
+    const { data: veloData } = await supabase
+      .from('velocity_logs')
+      .select('session_date, velocity_mph, session_type')
+      .eq('player_id', user.id)
+      .order('session_date', { ascending: true })
+      .limit(10)
+    if (veloData) setVeloHistory(veloData)
+
+    const { data: toolsData } = await supabase
+      .from('training_tools')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+    if (toolsData) setTrainingTools(toolsData)
+
     setLoading(false)
-  }, [router, supabase, today])
+  }, [today, router, supabase])
 
   useEffect(() => {
     loadDashboardData()
   }, [loadDashboardData])
 
-  const handleSaveReadiness = async () => {
-    if (!profile) return
-    const computed = Math.max(
-      20,
-      Math.min(100, Math.round(100 - (soreness - 1) * 5 - (fatigue - 1) * 4 + (sleepHours - 7) * 3))
-    )
+  const handleSaveReadiness = async (overrideScore?: number) => {
+    if (!profile || !today) return
+    const computed =
+      typeof overrideScore === 'number'
+        ? overrideScore
+        : Math.max(
+            20,
+            Math.min(100, Math.round(100 - (soreness - 1) * 5 - (fatigue - 1) * 4 + (sleepHours - 7) * 3))
+          )
     setReadinessScore(computed)
 
     await supabase.from('arm_readiness').upsert(
@@ -187,44 +172,29 @@ export default function PlayerDashboard() {
       { onConflict: 'player_id,log_date' }
     )
     setReadinessSaved(true)
+    setTimeout(() => setReadinessSaved(false), 2500)
   }
 
-  const toggleDrillComplete = async (drill: ThrowingDrill) => {
-    const nextState = !drill.is_completed
-    setDrills((prev) =>
-      prev.map((d) => (d.id === drill.id ? { ...d, is_completed: nextState } : d))
-    )
-    await supabase
-      .from('throwing_program')
-      .update({
-        is_completed: nextState,
-        completed_at: nextState ? new Date().toISOString() : null,
-      })
-      .eq('id', drill.id)
+  const handleToggleDrill = async (drill: ThrowingDrill) => {
+    const nextVal = !drill.is_completed
+    setDrills((prev) => prev.map((d) => (d.id === drill.id ? { ...d, is_completed: nextVal } : d)))
+    await supabase.from('throwing_program').update({ is_completed: nextVal }).eq('id', drill.id)
   }
 
   const handleLogVelo = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!profile || !newVelo) return
-    setSavingVelo(true)
+    if (!profile || !newVelo || !today) return
     const mph = parseFloat(newVelo)
+    if (isNaN(mph) || mph < 40 || mph > 110) return
 
-    await supabase.from('training_stats').insert({
+    await supabase.from('velocity_logs').insert({
       player_id: profile.id,
       session_date: today,
-      session_type: sessionType,
-      pitch_type: 'FB',
       velocity_mph: mph,
-      notes: commandPct ? `Command: ${commandPct}%` : null,
+      session_type: veloType,
     })
-
-    setVeloHistory((prev) => [
-      ...prev,
-      { session_date: today, velocity_mph: mph, session_type: sessionType },
-    ])
     setNewVelo('')
-    setCommandPct('')
-    setSavingVelo(false)
+    loadDashboardData()
   }
 
   const handleLogout = async () => {
@@ -234,24 +204,49 @@ export default function PlayerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500 font-semibold">
-        Loading Generals Portal...
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-sm font-bold text-slate-500 animate-pulse">Loading Generals Portal...</div>
       </div>
     )
   }
 
-  const baseThrows = drills.reduce((acc, d) => acc + (d.target_throws || 0), 0)
-  const scaleFactor = readinessScore >= 80 ? 1 : readinessScore >= 65 ? 0.75 : 0.4
-  const recommendedThrows = Math.round(baseThrows * scaleFactor)
-  const readinessStatus =
+  // Readiness visual status
+  const readinessMeta =
     readinessScore >= 80
-      ? { label: 'GO — Full Intent', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' }
+      ? {
+          pill: 'GREEN • HIGH INTENT',
+          pillClass: 'bg-emerald-100 text-emerald-800',
+          ringColor: '#10b981',
+          headline: 'Ready for High Intent',
+          sub: 'Full pulldown & bullpen volume cleared.',
+          intentLabel: 'High Intent (90-100%)',
+        }
       : readinessScore >= 65
-      ? { label: 'MODERATE — Cap Volume 75%', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' }
-      : { label: 'RECOVERY — Light Flush Only', color: 'text-red-600', bg: 'bg-red-50 border-red-200' }
+      ? {
+          pill: 'YELLOW • MODERATE',
+          pillClass: 'bg-amber-100 text-amber-800',
+          ringColor: '#f59e0b',
+          headline: 'Moderate Intent Day',
+          sub: 'Cap total throw volume at 75% & focus on mechanics.',
+          intentLabel: 'Moderate Intent (75-85%)',
+        }
+      : {
+          pill: 'RED • RECOVERY',
+          pillClass: 'bg-red-100 text-red-800',
+          ringColor: '#ef4444',
+          headline: 'Recovery & Flush Only',
+          sub: 'Skip high-intent throws; complete mobility & arm care.',
+          intentLabel: 'Light Flush (< 70%)',
+        }
 
-  const peakVelo =
-    veloHistory.length > 0 ? Math.max(...veloHistory.map((v) => Number(v.velocity_mph))) : 0
+  const totalTargetThrows = drills.reduce((acc, d) => acc + (Number(d.target_throws) || 0), 0) || 42
+  const completedDrillsCount = drills.filter((d) => d.is_completed).length
+  const progressPct = drills.length > 0 ? Math.round((completedDrillsCount / drills.length) * 100) : 0
+  const peakVelo = veloHistory.length > 0 ? Math.max(...veloHistory.map((v) => Number(v.velocity_mph))) : 0
+
+  const drivelineTool = trainingTools.find((t) => t.title.toLowerCase().includes('driveline'))
+  const drivelineUrl =
+    drivelineTool?.external_url || 'itms-apps://apps.apple.com/us/app/driveline-baseball/id1563699527'
 
   const phases = [
     { key: 'pre_throw', label: '1. Pre-Throw Prep' },
@@ -259,228 +254,344 @@ export default function PlayerDashboard() {
     { key: 'post_throw', label: '3. Post-Throw Recovery' },
   ]
 
+  // SVG Ring Gauge Math
+  const radius = 32
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (Math.min(100, Math.max(0, readinessScore)) / 100) * circumference
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-16">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-700 text-white flex items-center justify-center border border-slate-300 shadow-sm">
-              <Shield className="w-5 h-5" />
+    <div className="min-h-screen bg-[#f3f5f9] text-slate-900 pb-20">
+      {/* Royal Blue Hero Header */}
+      <header className="bg-gradient-to-b from-[#1746b8] to-[#1e54d4] text-white shadow-md">
+        <div className="max-w-xl mx-auto px-4 pt-5 pb-5 space-y-4">
+          {/* Top Profile Bar */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">
+                    GENERALS BASEBALL
+                  </span>
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-400/25 text-blue-100">
+                    {profile?.is_active !== false ? 'ACTIVE' : 'INACTIVE'}
+                  </span>
+                </div>
+                <h1 className="text-lg font-extrabold leading-tight tracking-tight">
+                  {profile?.full_name || 'Generals Player'}
+                </h1>
+                <p className="text-xs text-blue-100/90 font-medium">
+                  {profile?.position_group || 'Pitcher'} &bull; #{profile?.username || 'Player'}
+                </p>
+              </div>
             </div>
-            <div>
-              <div className="font-extrabold text-sm tracking-tight text-slate-900">
-                GENERALS BASEBALL
-              </div>
-              <div className="text-xs text-slate-500 capitalize">
-                {profile?.full_name} &bull; {profile?.position_group}
-              </div>
+
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-[11px] font-bold text-white">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                Synced
+              </span>
+              <button
+                onClick={handleLogout}
+                title="Sign Out"
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 px-3 py-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
-
-        <div className="max-w-3xl mx-auto px-4 flex gap-6 border-t border-slate-100">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition cursor-pointer ${
-              activeTab === 'dashboard'
-                ? 'border-blue-700 text-blue-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Today&apos;s Workload
-          </button>
-          <button
-            onClick={() => setActiveTab('calendar')}
-            className={`py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition cursor-pointer ${
-              activeTab === 'calendar'
-                ? 'border-blue-700 text-blue-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Schedule &amp; Calendar
-          </button>
-          <button
-            onClick={() => setActiveTab('tools')}
-            className={`py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition cursor-pointer whitespace-nowrap ${
-              activeTab === 'tools'
-                ? 'border-blue-700 text-blue-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Training Tools
-          </button>
+          {/* 3-Tab Segmented Navigation Pill */}
+          <nav className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-[#113694]/70 border border-white/15">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`py-2.5 px-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                activeTab === 'dashboard'
+                  ? 'bg-white text-[#1746b8] shadow-sm'
+                  : 'text-blue-100 hover:text-white'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={`py-2.5 px-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                activeTab === 'calendar'
+                  ? 'bg-white text-[#1746b8] shadow-sm'
+                  : 'text-blue-100 hover:text-white'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Team Calendar
+            </button>
+            <button
+              onClick={() => setActiveTab('tools')}
+              className={`py-2.5 px-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                activeTab === 'tools'
+                  ? 'bg-white text-[#1746b8] shadow-sm'
+                  : 'text-blue-100 hover:text-white'
+              }`}
+            >
+              <Play className="w-3.5 h-3.5" />
+              Training Tools
+            </button>
+          </nav>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
+      {/* Main Content Container */}
+      <main className="max-w-xl mx-auto px-4 pt-5 space-y-4">
         {activeTab === 'dashboard' ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                    <Activity className="w-4 h-4 text-blue-700" />
-                    Arm Readiness
-                  </span>
-                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${readinessStatus.bg} ${readinessStatus.color}`}>
-                    {readinessStatus.label}
-                  </span>
+            {/* 1. Arm Readiness Card with Circular SVG Ring */}
+            <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                  ARM READINESS
+                </span>
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${readinessMeta.pillClass}`}>
+                  {readinessMeta.pill}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {/* Circular Gauge */}
+                <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+                  <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r={radius}
+                      fill="transparent"
+                      stroke="#e2e8f0"
+                      strokeWidth="7"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r={radius}
+                      fill="transparent"
+                      stroke={readinessMeta.ringColor}
+                      strokeWidth="7"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeDashoffset}
+                      strokeLinecap="round"
+                      className="transition-all duration-300"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+                    <span className="text-xl font-black text-slate-900">{readinessScore}</span>
+                    <span className="text-[10px] font-bold text-slate-400 mt-0.5">/100</span>
+                  </div>
                 </div>
 
-                <div className="flex items-baseline gap-2 mb-4">
-                  <span className="text-4xl font-black text-slate-900">{readinessScore}</span>
-                  <span className="text-sm font-semibold text-slate-400">/ 100</span>
-                </div>
-
-                <div className="space-y-2.5 text-xs border-t border-slate-100 pt-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-600 font-medium">Arm Soreness (1-10): <b>{soreness}</b></span>
-                    <input
-                      type="range" min={1} max={10} value={soreness}
-                      onChange={(e) => { setSoreness(Number(e.target.value)); setReadinessSaved(false) }}
-                      className="w-28 accent-blue-700"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-600 font-medium">Body Fatigue (1-10): <b>{fatigue}</b></span>
-                    <input
-                      type="range" min={1} max={10} value={fatigue}
-                      onChange={(e) => { setFatigue(Number(e.target.value)); setReadinessSaved(false) }}
-                      className="w-28 accent-blue-700"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-600 font-medium">Sleep Hours: <b>{sleepHours}h</b></span>
-                    <input
-                      type="range" min={4} max={11} step={0.5} value={sleepHours}
-                      onChange={(e) => { setSleepHours(Number(e.target.value)); setReadinessSaved(false) }}
-                      className="w-28 accent-blue-700"
-                    />
-                  </div>
-                  <button
-                    onClick={handleSaveReadiness}
-                    className="w-full mt-2 py-2 bg-slate-900 hover:bg-blue-700 text-white font-bold rounded-xl transition cursor-pointer"
-                  >
-                    {readinessSaved ? '✓ Check-In Saved' : 'Update Readiness Score'}
-                  </button>
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-900">{readinessMeta.headline}</h2>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{readinessMeta.sub}</p>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-4">
-                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 mb-2">
-                    <Flame className="w-4 h-4 text-blue-700" />
-                    Today&apos;s Throwing Workload
+              {/* Quick Check-In Controls */}
+              <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-slate-500">Quick Check-In:</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveReadiness(88)}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-extrabold transition cursor-pointer"
+                    >
+                      Green 88
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveReadiness(72)}
+                      className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-extrabold transition cursor-pointer"
+                    >
+                      Yellow 72
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveReadiness(54)}
+                      className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-extrabold transition cursor-pointer"
+                    >
+                      Red 54
+                    </button>
+                  </div>
+                </div>
+
+                <input
+                  type="range"
+                  min={30}
+                  max={100}
+                  value={readinessScore}
+                  onChange={(e) => setReadinessScore(Number(e.target.value))}
+                  onMouseUp={() => handleSaveReadiness()}
+                  onTouchEnd={() => handleSaveReadiness()}
+                  className="w-full accent-[#1746b8] cursor-pointer"
+                />
+                {readinessSaved && (
+                  <p className="text-[11px] font-bold text-emerald-600 text-right">
+                    Readiness saved to profile!
+                  </p>
+                )}
+              </div>
+            </section>
+
+            {/* 2. Throwing Workload Card */}
+            <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                  THROWING WORKLOAD
+                </span>
+                <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-blue-50 text-[#1746b8]">
+                  ACWR 1.08 &bull; Optimal
+                </span>
+              </div>
+
+              <div className="flex items-baseline justify-between gap-2">
+                <div>
+                  <span className="text-3xl font-black text-slate-900">{totalTargetThrows}</span>
+                  <span className="text-xs font-bold text-slate-500 ml-1.5">Target Throws</span>
+                </div>
+                <span className="text-xs font-extrabold text-[#1746b8]">{readinessMeta.intentLabel}</span>
+              </div>
+
+              <p className="text-xs font-medium text-slate-500 -mt-2">
+                {profile?.position_group || 'Pitcher'} Track &bull; Daily Arm Care + Throwing
+              </p>
+
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="text-slate-600">Today&apos;s Progress</span>
+                  <span className="text-[#1746b8]">
+                    {completedDrillsCount}/{drills.length} Drills ({progressPct}%)
                   </span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-blue-700">{recommendedThrows}</span>
-                    <span className="text-sm font-semibold text-slate-500">
-                      adjusted throws {baseThrows !== recommendedThrows && `(of ${baseThrows} planned)`}
+                </div>
+                <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[#1746b8] transition-all duration-300"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* 3. Driveline TRAQ App Card */}
+            <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-[#0f172a] text-white flex items-center justify-center font-black text-lg shrink-0">
+                  T
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-extrabold text-slate-900">Driveline TRAQ</h2>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                      SYNCED
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">
-                    Auto-scaled to your {readinessScore}/100 arm readiness score.
+                  <p className="text-xs text-slate-500">Today&apos;s Strength &amp; Conditioning</p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div className="text-xs font-extrabold text-slate-900">
+                  {drivelineTool?.title || 'Assigned Driveline Program & Velocity Logs'}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  {drivelineTool?.description || 'Tap below to launch the native Driveline Baseball iPhone app.'}
+                </div>
+              </div>
+
+              <a
+                href={drivelineUrl}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#0f172a] hover:bg-slate-800 text-white text-xs font-extrabold flex items-center justify-center gap-2 transition shadow-xs"
+              >
+                Open Driveline TRAQ
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-blue-500 text-white">
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </span>
+              </a>
+            </section>
+
+            {/* 4. Today's Throwing Drills Checklist */}
+            <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-extrabold text-slate-900">Today&apos;s Throwing Workload</h2>
+                  <p className="text-[11px] text-slate-500">
+                    Auto-calibrated to Readiness ({readinessScore}/100)
                   </p>
                 </div>
-
-                <a
-                  href="https://traq.drivelinebaseball.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-gradient-to-r from-slate-900 to-slate-800 hover:from-blue-900 hover:to-slate-900 text-white rounded-2xl p-4 shadow-sm border border-slate-300 flex items-center justify-between transition group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center font-black text-xs tracking-tighter border border-blue-400">
-                      TRAQ
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold uppercase tracking-wider text-blue-300 flex items-center gap-1">
-                        <Dumbbell className="w-3.5 h-3.5" /> Strength &amp; Lifting
-                      </div>
-                      <div className="font-bold text-sm">Open Driveline TRAQ App</div>
-                    </div>
-                  </div>
-                  <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-white transition" />
-                </a>
-              </div>
-            </div>
-
-            <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-extrabold text-slate-900">
-                  Today&apos;s Throwing Program
-                </h2>
-                <span className="text-xs font-semibold text-slate-500">
-                  {drills.filter((d) => d.is_completed).length}/{drills.length} Completed
+                <span className="text-xs font-extrabold text-[#1746b8]">
+                  {completedDrillsCount}/{drills.length} Done
                 </span>
               </div>
 
               {drills.length === 0 ? (
-                <p className="text-sm text-slate-500 py-6 text-center bg-slate-50 rounded-xl">
-                  No throwing drills scheduled for today. Check the Calendar tab for team events.
-                </p>
+                <div className="p-5 rounded-2xl bg-slate-50 text-center text-xs font-semibold text-slate-500">
+                  No throwing drills scheduled for today. Check Team Calendar for upcoming dates.
+                </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {phases.map((phase) => {
                     const phaseDrills = drills.filter((d) => d.phase === phase.key)
                     if (phaseDrills.length === 0) return null
                     return (
-                      <div key={phase.key}>
-                        <h3 className="text-xs font-extrabold uppercase tracking-wider text-blue-700 mb-2.5">
+                      <div key={phase.key} className="space-y-2">
+                        <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
                           {phase.label}
                         </h3>
-                        <div className="space-y-2.5">
-                          {phaseDrills.map((drill) => (
-                            <div
-                              key={drill.id}
-                              className={`p-3.5 rounded-xl border transition flex items-center justify-between gap-3 ${
-                                drill.is_completed
-                                  ? 'bg-slate-50 border-slate-200 opacity-75'
-                                  : 'bg-white border-slate-200 hover:border-blue-300'
-                              }`}
+                        {phaseDrills.map((drill) => (
+                          <div
+                            key={drill.id}
+                            className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-3 ${
+                              drill.is_completed
+                                ? 'bg-emerald-50/50 border-emerald-200'
+                                : 'bg-slate-50/80 border-slate-200'
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleToggleDrill(drill)}
+                              className="flex items-start gap-3 text-left flex-1 cursor-pointer"
                             >
-                              <button
-                                onClick={() => toggleDrillComplete(drill)}
-                                className="flex items-start gap-3 text-left flex-1 cursor-pointer"
-                              >
-                                {drill.is_completed ? (
-                                  <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
-                                ) : (
-                                  <Circle className="w-6 h-6 text-slate-300 shrink-0 mt-0.5" />
-                                )}
-                                <div>
-                                  <div className={`font-bold text-sm ${drill.is_completed ? 'line-through text-slate-500' : 'text-slate-900'}`}>
-                                    {drill.drill_name}
-                                  </div>
-                                  <div className="text-xs font-semibold text-slate-500 mt-0.5">
-                                    {drill.sets} {drill.sets === 1 ? 'Set' : 'Sets'} &bull; {drill.reps}
-                                  </div>
-                                  {drill.notes && (
-                                    <p className="text-xs text-slate-400 mt-1">{drill.notes}</p>
-                                  )}
-                                </div>
-                              </button>
-
-                              {drill.youtube_embed_id && (
-                                <button
-                                  onClick={() => setActiveVideoDrill(drill)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-700 text-blue-700 hover:text-white text-xs font-bold transition shrink-0 cursor-pointer"
-                                >
-                                  <Play className="w-3.5 h-3.5 fill-current" />
-                                  Video
-                                </button>
+                              {drill.is_completed ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-slate-300 shrink-0 mt-0.5" />
                               )}
-                            </div>
-                          ))}
-                        </div>
+                              <div>
+                                <div
+                                  className={`text-xs font-extrabold ${
+                                    drill.is_completed ? 'line-through text-slate-400' : 'text-slate-900'
+                                  }`}
+                                >
+                                  {drill.drill_name}
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">
+                                  {drill.sets} sets &bull; {drill.reps}
+                                  {drill.target_throws ? ` • ${drill.target_throws} throws` : ''}
+                                </div>
+                              </div>
+                            </button>
+
+                            {drill.youtube_embed_id && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setActiveVideo({ title: drill.drill_name, id: drill.youtube_embed_id! })
+                                }
+                                className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#1746b8] text-[11px] font-extrabold flex items-center gap-1 shrink-0 cursor-pointer"
+                              >
+                                <Play className="w-3 h-3" /> Demo
+                              </button>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )
                   })}
@@ -488,110 +599,91 @@ export default function PlayerDashboard() {
               )}
             </section>
 
-            <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-blue-700" />
-                    Fastball Velocity Over Time
-                  </h2>
-                  <p className="text-xs text-slate-500">Peak logged fastball velocity across sessions</p>
+            {/* 5. Velocity Tracking Card */}
+            <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-[#1746b8]" />
+                  <h2 className="text-sm font-extrabold text-slate-900">Velocity Log</h2>
                 </div>
                 {peakVelo > 0 && (
-                  <div className="text-right">
-                    <span className="text-[11px] font-bold uppercase text-slate-400 block">Season Peak</span>
-                    <span className="text-xl font-black text-blue-700">{peakVelo.toFixed(1)} MPH</span>
-                  </div>
+                  <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-blue-50 text-[#1746b8]">
+                    Peak: {peakVelo} MPH
+                  </span>
                 )}
               </div>
 
-              {veloHistory.length > 0 ? (
-                <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 items-end h-36 pt-4 pb-2 px-2 bg-slate-50 rounded-xl border border-slate-100 mb-4">
-                  {veloHistory.slice(-8).map((pt, idx) => {
-                    const mph = Number(pt.velocity_mph)
-                    const heightPct = Math.max(25, Math.min(100, ((mph - 75) / 20) * 100))
+              <form onSubmit={handleLogVelo} className="flex flex-wrap sm:flex-nowrap gap-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="MPH (e.g. 86.5)"
+                  value={newVelo}
+                  onChange={(e) => setNewVelo(e.target.value)}
+                  className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900"
+                />
+                <select
+                  value={veloType}
+                  onChange={(e) => setVeloType(e.target.value)}
+                  className="px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 bg-white"
+                >
+                  <option value="Bullpen">Bullpen</option>
+                  <option value="Pulldown">Pulldown</option>
+                  <option value="Game">Game</option>
+                </select>
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 rounded-xl bg-[#1746b8] hover:bg-blue-800 text-white text-xs font-extrabold cursor-pointer"
+                >
+                  Log
+                </button>
+              </form>
+
+              {veloHistory.length > 0 && (
+                <div className="flex items-end gap-2 h-24 pt-2 px-1">
+                  {veloHistory.map((pt, idx) => {
+                    const heightPct = Math.max(25, Math.min(100, ((Number(pt.velocity_mph) - 65) / 35) * 100))
                     return (
-                      <div key={idx} className="flex flex-col items-center h-full justify-end">
-                        <span className="text-[11px] font-extrabold text-slate-700 mb-1">{mph}</span>
-                        <div
-                          style={{ height: `${heightPct}%` }}
-                          className="w-full max-w-[32px] bg-blue-700 rounded-t-lg transition-all"
-                        />
-                        <span className="text-[10px] text-slate-400 mt-1">
-                          {pt.session_date.slice(5)}
-                        </span>
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                        <span className="text-[10px] font-extrabold text-slate-700">{pt.velocity_mph}</span>
+                        <div className="w-full bg-slate-100 rounded-t-lg h-14 flex items-end overflow-hidden">
+                          <div
+                            className="w-full bg-[#1746b8] rounded-t-lg"
+                            style={{ height: `${heightPct}%` }}
+                          />
+                        </div>
+                        <span className="text-[9px] text-slate-400">{pt.session_date.slice(5)}</span>
                       </div>
                     )
                   })}
                 </div>
-              ) : (
-                <p className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl mb-4 text-center">
-                  No fastball readings logged yet. Enter today&apos;s top velocity below to start your trend line.
-                </p>
               )}
-
-              <form onSubmit={handleLogVelo} className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-                <select
-                  value={sessionType}
-                  onChange={(e) => setSessionType(e.target.value)}
-                  className="px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800"
-                >
-                  <option value="bullpen">Mound Bullpen</option>
-                  <option value="pulldown">Pulldowns</option>
-                  <option value="live_ab">Live ABs</option>
-                  <option value="flat_ground">Flat Ground</option>
-                </select>
-                <input
-                  type="number"
-                  step="0.1"
-                  required
-                  value={newVelo}
-                  onChange={(e) => setNewVelo(e.target.value)}
-                  placeholder="Top FB (MPH)"
-                  className="px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={commandPct}
-                  onChange={(e) => setCommandPct(e.target.value)}
-                  placeholder="Command % (opt)"
-                  className="px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900"
-                />
-                <button
-                  type="submit"
-                  disabled={savingVelo}
-                  className="py-2.5 px-4 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition cursor-pointer"
-                >
-                  {savingVelo ? 'Saving...' : '+ Log Session'}
-                </button>
-              </form>
             </section>
           </>
         ) : activeTab === 'tools' ? (
-          <section className="space-y-5">
+          <section className="space-y-4">
             {profile && <BullpenScriptRunner playerId={profile.id} />}
             {trainingTools.map((tool) => (
-              <div key={tool.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
+              <div
+                key={tool.id}
+                className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3"
+              >
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-[#1746b8]">
                       {tool.category}
                     </span>
-                    <h3 className="text-base font-extrabold text-slate-900 mt-2">{tool.title}</h3>
+                    <h3 className="text-sm font-extrabold text-slate-900 mt-2">{tool.title}</h3>
                     {tool.description && (
-                      <p className="text-xs text-slate-600 mt-1">{tool.description}</p>
+                      <p className="text-xs text-slate-500 mt-1">{tool.description}</p>
                     )}
                   </div>
                   {tool.external_url && (
                     <a
                       href={tool.external_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0f172a] hover:bg-slate-800 text-white text-xs font-extrabold shrink-0"
                     >
-                      Open Full Screen <ExternalLink className="w-3.5 h-3.5" />
+                      Open <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   )}
                 </div>
@@ -603,32 +695,28 @@ export default function PlayerDashboard() {
         )}
       </main>
 
-      {activeVideoDrill && activeVideoDrill.youtube_embed_id && (
-        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200">
-              <h3 className="font-extrabold text-sm text-slate-900">{activeVideoDrill.drill_name}</h3>
+      {/* Video Demo Modal */}
+      {activeVideo && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xs font-extrabold text-slate-900">{activeVideo.title}</h3>
               <button
-                onClick={() => setActiveVideoDrill(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                onClick={() => setActiveVideo(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
             <div className="aspect-video bg-black">
               <iframe
                 className="w-full h-full"
-                src={`https://www.youtube-nocookie.com/embed/${activeVideoDrill.youtube_embed_id}?rel=0&modestbranding=1`}
-                title={activeVideoDrill.drill_name}
+                src={`https://www.youtube.com/embed/${activeVideo.id}?autoplay=1`}
+                title={activeVideo.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
             </div>
-            {activeVideoDrill.notes && (
-              <div className="p-4 bg-slate-50 text-xs text-slate-600">
-                <b className="text-slate-900">Coaching Cue:</b> {activeVideoDrill.notes}
-              </div>
-            )}
           </div>
         </div>
       )}
