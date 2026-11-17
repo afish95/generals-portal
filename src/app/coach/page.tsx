@@ -18,7 +18,8 @@ type RosterPlayer = {
 export default function CoachDashboard() {
   const supabase = createClient()
   const router = useRouter()
-  const today = new Date().toISOString().split('T')[0]
+  const [today, setToday] = useState('')
+  useEffect(() => { setToday(new Date().toISOString().split('T')[0]) }, [])
 
   const [loading, setLoading] = useState(true)
   const [roster, setRoster] = useState<RosterPlayer[]>([])
@@ -28,7 +29,8 @@ export default function CoachDashboard() {
   const [targetType, setTargetType] = useState<'player' | 'group'>('group')
   const [selectedPlayerId, setSelectedPlayerId] = useState('')
   const [selectedGroup, setSelectedGroup] = useState('starter')
-  const [scheduledDate, setScheduledDate] = useState(today)
+  const [scheduledDate, setScheduledDate] = useState('')
+  useEffect(() => { if (today && !scheduledDate) setScheduledDate(today) }, [today, scheduledDate])
   const [phase, setPhase] = useState('throwing')
   const [drillName, setDrillName] = useState('')
   const [sets, setSets] = useState(1)
@@ -38,6 +40,7 @@ export default function CoachDashboard() {
   const [notes, setNotes] = useState('')
 
   const loadCoachData = useCallback(async () => {
+    if (!today) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       router.push('/login')

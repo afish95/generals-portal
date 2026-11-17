@@ -48,7 +48,8 @@ type VeloPoint = {
 export default function PlayerDashboard() {
   const supabase = createClient()
   const router = useRouter()
-  const today = new Date().toISOString().split('T')[0]
+  const [today, setToday] = useState('')
+  useEffect(() => { setToday(new Date().toISOString().split('T')[0]) }, [])
 
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -77,6 +78,7 @@ export default function PlayerDashboard() {
   const [activeVideoDrill, setActiveVideoDrill] = useState<ThrowingDrill | null>(null)
 
   const loadDashboardData = useCallback(async () => {
+    if (!today) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       router.push('/login')
