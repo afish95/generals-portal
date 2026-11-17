@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import BullpenScriptRunner from '@/components/BullpenScriptRunner'
 import {
   Shield, Activity, Calendar, Play, CheckCircle2, Circle,
   ExternalLink, LogOut, TrendingUp, X, Dumbbell, Flame
@@ -63,7 +64,7 @@ export default function PlayerDashboard() {
 
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'tools' | 'tools'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'tools'>('dashboard')
   const [trainingTools, setTrainingTools] = useState<TrainingTool[]>([])
 
   // Readiness State
@@ -425,53 +426,7 @@ export default function PlayerDashboard() {
                 <p className="text-sm text-slate-500 py-6 text-center bg-slate-50 rounded-xl">
                   No throwing drills scheduled for today. Check the Calendar tab for team events.
                 </p>
-              ) : activeTab === 'tools' ? (
-          <section className="space-y-5">
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <h2 className="text-base font-extrabold text-slate-900">Training Tools &amp; Resources</h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Interactive trackers, command charts, and pitching resources for Generals players.
-              </p>
-            </div>
-
-            {trainingTools.map((tool) => (
-              <div key={tool.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                      {tool.category}
-                    </span>
-                    <h3 className="text-base font-extrabold text-slate-900 mt-2">{tool.title}</h3>
-                    {tool.description && (
-                      <p className="text-xs text-slate-600 mt-1">{tool.description}</p>
-                    )}
-                  </div>
-                  {tool.external_url && (
-                    <a
-                      href={tool.external_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition"
-                    >
-                      Open Full Screen <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-
-                {tool.embed_url && (
-                  <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                    <iframe
-                      src={tool.embed_url}
-                      title={tool.title}
-                      className="w-full h-[560px] border-0"
-                      allowFullScreen
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </section>
-        ) : (
+              ) : (
                 <div className="space-y-6">
                   {phases.map((phase) => {
                     const phaseDrills = drills.filter((d) => d.phase === phase.key)
@@ -613,6 +568,35 @@ export default function PlayerDashboard() {
               </form>
             </section>
           </>
+        ) : activeTab === 'tools' ? (
+          <section className="space-y-5">
+            {profile && <BullpenScriptRunner playerId={profile.id} />}
+            {trainingTools.map((tool) => (
+              <div key={tool.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                      {tool.category}
+                    </span>
+                    <h3 className="text-base font-extrabold text-slate-900 mt-2">{tool.title}</h3>
+                    {tool.description && (
+                      <p className="text-xs text-slate-600 mt-1">{tool.description}</p>
+                    )}
+                  </div>
+                  {tool.external_url && (
+                    <a
+                      href={tool.external_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition"
+                    >
+                      Open Full Screen <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </section>
         ) : (
           <section className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3 rounded-2xl border border-slate-200">
