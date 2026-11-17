@@ -63,7 +63,7 @@ export default function PlayerDashboard() {
 
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'tools'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'tools' | 'tools'>('dashboard')
   const [trainingTools, setTrainingTools] = useState<TrainingTool[]>([])
 
   // Readiness State
