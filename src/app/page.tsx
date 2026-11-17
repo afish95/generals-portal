@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import BullpenScriptRunner from '@/components/BullpenScriptRunner'
+import ScheduleCalendarView from '@/components/ScheduleCalendarView'
 import {
   Shield, Activity, Calendar, Play, CheckCircle2, Circle,
   ExternalLink, LogOut, TrendingUp, X, Dumbbell, Flame
@@ -598,74 +599,7 @@ export default function PlayerDashboard() {
             ))}
           </section>
         ) : (
-          <section className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-white p-3 rounded-2xl border border-slate-200">
-              <div className="flex gap-1.5">
-                {(['all', 'team', 'personal'] as const).map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setCalendarFilter(filter)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition cursor-pointer ${
-                      calendarFilter === filter
-                        ? 'bg-blue-700 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {filter === 'all' ? 'All Events' : filter === 'team' ? 'Team Schedule' : 'My Throwing'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {calendarFilter !== 'personal' && (
-              <div className="space-y-3">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 px-1">
-                  Upcoming Games, Practices &amp; Bullpens
-                </h3>
-                {teamEvents.map((ev) => (
-                  <div key={ev.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                        {ev.event_type}
-                      </span>
-                      <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {ev.event_date} {ev.start_time && `• ${ev.start_time}`}
-                      </span>
-                    </div>
-                    <h4 className="font-extrabold text-slate-900 mt-2">{ev.title}</h4>
-                    {ev.location && <p className="text-xs text-slate-500 mt-0.5">{ev.location}</p>}
-                    {ev.practice_plan && (
-                      <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
-                        <span className="font-bold text-slate-900 block mb-0.5">Plan / Notes:</span>
-                        {ev.practice_plan}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {calendarFilter !== 'team' && (
-              <div className="space-y-3">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 px-1">
-                  Today&apos;s Personal Throwing Drills ({today})
-                </h3>
-                {drills.map((d) => (
-                  <div key={d.id} className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold uppercase text-blue-700">{d.phase.replace('_', ' ')}</span>
-                      <div className="font-bold text-sm text-slate-900">{d.drill_name}</div>
-                      <div className="text-xs text-slate-500">{d.sets} sets &bull; {d.reps}</div>
-                    </div>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${d.is_completed ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                      {d.is_completed ? 'Done' : 'Scheduled'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <ScheduleCalendarView today={today} initialEvents={teamEvents} />
         )}
       </main>
 
