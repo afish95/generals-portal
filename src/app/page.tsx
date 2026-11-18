@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import BullpenScriptRunner from '@/components/BullpenScriptRunner'
 import ScheduleCalendarView from '@/components/ScheduleCalendarView'
+import NotificationSetup from '@/components/NotificationSetup'
+import AnnouncementsFeed from '@/components/AnnouncementsFeed'
 import {
   Shield, Activity, Calendar, Play, CheckCircle2, Circle,
   ExternalLink, LogOut, TrendingUp, X, Zap
@@ -346,6 +348,9 @@ export default function PlayerDashboard() {
       <main className="max-w-xl mx-auto px-4 pt-5 space-y-4">
         {activeTab === 'dashboard' ? (
           <>
+            <NotificationSetup />
+            <AnnouncementsFeed limit={3} />
+
             {/* 1. Arm Readiness Card with Circular SVG Ring */}
             <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between gap-2">
