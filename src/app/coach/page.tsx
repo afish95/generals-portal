@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Shield, Users, Send, CheckCircle2, LogOut, Activity, Calendar } from 'lucide-react'
+import NotificationSetup from '@/components/NotificationSetup'
+import AnnouncementComposer from '@/components/AnnouncementComposer'
+import AnnouncementsFeed from '@/components/AnnouncementsFeed'
 
 type RosterPlayer = {
   id: string
@@ -25,6 +28,7 @@ export default function CoachDashboard() {
   const [roster, setRoster] = useState<RosterPlayer[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
+  const [announcementsVersion, setAnnouncementsVersion] = useState(0)
 
   const [targetType, setTargetType] = useState<'player' | 'group'>('group')
   const [selectedPlayerId, setSelectedPlayerId] = useState('')
@@ -194,6 +198,12 @@ export default function CoachDashboard() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
+        <NotificationSetup />
+        <div className="grid gap-6 md:grid-cols-2">
+          <AnnouncementComposer onSent={() => setAnnouncementsVersion((v) => v + 1)} />
+          <AnnouncementsFeed limit={5} refreshKey={announcementsVersion} />
+        </div>
+
         <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
