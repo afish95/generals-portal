@@ -11,6 +11,7 @@ import TeamPrFeed from '@/components/TeamPrFeed'
 import CoachDashboard from '@/components/coach/CoachDashboard'
 import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
 import BodyWeightCard from '@/components/wellness/BodyWeightCard'
+import ThoughtOfWeek from '@/components/ThoughtOfWeek'
 import { addDays, firstName, localDate, type Group, type Workout, type WorkoutItem } from '@/lib/training'
 
 type TodayRow = { workout: Workout; total: number; done: number }
@@ -111,6 +112,7 @@ export default function HomePage() {
       </div>
 
       <NotificationSetup />
+      <ThoughtOfWeek />
 
       {isCoach ? (
         <CoachDashboard />
