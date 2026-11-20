@@ -67,6 +67,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [router])
 
+  // Unread chat count for the Messages badge (refreshed on navigation and every minute)
+  const [unread, setUnread] = useState(0)
+  useEffect(() => {
+    if (status !== 'ready') return
+    let cancelled = false
+    const check = () =>
+      createClient()
+        .rpc('my_conversations')
+        .then(({ data }) => {
+          if (!cancelled) setUnread(((data as { unread: number }[]) || []).reduce((n, c) => n + Number(c.unread || 0), 0))
+        })
+    check()
+    const t = setInterval(check, 60000)
+    return () => {
+      cancelled = true
+      clearInterval(t)
+    }
+  }, [status, pathname])
+
   const isCoach = profile?.role === 'coach'
   const tabs = isCoach ? COACH_TABS : PLAYER_TABS
 
@@ -117,8 +136,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 {isCoach ? 'Coaching staff' : profile.position_group || 'Player'} &bull; #{profile.username}
               </div>
             </div>
-            <Link href="/messages" aria-label="Messages" className={iconBtn(messagesActive)}>
+            <Link href="/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'} className={`relative ${iconBtn(messagesActive)}`}>
               <MessageCircle className="w-5 h-5" />
+              {unread > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-[#1746b8]">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
             </Link>
           </div>
         </header>

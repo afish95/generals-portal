@@ -6,6 +6,11 @@ import { useProfile } from '@/components/shell/AppShell'
 import { PageTitle } from '@/components/ui'
 import TeamPrFeed from '@/components/TeamPrFeed'
 import GameStats from '@/components/stats/GameStats'
+import WeeklyRecap from '@/components/stats/WeeklyRecap'
+import Leaderboard from '@/components/stats/Leaderboard'
+import Progressions from '@/components/stats/Progressions'
+import CompareAthletes from '@/components/stats/CompareAthletes'
+import { Pill } from '@/components/ui'
 import { round1, type Exercise } from '@/lib/training'
 
 type Best = { exercise: Exercise; value: number; who?: string }
@@ -14,6 +19,7 @@ export default function StatsPage() {
   const { profile, isCoach } = useProfile()
   const [bests, setBests] = useState<Best[] | null>(null)
   const [mode, setMode] = useState<'training' | 'game'>('training')
+  const [sub, setSub] = useState<'overview' | 'leaderboard' | 'progressions' | 'compare'>('overview')
 
   useEffect(() => {
     const supabase = createClient()
@@ -63,6 +69,18 @@ export default function StatsPage() {
         <GameStats myId={profile.id} />
       ) : (
       <>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        <Pill active={sub === 'overview'} onClick={() => setSub('overview')}>Overview</Pill>
+        <Pill active={sub === 'leaderboard'} onClick={() => setSub('leaderboard')}>Leaderboard</Pill>
+        <Pill active={sub === 'progressions'} onClick={() => setSub('progressions')}>Progressions</Pill>
+        {isCoach && <Pill active={sub === 'compare'} onClick={() => setSub('compare')}>Compare</Pill>}
+      </div>
+      {sub === 'leaderboard' && <Leaderboard myId={profile.id} />}
+      {sub === 'progressions' && <Progressions isCoach={isCoach} />}
+      {sub === 'compare' && isCoach && <CompareAthletes />}
+      {sub === 'overview' && (
+      <>
+      {!isCoach && <WeeklyRecap athleteId={profile.id} />}
       <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
         <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">{isCoach ? 'Team bests' : 'My bests'}</div>
         {bests === null ? (
@@ -85,6 +103,8 @@ export default function StatsPage() {
         )}
       </section>
       <TeamPrFeed limit={15} athleteId={isCoach ? undefined : profile.id} />
+      </>
+      )}
       </>
       )}
     </div>
