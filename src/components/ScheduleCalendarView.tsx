@@ -50,6 +50,7 @@ export default function ScheduleCalendarView({
   const [monthDrills, setMonthDrills] = useState<CalendarDrill[]>([])
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents || [])
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
+  const [workoutTitles, setWorkoutTitles] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (initialEvents?.length) setEvents(initialEvents)
@@ -61,13 +62,53 @@ export default function ScheduleCalendarView({
     const start = formatDateKey(new Date(y, m, -7))
     const end = formatDateKey(new Date(y, m + 1, 14))
 
-    const { data: drillRows } = await supabase
-      .from('throwing_program')
-      .select('*')
-      .gte('scheduled_date', start)
-      .lte('scheduled_date', end)
+    // Throwing & hitting workouts the signed-in user can see (players: their groups; coaches: all)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data: workoutRows } = await supabase
+      .from('workouts')
+      .select('id, title, workout_date, group_id, sort_order')
+      .gte('workout_date', start)
+      .lte('workout_date', end)
       .order('sort_order', { ascending: true })
-    if (drillRows) setMonthDrills(drillRows)
+    const wList = (workoutRows as { id: number; title: string; workout_date: string; group_id: number | null }[]) || []
+    const wIds = wList.map((w) => w.id)
+    const [{ data: itemRows }, { data: exRows }, { data: groupRows }] = await Promise.all([
+      wIds.length
+        ? supabase.from('workout_items').select('id, workout_id, exercise_id, block_index, item_index, sets, reps, notes').in('workout_id', wIds)
+        : Promise.resolve({ data: [] }),
+      supabase.from('exercises').select('id, name'),
+      supabase.from('team_groups').select('id, name'),
+    ])
+    const items = (itemRows as { id: number; workout_id: number; exercise_id: number; block_index: number; item_index: number; sets: number; reps: string | null; notes: string | null }[]) || []
+    const itemIds = items.map((i) => i.id)
+    const { data: logRows } =
+      user && itemIds.length
+        ? await supabase.from('set_logs').select('workout_item_id').eq('athlete_id', user.id).in('workout_item_id', itemIds)
+        : { data: [] }
+    const loggedSets = new Map<number, number>()
+    for (const l of (logRows as { workout_item_id: number }[]) || []) loggedSets.set(l.workout_item_id, (loggedSets.get(l.workout_item_id) || 0) + 1)
+    const exName = new Map(((exRows as { id: number; name: string }[]) || []).map((e) => [e.id, e.name]))
+    const gName = new Map(((groupRows as { id: number; name: string }[]) || []).map((g) => [g.id, g.name]))
+    const byWorkout = new Map(wList.map((w) => [w.id, w]))
+    const titles: Record<string, string> = {}
+    wList.forEach((w) => {
+      titles[`w${w.id}`] = w.group_id ? `${w.title} · ${gName.get(w.group_id) ?? 'Group'}` : w.title
+    })
+    setWorkoutTitles(titles)
+    setMonthDrills(
+      items
+        .sort((a, b) => a.workout_id - b.workout_id || a.block_index - b.block_index || a.item_index - b.item_index)
+        .map((i) => ({
+          id: i.id,
+          phase: `w${i.workout_id}`,
+          drill_name: exName.get(i.exercise_id) ?? 'Drill',
+          sets: i.sets,
+          reps: i.reps,
+          scheduled_date: byWorkout.get(i.workout_id)?.workout_date ?? '',
+          notes: i.notes,
+          is_completed: (loggedSets.get(i.id) || 0) >= i.sets,
+        }))
+    )
 
     const { data: eventRows } = await supabase
       .from('team_schedule')
@@ -305,7 +346,7 @@ export default function ScheduleCalendarView({
         {groupedPhases.map((group) => {
           const cardKey = `phase-${group.phase}`
           const isOpen = !!expandedCards[cardKey]
-          const phaseTitle = group.phase.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+          const phaseTitle = workoutTitles[group.phase] ?? group.phase.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
           return (
             <div key={cardKey} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
               <div className="h-1.5 w-full bg-amber-500" />

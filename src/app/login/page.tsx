@@ -45,7 +45,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push(profile.role === 'coach' ? '/coach' : '/')
+    router.push('/')
     router.refresh()
   }
 
