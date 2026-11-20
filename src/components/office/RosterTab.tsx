@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { KeyRound, Plus, Trash2, UserX, UserCheck } from 'lucide-react'
 import { callApi } from '@/lib/api'
 import { inputClass } from '@/components/ui'
+import AthleteSheet from '@/components/coach/AthleteSheet'
 import type { Group, Profile } from '@/lib/training'
 
 const POSITIONS = [
@@ -27,6 +28,7 @@ export default function RosterTab({ players, groups, onChanged }: { players: Pro
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [credential, setCredential] = useState<{ name: string; username: string; password: string } | null>(null)
+  const [open, setOpen] = useState<Profile | null>(null)
 
   const create = async () => {
     setBusy(true)
@@ -145,14 +147,14 @@ export default function RosterTab({ players, groups, onChanged }: { players: Pro
             <div className="w-10 h-10 rounded-full bg-blue-50 text-[#1746b8] text-sm font-extrabold flex items-center justify-center shrink-0">
               {p.full_name.split(' ').map((s) => s[0]).join('').slice(0, 2)}
             </div>
-            <div className="flex-1 min-w-0">
+            <button type="button" onClick={() => setOpen(p)} className="flex-1 min-w-0 text-left cursor-pointer">
               <div className="text-sm font-extrabold text-slate-900 truncate">
                 {p.full_name} {p.is_demo && <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">DEMO</span>}
               </div>
               <div className="text-[11px] font-semibold text-slate-500">
                 @{p.username} · {p.position_group}{p.grad_year ? ` · ’${String(p.grad_year).slice(2)}` : ''}
               </div>
-            </div>
+            </button>
             <div className="flex gap-1">
               <RowBtn label="Reset password" onClick={() => resetPassword(p)}><KeyRound className="w-4 h-4" /></RowBtn>
               {p.is_active ? (
@@ -165,6 +167,7 @@ export default function RosterTab({ players, groups, onChanged }: { players: Pro
           </div>
         ))}
       </div>
+      {open && <AthleteSheet athlete={open} onClose={() => setOpen(null)} />}
     </div>
   )
 }

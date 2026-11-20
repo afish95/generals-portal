@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Flame, Target, Users } from 'lucide-react'
+import { Flame, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useProfile } from '@/components/shell/AppShell'
 import NotificationSetup from '@/components/NotificationSetup'
 import AnnouncementsFeed from '@/components/AnnouncementsFeed'
 import TeamPrFeed from '@/components/TeamPrFeed'
+import CoachDashboard from '@/components/coach/CoachDashboard'
+import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
+import BodyWeightCard from '@/components/wellness/BodyWeightCard'
 import { addDays, firstName, localDate, type Group, type Workout, type WorkoutItem } from '@/lib/training'
 
 type TodayRow = { workout: Workout; total: number; done: number }
@@ -25,6 +28,7 @@ export default function HomePage() {
     let cancelled = false
     const date = localDate()
     const load = async () => {
+      if (isCoach) return // the coach dashboard loads its own data
       const { data: w } = await supabase.from('workouts').select('*').eq('workout_date', date).order('sort_order')
       const workouts = (w as Workout[]) || []
       const ids = workouts.map((x) => x.id)
@@ -109,31 +113,10 @@ export default function HomePage() {
       <NotificationSetup />
 
       {isCoach ? (
-        <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-[#1746b8]" />
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Today’s training</span>
-          </div>
-          {coachToday.length === 0 ? (
-            <p className="text-xs font-medium text-slate-500">Nothing scheduled today. <Link href="/office" className="font-bold text-[#1746b8]">Build a workout</Link></p>
-          ) : (
-            <ul className="space-y-2.5">
-              {coachToday.map((r) => (
-                <li key={r.workout.id}>
-                  <div className="flex items-center justify-between text-sm font-bold text-slate-900">
-                    <span>{r.workout.title} <span className="text-xs text-slate-400">· {r.groupName}</span></span>
-                    <span className="text-xs text-slate-500">{r.logged}/{r.expected}</span>
-                  </div>
-                  <div className="mt-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div className="h-full bg-[#1746b8]" style={{ width: `${r.expected ? Math.min(100, Math.round((100 * r.logged) / r.expected)) : 0}%` }} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <CoachDashboard />
       ) : (
         <>
+          <ReadinessCheckIn athleteId={profile.id} />
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-3xl bg-gradient-to-br from-orange-400 to-rose-500 text-white p-4">
               <Flame className="w-5 h-5" />
@@ -170,6 +153,7 @@ export default function HomePage() {
               </div>
             )}
           </section>
+          <BodyWeightCard athleteId={profile.id} />
         </>
       )}
 

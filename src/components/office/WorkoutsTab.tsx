@@ -1,13 +1,16 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Copy, Pencil, Plus, Trash2 } from 'lucide-react'
+import { CalendarRange, Pencil, Plus, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { DateStepper, EmptyState, Pill } from '@/components/ui'
 import WorkoutEditor from './WorkoutEditor'
+import BulkScheduleSheet from './BulkScheduleSheet'
 import {
+  addDays,
   itemLabel,
   localDate,
+  prettyDate,
   phaseLabel,
   type Exercise,
   type Group,
@@ -28,6 +31,9 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
   const [reload, setReload] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
   const [lastPhase, setLastPhase] = useState<Phase>('off_season')
+  const [view, setView] = useState<'day' | 'range'>('day')
+  const [range, setRange] = useState<Workout[]>([])
+  const [bulk, setBulk] = useState<{ workout: Workout; items: WorkoutItem[] } | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -59,6 +65,25 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
     }
   }, [date, reload])
 
+  // Overview: the week before through two weeks after the selected day
+  useEffect(() => {
+    if (view !== 'range') return
+    let cancelled = false
+    createClient()
+      .from('workouts')
+      .select('*')
+      .gte('workout_date', addDays(date, -7))
+      .lte('workout_date', addDays(date, 14))
+      .order('workout_date')
+      .order('sort_order')
+      .then(({ data }) => {
+        if (!cancelled) setRange((data as Workout[]) || [])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [view, date, reload])
+
   const refresh = useCallback(() => setReload((n) => n + 1), [])
   const groupName = (id: number | null) => (id === null ? 'Whole team' : groups.find((g) => g.id === id)?.name ?? 'Group')
   const exName = (id: number) => exercises.find((e) => e.id === id)?.name ?? 'Drill'
@@ -76,42 +101,56 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
     refresh()
   }
 
-  const duplicate = async (w: Workout) => {
-    const target = window.prompt('Copy to which date? (YYYY-MM-DD)', date)
-    if (!target || !/^\d{4}-\d{2}-\d{2}$/.test(target)) return
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('workouts')
-      .insert({ title: w.title, workout_date: target, group_id: w.group_id, phase: w.phase, notes: w.notes, sort_order: w.sort_order })
-      .select('id')
-      .single()
-    if (error || !data) {
-      setMessage(error?.message || 'Could not copy')
-      return
-    }
-    const src = items.filter((i) => i.workout_id === w.id)
-    if (src.length) {
-      await supabase.from('workout_items').insert(
-        src.map((i) => ({
-          workout_id: data.id,
-          exercise_id: i.exercise_id,
-          block_index: i.block_index,
-          item_index: i.item_index,
-          sets: i.sets,
-          reps: i.reps,
-          load: i.load,
-          rest_seconds: i.rest_seconds,
-          notes: i.notes,
-        }))
-      )
-    }
-    setMessage(`Copied to ${target}`)
-    if (target === date) refresh()
-  }
-
   return (
     <div>
+      <div className="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-slate-100 mb-3">
+        {(['day', 'range'] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setView(v)}
+            className={`py-2 rounded-xl text-xs font-extrabold cursor-pointer ${view === v ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}
+          >
+            {v === 'day' ? 'Day' : '3-week overview'}
+          </button>
+        ))}
+      </div>
       <DateStepper value={date} onChange={setDate} />
+      {view === 'range' ? (
+        <div className="space-y-2">
+          {Array.from({ length: 22 }, (_, i) => addDays(date, i - 7)).map((d) => {
+            const list = range.filter((w) => w.workout_date === d && (filter === 'all' || (filter === 'team' ? w.group_id === null : w.group_id === filter)))
+            const isToday = d === localDate()
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => {
+                  setDate(d)
+                  setView('day')
+                }}
+                className={`w-full text-left rounded-2xl border p-3 cursor-pointer ${d === date ? 'bg-amber-50 border-amber-300' : isToday ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'} ${d < localDate() ? 'opacity-80' : ''}`}
+              >
+                <div className="text-xs font-extrabold text-slate-900">
+                  {prettyDate(d)} {isToday && <span className="text-[#1746b8]">· Today</span>}
+                </div>
+                {list.length === 0 ? (
+                  <div className="text-[11px] font-semibold text-slate-400">No training</div>
+                ) : (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {list.map((w) => (
+                      <span key={w.id} className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-amber-100 text-amber-800">
+                        {w.title} · {groupName(w.group_id)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+      <>
       <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
         <Pill active={filter === 'all'} onClick={() => setFilter('all')}>All</Pill>
         <Pill active={filter === 'team'} onClick={() => setFilter('team')}>Whole team</Pill>
@@ -151,7 +190,7 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
                   </div>
                   <div className="flex gap-1">
                     <SmallBtn label="Edit" onClick={() => setEditing({ workout: w, items: its })}><Pencil className="w-4 h-4" /></SmallBtn>
-                    <SmallBtn label="Copy to another date" onClick={() => duplicate(w)}><Copy className="w-4 h-4" /></SmallBtn>
+                    <SmallBtn label="Schedule on more days" onClick={() => setBulk({ workout: w, items: its })}><CalendarRange className="w-4 h-4" /></SmallBtn>
                     <SmallBtn label="Delete" onClick={() => remove(w)}><Trash2 className="w-4 h-4" /></SmallBtn>
                   </div>
                 </div>
@@ -170,6 +209,23 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
             )
           })}
         </div>
+      )}
+
+      </>
+      )}
+
+      {bulk && (
+        <BulkScheduleSheet
+          workout={bulk.workout}
+          items={bulk.items}
+          groups={groups}
+          onClose={() => setBulk(null)}
+          onDone={(n) => {
+            setBulk(null)
+            setMessage(`Scheduled ${n} workout${n === 1 ? '' : 's'}`)
+            refresh()
+          }}
+        />
       )}
 
       {editing && (

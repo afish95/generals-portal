@@ -8,10 +8,12 @@ import WorkoutsTab from '@/components/office/WorkoutsTab'
 import GroupsTab from '@/components/office/GroupsTab'
 import RosterTab from '@/components/office/RosterTab'
 import DrillsTab from '@/components/office/DrillsTab'
+import AttendanceTab from '@/components/office/AttendanceTab'
 import type { Exercise, Group, Profile } from '@/lib/training'
 
 const TABS = [
   { key: 'workouts', label: 'Workouts' },
+  { key: 'attendance', label: 'Attendance' },
   { key: 'groups', label: 'Groups' },
   { key: 'roster', label: 'Roster' },
   { key: 'drills', label: 'Drills' },
@@ -57,6 +59,7 @@ export default function CoachOfficePage() {
         ))}
       </div>
       {tab === 'workouts' && <WorkoutsTab groups={groups} exercises={exercises} />}
+      {tab === 'attendance' && <AttendanceTab players={players} groups={groups} />}
       {tab === 'groups' && <GroupsTab groups={groups} players={players} onChanged={refresh} />}
       {tab === 'roster' && <RosterTab players={players} groups={groups} onChanged={refresh} />}
       {tab === 'drills' && <DrillsTab exercises={exercises} onChanged={refresh} />}
