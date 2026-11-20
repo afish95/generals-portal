@@ -54,7 +54,7 @@ export default function DrillsTab({ exercises, onChanged }: { exercises: Exercis
           <Plus className="w-4 h-4" /> Add drill
         </button>
       ) : (
-        <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-2">
+        <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-2">
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Drill name (e.g. Crow Hop Velo)" className={inputClass} />
           <div className="grid grid-cols-2 gap-2">
             <select value={form.discipline} onChange={(e) => setForm({ ...form, discipline: e.target.value as Discipline })} className={inputClass}>

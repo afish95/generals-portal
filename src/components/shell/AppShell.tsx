@@ -86,68 +86,74 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     )
   }
 
+  const homeActive = pathname === '/'
+  const messagesActive = pathname.startsWith('/messages')
+  const iconBtn = (active: boolean) =>
+    `w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 transition ${
+      active ? 'bg-white text-[#1746b8] border-white shadow-sm' : 'bg-white/15 border-white/20 text-white'
+    }`
+
   return (
     <ProfileContext.Provider value={{ profile, isCoach }}>
-      <div className="min-h-screen bg-[#f3f5f9]">
-        {/* Floating header */}
+      <div className="min-h-screen bg-[#f3f5f9] text-slate-900">
+        {/* Royal blue header: Home top left, Messages top right */}
         <header
-          className="fixed top-0 inset-x-0 z-40 px-3"
-          style={{ paddingTop: 'max(env(safe-area-inset-top), 10px)' }}
+          className="sticky top-0 z-40 bg-gradient-to-b from-[#1746b8] to-[#1e54d4] text-white shadow-md"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-          <div className="max-w-xl mx-auto flex items-center justify-between rounded-2xl bg-[#1746b8]/95 backdrop-blur px-2 py-1.5 shadow-lg shadow-blue-900/20">
-            <Link
-              href="/"
-              aria-label="Home"
-              className={`w-11 h-11 rounded-xl flex items-center justify-center ${pathname === '/' ? 'bg-white text-[#1746b8]' : 'text-white'}`}
-            >
+          <div className="max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
+            <Link href="/" aria-label="Home" className={iconBtn(homeActive)}>
               <House className="w-5 h-5" />
             </Link>
-            <div className="text-center leading-tight">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-200">Generals</div>
-              <div className="text-sm font-extrabold text-white">{isCoach ? 'Coach' : 'Baseball'}</div>
+            <div className="min-w-0 flex-1 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Generals Baseball</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-400/25 text-blue-100">
+                  {isCoach ? 'Coach' : 'Active'}
+                </span>
+              </div>
+              <div className="text-lg font-extrabold leading-tight tracking-tight truncate">{profile.full_name}</div>
+              <div className="text-xs text-blue-100/90 font-medium truncate">
+                {isCoach ? 'Coaching staff' : profile.position_group || 'Player'} &bull; #{profile.username}
+              </div>
             </div>
-            <Link
-              href="/messages"
-              aria-label="Messages"
-              className={`w-11 h-11 rounded-xl flex items-center justify-center ${pathname.startsWith('/messages') ? 'bg-white text-[#1746b8]' : 'text-white'}`}
-            >
+            <Link href="/messages" aria-label="Messages" className={iconBtn(messagesActive)}>
               <MessageCircle className="w-5 h-5" />
             </Link>
           </div>
         </header>
 
         <main
-          className="max-w-xl mx-auto px-4"
-          style={{
-            paddingTop: 'calc(max(env(safe-area-inset-top), 10px) + 76px)',
-            paddingBottom: 'calc(max(env(safe-area-inset-bottom), 10px) + 96px)',
-          }}
+          className="max-w-xl mx-auto px-4 pt-5"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 104px)' }}
         >
           {children}
         </main>
 
-        {/* Floating footer */}
+        {/* Royal blue footer with the segmented navigation */}
         <nav
-          className="fixed bottom-0 inset-x-0 z-40 px-3"
-          style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
+          className="fixed bottom-0 inset-x-0 z-40 bg-gradient-to-b from-[#1e54d4] to-[#1746b8] shadow-[0_-4px_12px_rgba(23,70,184,0.25)]"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
-          <div className="max-w-xl mx-auto grid grid-cols-4 gap-1 rounded-2xl bg-white/95 backdrop-blur border border-slate-200 p-1.5 shadow-xl shadow-slate-900/10">
-            {tabs.map((t) => {
-              const active = pathname.startsWith(t.href)
-              const Icon = t.icon
-              return (
-                <Link
-                  key={t.href}
-                  href={t.href}
-                  className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 text-[10px] font-extrabold ${
-                    active ? 'bg-[#1746b8] text-white' : 'text-slate-500'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {t.label}
-                </Link>
-              )
-            })}
+          <div className="max-w-xl mx-auto px-4 py-2.5">
+            <div className="grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl bg-[#113694]/70 border border-white/15">
+              {tabs.map((t) => {
+                const active = pathname.startsWith(t.href)
+                const Icon = t.icon
+                return (
+                  <Link
+                    key={t.href}
+                    href={t.href}
+                    className={`py-2 px-1 rounded-xl text-[11px] font-extrabold flex flex-col items-center justify-center gap-1 transition ${
+                      active ? 'bg-white text-[#1746b8] shadow-sm' : 'text-blue-100'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="leading-none whitespace-nowrap">{t.label}</span>
+                  </Link>
+                )
+              })}
+            </div>
           </div>
         </nav>
       </div>

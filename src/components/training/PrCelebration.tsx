@@ -18,7 +18,7 @@ export default function PrCelebration({ hit, onDone }: { hit: PrHit | null; onDo
       type="button"
       onClick={onDone}
       className="fixed inset-x-0 z-50 flex justify-center px-4 cursor-pointer"
-      style={{ top: 'calc(max(env(safe-area-inset-top), 10px) + 76px)' }}
+      style={{ top: 'calc(env(safe-area-inset-top) + 100px)' }}
     >
       <div className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 text-white p-5 shadow-2xl shadow-orange-500/40 animate-bounce">
         <div className="flex items-center gap-3">

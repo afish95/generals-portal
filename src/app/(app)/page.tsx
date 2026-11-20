@@ -109,7 +109,7 @@ export default function HomePage() {
       <NotificationSetup />
 
       {isCoach ? (
-        <section className="bg-white rounded-3xl border border-slate-200 p-4">
+        <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
           <div className="flex items-center gap-2 mb-2">
             <Users className="w-4 h-4 text-[#1746b8]" />
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Today’s training</span>
@@ -137,17 +137,17 @@ export default function HomePage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-3xl bg-gradient-to-br from-orange-400 to-rose-500 text-white p-4">
               <Flame className="w-5 h-5" />
-              <div className="text-3xl font-extrabold mt-1">{streak ?? '–'}</div>
+              <div className="text-3xl font-black mt-1">{streak ?? '–'}</div>
               <div className="text-[11px] font-bold text-orange-50">day streak</div>
             </div>
             <div className="rounded-3xl bg-gradient-to-br from-[#1746b8] to-indigo-600 text-white p-4">
               <Target className="w-5 h-5" />
-              <div className="text-3xl font-extrabold mt-1">{weekSets}</div>
+              <div className="text-3xl font-black mt-1">{weekSets}</div>
               <div className="text-[11px] font-bold text-blue-100">sets this week</div>
             </div>
           </div>
 
-          <section className="bg-white rounded-3xl border border-slate-200 p-4">
+          <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
             <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Today</div>
             {today.length === 0 ? (
               <p className="text-xs font-medium text-slate-500">Recovery day. Nothing scheduled.</p>

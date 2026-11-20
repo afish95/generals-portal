@@ -141,7 +141,7 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
             const counts = new Map<number, number>()
             its.forEach((i) => counts.set(i.block_index, (counts.get(i.block_index) || 0) + 1))
             return (
-              <section key={w.id} className="bg-white rounded-3xl border border-slate-200 p-4">
+              <section key={w.id} className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="text-base font-extrabold text-slate-900">{w.title}</div>

@@ -236,7 +236,7 @@ export default function WorkoutEditor({
           <div className="w-10" />
         </div>
 
-        <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-3">
+        <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
           <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Title (e.g. Throwing Day)" className={`${inputClass} font-bold`} />
           <div className="grid grid-cols-2 gap-2">
             <label className="text-[10px] font-extrabold uppercase text-slate-400">
@@ -273,7 +273,7 @@ export default function WorkoutEditor({
         </section>
 
         {blocks.map((blk, b) => (
-          <section key={b} className="bg-white rounded-3xl border border-slate-200 p-4 space-y-3">
+          <section key={b} className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
                 Block {String.fromCharCode(65 + b)} {blk.length > 1 && <span className="text-[#1746b8]">· superset</span>}

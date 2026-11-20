@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { prettyDate, addDays, localDate } from '@/lib/training'
 
 export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <section className={`bg-white rounded-3xl border border-slate-200/90 p-4 shadow-xs ${className}`}>{children}</section>
+  return <section className={`bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs ${className}`}>{children}</section>
 }
 
 export function SectionLabel({ children }: { children: React.ReactNode }) {

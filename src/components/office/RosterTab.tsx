@@ -83,7 +83,7 @@ export default function RosterTab({ players, groups, onChanged }: { players: Pro
           <Plus className="w-4 h-4" /> Add player
         </button>
       ) : (
-        <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-2">
+        <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-2">
           <input
             value={form.full_name}
             onChange={(e) => {

@@ -20,7 +20,7 @@ export default function OtherPage() {
   return (
     <div className="space-y-4">
       <PageTitle title="Other" />
-      <section className="bg-white rounded-3xl border border-slate-200 p-4">
+      <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
         <div className="text-sm font-extrabold text-slate-900">{profile.full_name}</div>
         <div className="text-xs font-semibold text-slate-500">@{profile.username} · {isCoach ? 'Coach' : 'Player'}</div>
       </section>
