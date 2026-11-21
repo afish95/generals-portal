@@ -13,7 +13,7 @@ const SCALES = [
 ] as const
 type ScaleKey = (typeof SCALES)[number]['key']
 
-export default function ReadinessCheckIn({ athleteId }: { athleteId: string }) {
+export default function ReadinessCheckIn({ athleteId, onSaved }: { athleteId: string; onSaved?: () => void }) {
   const [today, setToday] = useState<Checkin | null | undefined>(undefined)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState<Record<ScaleKey, number | null>>({ sleep_quality: null, soreness: null, stress: null })
@@ -44,13 +44,17 @@ export default function ReadinessCheckIn({ athleteId }: { athleteId: string }) {
   }, [athleteId])
 
   const save = async () => {
+    const h = parseFloat(hours)
     if (form.sleep_quality == null || form.soreness == null || form.stress == null) {
       setError('Pick a number for sleep, soreness and stress.')
       return
     }
+    if (!Number.isFinite(h) || h < 0 || h > 16) {
+      setError('Enter how many hours you slept. It counts toward your daily points.')
+      return
+    }
     setSaving(true)
     setError(null)
-    const h = parseFloat(hours)
     const { data, error: e } = await createClient()
       .from('daily_checkins')
       .upsert(
@@ -73,6 +77,7 @@ export default function ReadinessCheckIn({ athleteId }: { athleteId: string }) {
     }
     setToday(data as Checkin)
     setEditing(false)
+    onSaved?.()
   }
 
   if (today === undefined) return <div className="h-32 rounded-3xl bg-white/60 animate-pulse" />
@@ -128,7 +133,7 @@ export default function ReadinessCheckIn({ athleteId }: { athleteId: string }) {
             </div>
           ))}
           <label className="flex items-center justify-between gap-3 text-xs font-extrabold text-slate-700">
-            Hours of sleep (optional)
+            Hours of sleep last night
             <input
               inputMode="decimal"
               value={hours}
