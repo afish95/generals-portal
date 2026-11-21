@@ -25,7 +25,7 @@ type Convo = {
 type Person = { id: string; full_name: string; role: string; is_active: boolean }
 
 export default function MessagesPage() {
-  const { profile, isCoach } = useProfile()
+  const { profile, isCoach, viewAs } = useProfile()
   const [tab, setTab] = useState<'chats' | 'announcements'>('chats')
   const [convos, setConvos] = useState<Convo[] | null>(null)
   const [people, setPeople] = useState<Person[]>([])
@@ -41,7 +41,7 @@ export default function MessagesPage() {
     const supabase = createClient()
     let cancelled = false
     Promise.all([
-      supabase.rpc('my_conversations'),
+      viewAs.active ? supabase.rpc('conversations_for', { p_user: profile.id }) : supabase.rpc('my_conversations'),
       supabase.from('profiles').select('id, full_name, role, is_active'),
       supabase.from('team_groups').select('*').order('sort_order'),
     ]).then(([c, p, g]) => {
@@ -53,7 +53,7 @@ export default function MessagesPage() {
     return () => {
       cancelled = true
     }
-  }, [reload])
+  }, [reload, viewAs.active, profile.id])
 
   const names = new Map(people.map((p) => [p.id, p.full_name]))
   const titleOf = (c: Convo) => {
@@ -121,13 +121,13 @@ export default function MessagesPage() {
         </>
       ) : (
         <>
-          <button
+          {!viewAs.active && <button
             type="button"
             onClick={() => setPicking((v) => !v)}
             className="w-full py-3 rounded-2xl bg-white border border-slate-200 text-sm font-extrabold text-[#1746b8] flex items-center justify-center gap-2 cursor-pointer"
           >
             <MessageCirclePlus className="w-4 h-4" /> {isCoach ? 'New message' : 'Message a coach'}
-          </button>
+          </button>}
 
           {picking && (
             <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
@@ -198,6 +198,9 @@ export default function MessagesPage() {
           subtitle={subtitleOf(open)}
           myId={profile.id}
           isCoach={isCoach}
+          readOnly={viewAs.active}
+          direct={open.kind === 'direct'}
+          members={open.kind === 'direct' ? [open.member_a, open.member_b].filter((x): x is string => !!x) : undefined}
           names={names}
           onClose={() => {
             setOpenId(null)

@@ -13,6 +13,7 @@ export default function CalendarPage() {
     <ScheduleCalendarView
       today={localDate()}
       initialEvents={[]}
+      athleteId={isCoach ? undefined : profile.id}
       renderDay={(date) => (
         <DayPlan
           athleteId={profile.id}

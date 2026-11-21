@@ -80,7 +80,7 @@ export default function StatsPage() {
           <PositionLeaderboard myId={profile.id} myPosition={isCoach ? null : profile.position_group} />
         </section>
       )}
-      {sub === 'progressions' && <Progressions isCoach={isCoach} />}
+      {sub === 'progressions' && <Progressions isCoach={isCoach} athleteId={profile.id} />}
       {sub === 'compare' && isCoach && <CompareAthletes />}
       {sub === 'overview' && (
       <>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useProfile } from '@/components/shell/AppShell'
 import { Megaphone, Pin, ExternalLink } from 'lucide-react'
 
 type Announcement = {
@@ -24,14 +25,14 @@ function timeAgo(iso: string) {
 
 export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot }: { limit?: number; refreshKey?: number; topSlot?: React.ReactNode }) {
   const [items, setItems] = useState<Announcement[] | null>(null)
+  const { isCoach } = useProfile()
 
   useEffect(() => {
     const supabase = createClient()
     let cancelled = false
-    supabase
-      .from('announcements')
-      .select('id, title, body, link_url, is_pinned, created_at')
-      .order('is_pinned', { ascending: false })
+    let q = supabase.from('announcements').select('id, title, body, link_url, is_pinned, created_at')
+    if (!isCoach) q = q.in('audience', ['everyone', 'players'])
+    q.order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(limit)
       .then(({ data }) => {
@@ -40,7 +41,7 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot }
     return () => {
       cancelled = true
     }
-  }, [limit, refreshKey])
+  }, [limit, refreshKey, isCoach])
 
   if (items === null) return null
 

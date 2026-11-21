@@ -36,9 +36,12 @@ export default function ScheduleCalendarView({
   today,
   initialEvents,
   renderDay,
+  athleteId,
 }: {
   today: string
   initialEvents: CalendarEvent[]
+  /** Player whose workouts and logs to show (defaults to the signed-in user; coaches see every group when omitted) */
+  athleteId?: string
   /** When given, the selected day's details are rendered by this (e.g. the Day plan) instead of the built-in list. */
   renderDay?: (date: string) => React.ReactNode
 }) {
@@ -73,7 +76,12 @@ export default function ScheduleCalendarView({
       .gte('workout_date', start)
       .lte('workout_date', end)
       .order('sort_order', { ascending: true })
-    const wList = (workoutRows as { id: number; title: string; workout_date: string; group_id: number | null }[]) || []
+    let wList = (workoutRows as { id: number; title: string; workout_date: string; group_id: number | null }[]) || []
+    if (athleteId && wList.some((w) => w.group_id != null)) {
+      const { data: gm } = await supabase.from('group_members').select('group_id').eq('athlete_id', athleteId)
+      const mine = new Set(((gm as { group_id: number }[]) || []).map((g) => g.group_id))
+      wList = wList.filter((w) => w.group_id == null || mine.has(w.group_id))
+    }
     const wIds = wList.map((w) => w.id)
     const [{ data: itemRows }, { data: exRows }, { data: groupRows }] = await Promise.all([
       wIds.length
@@ -85,8 +93,8 @@ export default function ScheduleCalendarView({
     const items = (itemRows as { id: number; workout_id: number; exercise_id: number; block_index: number; item_index: number; sets: number; reps: string | null; notes: string | null }[]) || []
     const itemIds = items.map((i) => i.id)
     const { data: logRows } =
-      user && itemIds.length
-        ? await supabase.from('set_logs').select('workout_item_id').eq('athlete_id', user.id).in('workout_item_id', itemIds)
+      (athleteId || user) && itemIds.length
+        ? await supabase.from('set_logs').select('workout_item_id').eq('athlete_id', athleteId || user!.id).in('workout_item_id', itemIds)
         : { data: [] }
     const loggedSets = new Map<number, number>()
     for (const l of (logRows as { workout_item_id: number }[]) || []) loggedSets.set(l.workout_item_id, (loggedSets.get(l.workout_item_id) || 0) + 1)
@@ -120,7 +128,7 @@ export default function ScheduleCalendarView({
       .lte('event_date', end)
       .order('event_date', { ascending: true })
     if (eventRows) setEvents(eventRows)
-  }, [currentMonth, supabase])
+  }, [currentMonth, supabase, athleteId])
 
   useEffect(() => {
     loadRangeData()

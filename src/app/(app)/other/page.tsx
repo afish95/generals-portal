@@ -8,7 +8,7 @@ import { PageTitle } from '@/components/ui'
 import NotificationSetup from '@/components/NotificationSetup'
 
 export default function OtherPage() {
-  const { profile, isCoach } = useProfile()
+  const { profile, isCoach, viewAs } = useProfile()
   const router = useRouter()
 
   const signOut = async () => {
@@ -23,6 +23,12 @@ export default function OtherPage() {
         <div className="text-sm font-extrabold text-slate-900">{profile.full_name}</div>
         <div className="text-xs font-semibold text-slate-500">@{profile.username} · {isCoach ? 'Coach' : 'Player'}</div>
       </section>
+      {viewAs.active ? (
+        <button type="button" onClick={viewAs.exit} className="w-full py-3 rounded-2xl bg-amber-400 text-amber-950 text-sm font-extrabold cursor-pointer">
+          Exit player view
+        </button>
+      ) : (
+      <>
       <NotificationSetup />
       <button
         type="button"
@@ -31,6 +37,8 @@ export default function OtherPage() {
       >
         <LogOut className="w-4 h-4" /> Sign out
       </button>
+      </>
+      )}
     </div>
   )
 }

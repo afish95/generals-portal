@@ -1,13 +1,24 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { House, MessageCircle, Calendar, Target, Activity, LayoutGrid, Shield } from 'lucide-react'
-import { createClient } from '@/lib/supabase'
+import { House, MessageCircle, Calendar, Target, Activity, LayoutGrid, Shield, Eye, X } from 'lucide-react'
+import { createClient, READ_ONLY_EVENT, setReadOnlyMode } from '@/lib/supabase'
 import type { Profile } from '@/lib/training'
 
-type ShellContext = { profile: Profile; isCoach: boolean }
+export type ViewAs = {
+  /** True while a coach is previewing the app as a player (read-only) */
+  active: boolean
+  /** The signed-in coach, even while viewing as a player */
+  realProfile: Profile
+  players: Profile[]
+  start: (playerId: string) => void
+  exit: () => void
+}
+type ShellContext = { profile: Profile; isCoach: boolean; viewAs: ViewAs }
+const VIEW_KEY = 'generals.viewAs'
+const PROFILE_COLS = 'id, username, full_name, role, position_group, grad_year, is_active, is_demo'
 const ProfileContext = createContext<ShellContext | null>(null)
 
 export function useProfile(): ShellContext {
@@ -46,7 +57,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       }
       const { data } = await supabase
         .from('profiles')
-        .select('id, username, full_name, role, position_group, grad_year, is_active, is_demo')
+        .select(PROFILE_COLS)
         .eq('id', user.id)
         .single()
       if (cancelled) return
@@ -67,14 +78,87 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [router])
 
+  // ----- Coach "view as player" (read-only preview) -----
+  const realIsCoach = profile?.role === 'coach'
+  const [viewAsId, setViewAsId] = useState<string | null>(null)
+  const [viewed, setViewed] = useState<Profile | null>(null)
+  const [players, setPlayers] = useState<Profile[]>([])
+  const [toast, setToast] = useState(false)
+
+  useEffect(() => {
+    if (!realIsCoach) return
+    try {
+      setViewAsId(sessionStorage.getItem(VIEW_KEY))
+    } catch {}
+    createClient()
+      .from('profiles')
+      .select(PROFILE_COLS)
+      .eq('role', 'player')
+      .eq('is_active', true)
+      .order('full_name')
+      .then(({ data }) => setPlayers((data as Profile[]) || []))
+  }, [realIsCoach])
+
+  useEffect(() => {
+    if (!viewAsId) {
+      setViewed(null)
+      return
+    }
+    const found = players.find((p) => p.id === viewAsId)
+    if (found) setViewed(found)
+    else if (players.length) {
+      // That player is gone or inactive: fall back to the coach view
+      setViewAsId(null)
+      try {
+        sessionStorage.removeItem(VIEW_KEY)
+      } catch {}
+    }
+  }, [viewAsId, players])
+
+  const viewing = !!(realIsCoach && viewAsId && viewed)
+  // Must be set before any child creates a database client
+  setReadOnlyMode(viewing)
+
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined
+    const onBlocked = () => {
+      setToast(true)
+      clearTimeout(t)
+      t = setTimeout(() => setToast(false), 2200)
+    }
+    window.addEventListener(READ_ONLY_EVENT, onBlocked)
+    return () => {
+      window.removeEventListener(READ_ONLY_EVENT, onBlocked)
+      clearTimeout(t)
+    }
+  }, [])
+
+  const startViewAs = useCallback(
+    (id: string) => {
+      try {
+        sessionStorage.setItem(VIEW_KEY, id)
+      } catch {}
+      setViewAsId(id)
+      router.push('/')
+    },
+    [router]
+  )
+  const exitViewAs = useCallback(() => {
+    try {
+      sessionStorage.removeItem(VIEW_KEY)
+    } catch {}
+    setViewAsId(null)
+    setReadOnlyMode(false)
+    router.push('/')
+  }, [router])
+
   // Unread chat count for the Messages badge (refreshed on navigation and every minute)
   const [unread, setUnread] = useState(0)
   useEffect(() => {
     if (status !== 'ready') return
     let cancelled = false
     const check = () =>
-      createClient()
-        .rpc('my_conversations')
+      (viewing && viewAsId ? createClient().rpc('conversations_for', { p_user: viewAsId }) : createClient().rpc('my_conversations'))
         .then(({ data }) => {
           if (!cancelled) setUnread(((data as { unread: number }[]) || []).reduce((n, c) => n + Number(c.unread || 0), 0))
         })
@@ -84,9 +168,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       cancelled = true
       clearInterval(t)
     }
-  }, [status, pathname])
+  }, [status, pathname, viewing, viewAsId])
 
-  const isCoach = profile?.role === 'coach'
+  const isCoach = realIsCoach && !viewing
   const tabs = isCoach ? COACH_TABS : PLAYER_TABS
 
   if (status === 'inactive') {
@@ -97,7 +181,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (status === 'loading' || !profile) {
+  if (status === 'loading' || !profile || (realIsCoach && viewAsId && !viewed && players.length === 0)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-10 h-10 rounded-full border-4 border-blue-200 border-t-[#1746b8] animate-spin" />
@@ -113,7 +197,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }`
 
   return (
-    <ProfileContext.Provider value={{ profile, isCoach }}>
+    <ProfileContext.Provider
+      value={{
+        profile: viewing && viewed ? viewed : profile,
+        isCoach,
+        viewAs: { active: viewing, realProfile: profile, players, start: startViewAs, exit: exitViewAs },
+      }}
+    >
       <div className="min-h-screen bg-[#f3f5f9] text-slate-900">
         {/* Royal blue header: Home top left, Messages top right */}
         <header
@@ -131,9 +221,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   {isCoach ? 'Coach' : 'Active'}
                 </span>
               </div>
-              <div className="text-lg font-extrabold leading-tight tracking-tight truncate">{profile.full_name}</div>
+              <div className="text-lg font-extrabold leading-tight tracking-tight truncate">{(viewing && viewed ? viewed : profile).full_name}</div>
               <div className="text-xs text-blue-100/90 font-medium truncate">
-                {isCoach ? 'Coaching staff' : profile.position_group || 'Player'} &bull; #{profile.username}
+                {isCoach ? 'Coaching staff' : (viewing && viewed ? viewed : profile).position_group || 'Player'} &bull; #{(viewing && viewed ? viewed : profile).username}
               </div>
             </div>
             <Link href="/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'} className={`relative ${iconBtn(messagesActive)}`}>
@@ -145,9 +235,38 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               )}
             </Link>
           </div>
+          {viewing && viewed && (
+            <div className="bg-amber-400 text-amber-950">
+              <div className="max-w-xl mx-auto px-4 py-2 flex items-center gap-2">
+                <Eye className="w-4 h-4 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider leading-none">Player view · read-only</div>
+                  <select
+                    value={viewed.id}
+                    onChange={(e) => startViewAs(e.target.value)}
+                    aria-label="Switch player"
+                    className="mt-0.5 max-w-full bg-transparent text-sm font-extrabold truncate cursor-pointer outline-none"
+                  >
+                    {players.map((p) => (
+                      <option key={p.id} value={p.id}>{p.full_name}</option>
+                    ))}
+                  </select>
+                </div>
+                <button type="button" onClick={exitViewAs} className="shrink-0 px-3 py-1.5 rounded-xl bg-amber-950 text-amber-50 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
+                  <X className="w-3.5 h-3.5" /> Exit
+                </button>
+              </div>
+            </div>
+          )}
         </header>
+        {toast && (
+          <div className="fixed inset-x-0 z-50 flex justify-center px-4 pointer-events-none" style={{ top: 'calc(env(safe-area-inset-top) + 130px)' }}>
+            <div className="rounded-2xl bg-slate-900 text-white px-4 py-2.5 text-xs font-extrabold shadow-xl animate-gen-pop">Preview only: nothing was saved</div>
+          </div>
+        )}
 
         <main
+          key={viewing && viewed ? `view-${viewed.id}` : 'self'}
           className="max-w-xl mx-auto px-4 pt-5"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 104px)' }}
         >

@@ -18,7 +18,7 @@ type Prog = {
 }
 type Sort = 'improved' | 'recent' | 'best' | 'name'
 
-export default function Progressions({ isCoach }: { isCoach: boolean }) {
+export default function Progressions({ isCoach, athleteId }: { isCoach: boolean; athleteId?: string }) {
   const [rows, setRows] = useState<Prog[] | null>(null)
   const [exercises, setExercises] = useState<Map<number, Exercise>>(new Map())
   const [names, setNames] = useState<Map<string, string>>(new Map())
@@ -41,7 +41,7 @@ export default function Progressions({ isCoach }: { isCoach: boolean }) {
     ]).then(([p, e, n, g, m]) => {
       if (cancelled) return
       setRows(
-        ((p.data as Prog[]) || []).map((r) => ({
+        ((p.data as Prog[]) || []).filter((r) => isCoach || !athleteId || r.athlete_id === athleteId).map((r) => ({
           ...r,
           first_value: Number(r.first_value),
           latest_value: Number(r.latest_value),
@@ -57,7 +57,7 @@ export default function Progressions({ isCoach }: { isCoach: boolean }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isCoach, athleteId])
 
   const list = useMemo(() => {
     const term = q.trim().toLowerCase()

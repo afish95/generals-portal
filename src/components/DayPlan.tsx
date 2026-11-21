@@ -78,7 +78,12 @@ export default function DayPlan({
         supabase.from('workouts').select('*').eq('workout_date', day).order('sort_order'),
         supabase.from('team_groups').select('id, name'),
       ])
-      const wList = (w as Workout[]) || []
+      let wList = (w as Workout[]) || []
+      if (!isCoach && wList.some((x) => x.group_id != null)) {
+        const { data: gm } = await supabase.from('group_members').select('group_id').eq('athlete_id', athleteId)
+        const mine = new Set(((gm as { group_id: number }[]) || []).map((g) => g.group_id))
+        wList = wList.filter((x) => x.group_id == null || mine.has(x.group_id))
+      }
       const ids = wList.map((x) => x.id)
       const [{ data: it }, { data: ex }, { data: tl }, { data: sc }, { data: bs }] = await Promise.all([
         ids.length ? supabase.from('workout_items').select('*').in('workout_id', ids) : Promise.resolve({ data: [] }),
@@ -140,18 +145,23 @@ export default function DayPlan({
     const supabase = createClient()
     setBusy(key)
     if (checks.has(key)) {
-      await supabase.from('plan_checks').delete().eq('athlete_id', athleteId).eq('check_date', day).eq('item_type', type).eq('item_id', id)
-      setChecks((c) => {
-        const n = new Set(c)
-        n.delete(key)
-        return n
-      })
+      const { error } = await supabase.from('plan_checks').delete().eq('athlete_id', athleteId).eq('check_date', day).eq('item_type', type).eq('item_id', id)
+      if (!error)
+        setChecks((c) => {
+          const n = new Set(c)
+          n.delete(key)
+          return n
+        })
     } else {
+      let failed = false
       const gained = await withPointsDelta(athleteId, day, async () => {
-        await supabase.from('plan_checks').insert({ athlete_id: athleteId, check_date: day, item_type: type, item_id: id })
+        const { error } = await supabase.from('plan_checks').insert({ athlete_id: athleteId, check_date: day, item_type: type, item_id: id })
+        failed = !!error
       })
-      setChecks((c) => new Set(c).add(key))
-      celebrate(key, gained)
+      if (!failed) {
+        setChecks((c) => new Set(c).add(key))
+        celebrate(key, gained)
+      }
     }
     setBusy(null)
     onChange?.()
@@ -162,14 +172,18 @@ export default function DayPlan({
     const supabase = createClient()
     setBusy('lift')
     if (liftDone) {
-      await supabase.from('habit_logs').delete().eq('athlete_id', athleteId).eq('log_date', day).eq('habit', 'lift')
-      setLiftDone(false)
+      const { error } = await supabase.from('habit_logs').delete().eq('athlete_id', athleteId).eq('log_date', day).eq('habit', 'lift')
+      if (!error) setLiftDone(false)
     } else {
+      let failed = false
       const gained = await withPointsDelta(athleteId, day, async () => {
-        await supabase.from('habit_logs').upsert({ athlete_id: athleteId, log_date: day, habit: 'lift', status: 'done' }, { onConflict: 'athlete_id,log_date,habit' })
+        const { error } = await supabase.from('habit_logs').upsert({ athlete_id: athleteId, log_date: day, habit: 'lift', status: 'done' }, { onConflict: 'athlete_id,log_date,habit' })
+        failed = !!error
       })
-      setLiftDone(true)
-      celebrate('lift', gained)
+      if (!failed) {
+        setLiftDone(true)
+        celebrate('lift', gained)
+      }
     }
     setBusy(null)
     onChange?.()
