@@ -12,6 +12,7 @@ import ThoughtLine from '@/components/ThoughtLine'
 import DayPlan from '@/components/DayPlan'
 import DailyPointsCard from '@/components/points/DailyPointsCard'
 import ClassStandings from '@/components/points/ClassStandings'
+import BodyWeightCard from '@/components/wellness/BodyWeightCard'
 
 export default function HomePage() {
   const { profile, isCoach } = useProfile()
@@ -34,7 +35,7 @@ export default function HomePage() {
     )
   }
 
-  // Player Home, in Coach's order: Announcements → Day plan → Today's points (with readiness) → Class Cup
+  // Player Home, in Coach's order: Announcements → Day plan → Today's points (with readiness) → Class Cup → Body weight
   return (
     <div className="space-y-4">
       <NotificationSetup hideWhenOn />
@@ -47,6 +48,7 @@ export default function HomePage() {
         readiness={<ReadinessCheckIn athleteId={profile.id} embedded onSaved={() => setPointsKey((n) => n + 1)} />}
       />
       <ClassStandings myClass={profile.grad_year} />
+      <BodyWeightCard athleteId={profile.id} />
     </div>
   )
 }
