@@ -24,6 +24,7 @@ export default function ChatThread({
   isCoach,
   names,
   onClose,
+  readOnly = false,
 }: {
   conversationId: number
   title: string
@@ -32,6 +33,8 @@ export default function ChatThread({
   isCoach: boolean
   names: Map<string, string>
   onClose: () => void
+  /** Coach previewing as a player: no sending, no read markers */
+  readOnly?: boolean
 }) {
   const [messages, setMessages] = useState<Msg[]>([])
   const [text, setText] = useState('')
@@ -50,10 +53,11 @@ export default function ChatThread({
       .limit(150)
     const list = ((data as Msg[]) || []).reverse()
     setMessages(list)
+    if (readOnly) return
     await supabase
       .from('message_reads')
       .upsert({ conversation_id: conversationId, profile_id: myId, last_read_at: new Date().toISOString() }, { onConflict: 'conversation_id,profile_id' })
-  }, [conversationId, myId])
+  }, [conversationId, myId, readOnly])
 
   useEffect(() => {
     load()
@@ -126,6 +130,11 @@ export default function ChatThread({
         </div>
       </div>
 
+      {readOnly ? (
+        <div className="shrink-0 bg-amber-50 border-t border-amber-200 text-center text-xs font-extrabold text-amber-800 py-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}>
+          Player view: read-only
+        </div>
+      ) : (
       <div className="shrink-0 bg-white border-t border-slate-200" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="max-w-xl mx-auto px-3 py-2.5 flex items-end gap-2">
           <textarea
@@ -147,6 +156,7 @@ export default function ChatThread({
         </div>
         {error && <p className="max-w-xl mx-auto px-4 pb-2 text-xs font-bold text-red-600">{error}</p>}
       </div>
+      )}
     </div>
   )
 }
