@@ -21,6 +21,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
   const [checks, setChecks] = useState<Set<string>>(new Set())
   const [liftDone, setLiftDone] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
+  const [pop, setPop] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -64,6 +65,12 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
     }
   }, [athleteId, refreshKey])
 
+  const celebrate = (key: string) => {
+    setPop(key)
+    if ('vibrate' in navigator) navigator.vibrate?.(40)
+    setTimeout(() => setPop((p) => (p === key ? null : p)), 1300)
+  }
+
   // Each check-off saves (or removes) just that one record, then refreshes Today's points.
   const toggleCheck = async (type: 'event' | 'workout', id: number) => {
     const key = `${type}:${id}`
@@ -80,7 +87,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
     } else {
       await supabase.from('plan_checks').insert({ athlete_id: athleteId, check_date: today, item_type: type, item_id: id })
       setChecks((c) => new Set(c).add(key))
-      if ('vibrate' in navigator) navigator.vibrate?.(40)
+      celebrate(key)
     }
     setBusy(null)
     onChange?.()
@@ -95,7 +102,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
     } else {
       await supabase.from('habit_logs').upsert({ athlete_id: athleteId, log_date: today, habit: 'lift', status: 'done' }, { onConflict: 'athlete_id,log_date,habit' })
       setLiftDone(true)
-      if ('vibrate' in navigator) navigator.vibrate?.(40)
+      celebrate('lift')
     }
     setBusy(null)
     onChange?.()
@@ -126,6 +133,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
                 onClick={() => toggle(k)}
                 checked={checks.has(`event:${e.id}`)}
                 busy={busy === `event:${e.id}`}
+                popping={pop === `event:${e.id}`}
                 onCheck={() => toggleCheck('event', e.id)}
               />
               {open === k && (
@@ -161,6 +169,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
                 onClick={() => toggle(k)}
                 checked={checks.has(`workout:${w.id}`) || (total > 0 && done >= total)}
                 busy={busy === `workout:${w.id}`}
+                popping={pop === `workout:${w.id}`}
                 onCheck={() => toggleCheck('workout', w.id)}
               />
               {open === k && (
@@ -196,6 +205,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
             onClick={() => toggle('driveline')}
             checked={liftDone}
             busy={busy === 'lift'}
+            popping={pop === 'lift'}
             onCheck={toggleLift}
           />
           {open === 'driveline' && (
@@ -225,6 +235,7 @@ function Row({
   checked,
   busy,
   onCheck,
+  popping = false,
 }: {
   icon: React.ReactNode
   tone: string
@@ -235,9 +246,10 @@ function Row({
   checked: boolean
   busy: boolean
   onCheck: () => void
+  popping?: boolean
 }) {
   return (
-    <div className="flex items-center gap-2 pr-4">
+    <div className="flex items-center gap-1 pr-2">
       <button type="button" onClick={onClick} className="flex-1 min-w-0 flex items-center gap-3 pl-5 py-3 text-left cursor-pointer">
         <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>{icon}</span>
         <div className="flex-1 min-w-0">
@@ -252,11 +264,26 @@ function Row({
         disabled={busy}
         aria-label={checked ? `Mark ${title} not done` : `Mark ${title} complete`}
         aria-pressed={checked}
-        className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer ${
-          checked ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white border-[3px] border-slate-300 text-slate-300'
-        } ${busy ? 'opacity-60' : ''}`}
+        className={`shrink-0 w-[4.5rem] flex flex-col items-center gap-1 py-2 cursor-pointer ${busy ? 'opacity-60' : ''}`}
       >
-        <Check className="w-7 h-7" strokeWidth={3} />
+        <span className="relative">
+          <span
+            key={popping ? 'pop' : checked ? 'on' : 'off'}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition active:scale-90 ${
+              checked ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30 animate-gen-pop' : 'bg-white border-[2.5px] border-slate-300 text-slate-300'
+            }`}
+          >
+            {popping ? <span className="text-sm font-black leading-none">+1</span> : <Check className="w-5 h-5" strokeWidth={3} />}
+          </span>
+          {popping && (
+            <span className="pointer-events-none absolute left-1/2 -top-2 whitespace-nowrap rounded-full bg-amber-400 text-white text-[10px] font-black px-2 py-0.5 shadow animate-gen-float">
+              +1 point
+            </span>
+          )}
+        </span>
+        <span className={`text-[9px] font-extrabold uppercase tracking-wide leading-none ${checked ? 'text-emerald-600' : 'text-slate-400'}`}>
+          {checked ? 'Complete' : 'Mark complete'}
+        </span>
       </button>
     </div>
   )
