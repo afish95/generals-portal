@@ -16,7 +16,7 @@ export const METRICS: Record<Group, Metric[]> = {
     { key: 'pulldown_velo', label: 'Pulldown velo', short: 'Pulldown', unit: ' mph', howTo: 'Log Pulldown Throws.' },
     { key: 'long_toss', label: 'Long toss distance', short: 'Long toss', unit: ' ft', howTo: 'Log Long Toss.' },
     { key: 'strike_pct', label: 'Strike %', short: 'Strike %', unit: '%', howTo: 'Throw a tracked bullpen (10+ pitches).' },
-    { key: 'ahead_pct', label: 'Ahead %', short: 'Ahead %', unit: '%', howTo: 'Log Ahead in Count after live ABs or a sim game.' },
+    { key: 'ahead_pct', label: 'Ahead %', short: 'Ahead %', unit: '%', howTo: 'Throw the Ahead in the Count (2 of 3) bullpen in Training tools.' },
     { key: 'miss_in', label: 'Avg. miss distance', short: 'Avg miss', unit: '"', lowerIsBetter: true, howTo: 'Track intended zones in a bullpen (10+ pitches).' },
   ],
   hitters: [
@@ -170,7 +170,7 @@ export default function PositionLeaderboard({ myId, myPosition }: { myId: string
             {metric.lowerIsBetter ? 'Lower is better. ' : ''}
             {metric.key === 'strike_pct' && 'Every tracked bullpen pitch plus logged strike sets (10+ pitches to qualify). '}
             {metric.key === 'miss_in' && 'Estimated inches between the zone you aimed at and where it went, from tracked bullpens. '}
-            {metric.key === 'ahead_pct' && 'Batters you got ahead of: strike on the first pitch, or on the 1-1 pitch. '}
+            {metric.key === 'ahead_pct' && 'Aheads ÷ batters faced. Ahead = 2 of the first 3 pitches are strikes, from the Ahead in the Count bullpen. '}
             Percentile = how you compare with teammates (99th is the top).
           </p>
         </>
