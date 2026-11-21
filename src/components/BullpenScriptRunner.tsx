@@ -18,6 +18,8 @@ type BullpenScript = {
   pitch_count: number
   description: string | null
   steps: ScriptStep[]
+  /** At-bat bullpen: pitches per batter (Ahead = 2 of the first 3 are strikes) */
+  ab_pitches?: number | null
 }
 
 type LoggedPitch = {
@@ -29,6 +31,30 @@ type LoggedPitch = {
   is_strike: boolean
   is_intended_hit: boolean
   velocity_mph: number | null
+  at_bat: number | null
+}
+
+/** Batters decided so far: Ahead when 2 of the first 3 pitches are strikes, otherwise behind once 2 balls or 3 pitches. */
+function countAheads(pitches: LoggedPitch[]) {
+  const byAb = new Map<number, LoggedPitch[]>()
+  for (const p of pitches) {
+    if (p.at_bat == null) continue
+    const list = byAb.get(p.at_bat) || []
+    list.push(p)
+    byAb.set(p.at_bat, list)
+  }
+  let faced = 0
+  let aheads = 0
+  for (const list of byAb.values()) {
+    const first3 = list.slice(0, 3)
+    const k = first3.filter((p) => p.is_strike).length
+    const b = first3.length - k
+    if (k >= 2) {
+      faced++
+      aheads++
+    } else if (b >= 2 || first3.length >= 3) faced++
+  }
+  return { faced, aheads }
 }
 
 type SavedSession = {
@@ -38,6 +64,8 @@ type SavedSession = {
   total_pitches: number
   strikes_count: number
   intended_hits_count: number
+  batters_faced?: number | null
+  aheads_count?: number | null
   avg_velo: number | null
   max_velo: number | null
 }
@@ -166,6 +194,7 @@ export default function BullpenScriptRunner({
       is_strike: isStrike,
       is_intended_hit: isIntendedHit,
       velocity_mph: parsedVelo && !isNaN(parsedVelo) ? parsedVelo : null,
+      at_bat: selectedScript?.ab_pitches ? Math.floor((nextNum - 1) / selectedScript.ab_pitches) + 1 : null,
     }
 
     const updated = [...pitches, newPitch]
@@ -207,6 +236,8 @@ export default function BullpenScriptRunner({
         player_id: playerId,
         script_id: selectedScript.id,
         workout_id: workoutId ?? null,
+        batters_faced: selectedScript.ab_pitches ? countAheads(pitches).faced : null,
+        aheads_count: selectedScript.ab_pitches ? countAheads(pitches).aheads : null,
         session_title: selectedScript.title,
         total_pitches: pitches.length,
         strikes_count: strikesCount,
@@ -230,6 +261,7 @@ export default function BullpenScriptRunner({
           is_strike: p.is_strike,
           is_intended_hit: p.is_intended_hit,
           velocity_mph: p.velocity_mph,
+          at_bat: p.at_bat,
         }))
       )
       setSavedBanner(true)
@@ -245,6 +277,11 @@ export default function BullpenScriptRunner({
   const intendedCount = pitches.filter((p) => p.is_intended_hit).length
   const strikePct = pitches.length ? Math.round((strikesCount / pitches.length) * 100) : 0
   const commandPct = pitches.length ? Math.round((intendedCount / pitches.length) * 100) : 0
+  const abSize = selectedScript?.ab_pitches ?? null
+  const abLive = countAheads(pitches)
+  const aheadPct = abLive.faced ? Math.round((100 * abLive.aheads) / abLive.faced) : 0
+  const curBatter = abSize ? Math.floor(pitches.length / abSize) + 1 : null
+  const curPitchInAb = abSize ? (pitches.length % abSize) + 1 : null
 
   return (
     <div className="space-y-5">
@@ -322,6 +359,11 @@ export default function BullpenScriptRunner({
                         <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
                           Intended Hit: {cPct}%
                         </span>
+                        {s.batters_faced ? (
+                          <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                            Ahead: {s.aheads_count ?? 0}/{s.batters_faced}
+                          </span>
+                        ) : null}
                         {s.max_velo && (
                           <span className="px-2.5 py-1 rounded-lg bg-slate-200/70 text-slate-800">
                             Max: {s.max_velo} mph
@@ -364,17 +406,26 @@ export default function BullpenScriptRunner({
               <div className="text-[10px] font-bold uppercase text-blue-700">Strike %</div>
               <div className="text-lg font-black text-blue-900">{strikePct}%</div>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-              <div className="text-[10px] font-bold uppercase text-emerald-700">Intended Hit %</div>
-              <div className="text-lg font-black text-emerald-900">{commandPct}%</div>
-            </div>
+            {abSize ? (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+                <div className="text-[10px] font-bold uppercase text-amber-700">Ahead %</div>
+                <div className="text-lg font-black text-amber-900">
+                  {aheadPct}%<span className="text-[10px] font-bold text-amber-700 ml-1">{abLive.aheads}/{abLive.faced}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                <div className="text-[10px] font-bold uppercase text-emerald-700">Intended Hit %</div>
+                <div className="text-lg font-black text-emerald-900">{commandPct}%</div>
+              </div>
+            )}
           </div>
 
           {currentPrompt ? (
             <div className="p-4 rounded-xl bg-slate-900 text-white flex items-center justify-between">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-blue-300">
-                  Pitch #{pitches.length + 1} Script Prompt
+                  {abSize ? `Batter ${curBatter} · Pitch ${curPitchInAb} of ${abSize}` : `Pitch #${pitches.length + 1} Script Prompt`}
                 </div>
                 <div className="text-sm font-extrabold mt-0.5">{currentPrompt.target}</div>
               </div>

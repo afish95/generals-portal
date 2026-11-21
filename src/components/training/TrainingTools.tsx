@@ -5,8 +5,8 @@ import { Play, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { timeAgo } from '@/lib/training'
 
-type Script = { id: number; title: string; category: string; pitch_count: number; description: string | null }
-type Session = { script_id: number | null; total_pitches: number; strikes_count: number; intended_hits_count: number; created_at: string }
+type Script = { id: number; title: string; category: string; pitch_count: number; description: string | null; ab_pitches: number | null }
+type Session = { script_id: number | null; total_pitches: number; strikes_count: number; intended_hits_count: number; batters_faced: number | null; aheads_count: number | null; created_at: string }
 
 export default function TrainingTools({ athleteId, refreshKey = 0, onStart }: { athleteId: string; refreshKey?: number; onStart: (scriptId: number, title: string) => void }) {
   const [scripts, setScripts] = useState<Script[] | null>(null)
@@ -16,8 +16,8 @@ export default function TrainingTools({ athleteId, refreshKey = 0, onStart }: { 
     const supabase = createClient()
     let cancelled = false
     Promise.all([
-      supabase.from('bullpen_scripts').select('id, title, category, pitch_count, description').eq('is_active', true).order('sort_order'),
-      supabase.from('bullpen_sessions').select('script_id, total_pitches, strikes_count, intended_hits_count, created_at').eq('player_id', athleteId).order('created_at', { ascending: false }).limit(500),
+      supabase.from('bullpen_scripts').select('id, title, category, pitch_count, description, ab_pitches').eq('is_active', true).order('sort_order'),
+      supabase.from('bullpen_sessions').select('script_id, total_pitches, strikes_count, intended_hits_count, batters_faced, aheads_count, created_at').eq('player_id', athleteId).order('created_at', { ascending: false }).limit(500),
     ]).then(([s, b]) => {
       if (cancelled) return
       setScripts((s.data as Script[]) || [])
@@ -38,6 +38,7 @@ export default function TrainingTools({ athleteId, refreshKey = 0, onStart }: { 
         {scripts.map((t) => {
           const mine = sessions.filter((s) => s.script_id === t.id)
           const bestCommand = mine.reduce((m, s) => Math.max(m, s.total_pitches ? Math.round((100 * s.intended_hits_count) / s.total_pitches) : 0), 0)
+          const bestAhead = mine.reduce((m, s) => Math.max(m, s.batters_faced ? Math.round((100 * (s.aheads_count ?? 0)) / s.batters_faced) : 0), 0)
           const bestStrike = mine.reduce((m, s) => Math.max(m, s.total_pitches ? Math.round((100 * s.strikes_count) / s.total_pitches) : 0), 0)
           return (
             <li key={t.id} className="rounded-2xl border border-amber-200 bg-amber-50/40 p-3.5">
@@ -51,7 +52,7 @@ export default function TrainingTools({ athleteId, refreshKey = 0, onStart }: { 
                   {t.description && <p className="text-[11px] text-slate-600 mt-0.5 line-clamp-2">{t.description}</p>}
                   <div className="text-[10px] font-bold text-slate-500 mt-1.5">
                     {mine.length
-                      ? `${mine.length} session${mine.length === 1 ? '' : 's'} · best ${bestStrike}% strikes · ${bestCommand}% hit zone · last ${timeAgo(mine[0].created_at)}`
+                      ? `${mine.length} session${mine.length === 1 ? '' : 's'} · best ${t.ab_pitches ? `${bestAhead}% ahead` : `${bestStrike}% strikes · ${bestCommand}% hit zone`} · last ${timeAgo(mine[0].created_at)}`
                       : 'Not tried yet'}
                   </div>
                 </div>

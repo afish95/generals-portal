@@ -11,10 +11,12 @@ import DrillsTab from '@/components/office/DrillsTab'
 import AttendanceTab from '@/components/office/AttendanceTab'
 import ThoughtTab from '@/components/office/ThoughtTab'
 import GameStatsImport from '@/components/office/GameStatsImport'
+import PracticePlansTab from '@/components/office/PracticePlansTab'
 import type { Exercise, Group, Profile } from '@/lib/training'
 
 const TABS = [
   { key: 'workouts', label: 'Workouts' },
+  { key: 'practices', label: 'Practice plans' },
   { key: 'attendance', label: 'Attendance' },
   { key: 'groups', label: 'Groups' },
   { key: 'roster', label: 'Roster' },
@@ -32,6 +34,16 @@ export default function CoachOfficePage() {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [reload, setReload] = useState(0)
   const refresh = useCallback(() => setReload((n) => n + 1), [])
+  const [openEventId, setOpenEventId] = useState<number | null>(null)
+
+  // Deep links, e.g. /office?tab=practices&event=12 from the Day plan
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    const t = q.get('tab')
+    if (t && TABS.some((x) => x.key === t)) setTab(t as TabKey)
+    const ev = Number(q.get('event'))
+    if (ev) setOpenEventId(ev)
+  }, [])
 
   useEffect(() => {
     if (!isCoach) return
@@ -63,6 +75,7 @@ export default function CoachOfficePage() {
         ))}
       </div>
       {tab === 'workouts' && <WorkoutsTab groups={groups} exercises={exercises} />}
+      {tab === 'practices' && <PracticePlansTab openEventId={openEventId} />}
       {tab === 'attendance' && <AttendanceTab players={players} groups={groups} />}
       {tab === 'groups' && <GroupsTab groups={groups} players={players} onChanged={refresh} />}
       {tab === 'roster' && <RosterTab players={players} groups={groups} onChanged={refresh} />}
