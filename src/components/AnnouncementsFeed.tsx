@@ -22,7 +22,7 @@ function timeAgo(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export default function AnnouncementsFeed({ limit = 5, refreshKey = 0 }: { limit?: number; refreshKey?: number }) {
+export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot }: { limit?: number; refreshKey?: number; topSlot?: React.ReactNode }) {
   const [items, setItems] = useState<Announcement[] | null>(null)
 
   useEffect(() => {
@@ -50,6 +50,7 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0 }: { limit
         <Megaphone className="w-4 h-4 text-[#1746b8]" />
         <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Announcements</span>
       </div>
+      {topSlot}
       {items.length === 0 ? (
         <p className="text-xs text-slate-500 font-medium">No announcements yet.</p>
       ) : (

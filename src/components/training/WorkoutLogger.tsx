@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Check, ExternalLink } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { withPointsDelta } from '@/lib/pointsDelta'
+import { PointBubble, buzz } from '@/components/points/PointBurst'
 import {
   itemLabel,
   phaseLabel,
@@ -57,6 +59,7 @@ export default function WorkoutLogger({
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [burst, setBurst] = useState<{ key: string; amount: number } | null>(null)
 
   const logByKey = new Map(logs.map((l) => [`${l.workout_item_id}:${l.set_number}`, l]))
   const sorted = [...items].sort((a, b) => a.block_index - b.block_index || a.item_index - b.item_index)
@@ -113,12 +116,22 @@ export default function WorkoutLogger({
         setError('Made can’t be more than attempts.')
         return
       }
-      const { data, error: upErr } = await supabase
-        .from('set_logs')
-        .upsert(row, { onConflict: 'workout_item_id,athlete_id,set_number' })
-        .select('*')
-        .single()
+      let res: { data: unknown; error: { message: string } | null } = { data: null, error: null }
+      const save = async () => {
+        res = await supabase.from('set_logs').upsert(row, { onConflict: 'workout_item_id,athlete_id,set_number' }).select('*').single()
+      }
+      // Throwing sets can complete the day's throwing point, so measure points around the save.
+      const counts = ex.discipline === 'throwing' || ex.discipline === 'arm_care'
+      let gained = 0
+      if (counts) gained = await withPointsDelta(athleteId, workout.workout_date, save)
+      else await save()
+      const { data, error: upErr } = res
       if (upErr || !data) throw upErr || new Error('Not saved')
+      if (gained > 0) {
+        buzz()
+        setBurst({ key, amount: gained })
+        setTimeout(() => setBurst((b) => (b?.key === key ? null : b)), 1400)
+      }
       const saved = data as SetLog
       onLogsChange([...logs.filter((l) => l.id !== saved.id), saved])
       setDrafts((dr) => {
@@ -225,6 +238,8 @@ export default function WorkoutLogger({
                         </>
                       )}
                     </div>
+                    <span className="relative shrink-0">
+                    <PointBubble amount={burst?.key === key ? burst.amount : 0} />
                     <button
                       type="button"
                       aria-label={done ? `Undo set ${setNumber}` : `Log set ${setNumber}`}
@@ -240,6 +255,7 @@ export default function WorkoutLogger({
                     >
                       <Check className="w-5 h-5" />
                     </button>
+                    </span>
                   </div>
                 )
               })}

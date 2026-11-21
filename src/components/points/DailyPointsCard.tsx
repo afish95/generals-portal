@@ -10,10 +10,11 @@ import ReadinessRing from '@/components/wellness/ReadinessRing'
 
 type State = 'earned' | 'missed' | 'open' | 'off'
 
-export default function DailyPointsCard({ athleteId, refreshKey = 0 }: { athleteId: string; refreshKey?: number }) {
+export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness, onChange }: { athleteId: string; refreshKey?: number; readiness?: React.ReactNode; onChange?: () => void }) {
   const [week, setWeek] = useState<DayPoints[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [reload, setReload] = useState(0)
+  const [readinessOpen, setReadinessOpen] = useState<boolean | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -41,6 +42,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0 }: { athlete
     }
     setBusy(false)
     setReload((n) => n + 1)
+    onChange?.()
   }
 
   if (!week) return <div className="h-64 rounded-3xl bg-white/60 animate-pulse" />
@@ -57,34 +59,26 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0 }: { athlete
     {
       label: '8+ hours of sleep',
       state: today?.sleep_ok ? 'earned' : today?.readiness_ok ? 'missed' : 'open',
-      hint: today?.sleep_ok ? 'Locked in' : today?.readiness_ok ? 'Under 8 hours last night' : 'Add your hours in the check-in',
+      hint: today?.sleep_ok ? 'Locked in' : today?.readiness_ok ? 'Under 8 hours last night' : 'Enter your hours in the readiness check-in',
     },
     {
       label: 'Attendance',
       state: !today?.attend_avail ? 'off' : today.attend_ok ? 'earned' : 'missed',
-      hint: !today?.attend_avail ? 'No practice marked today' : today.attend_ok ? 'Present' : 'Not marked present',
+      hint: !today?.attend_avail ? 'No practice today' : today.attend_ok ? 'Present' : 'Check off practice in your Day plan',
     },
     {
       label: 'Lift / workout / mobility',
       state: today?.lift_ok ? 'earned' : today && !today.lift_avail ? 'off' : 'open',
-      hint: today?.lift_ok ? 'Done in TRAQ' : today && !today.lift_avail ? 'Rest day' : 'Tap Done after your TRAQ session',
+      hint: today?.lift_ok ? 'Done in Driveline Baseball' : today && !today.lift_avail ? 'Rest day' : 'Check it off in your Day plan',
       action: (
         <div className="flex gap-1.5">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setLift('done')}
-            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${today?.lift_ok ? 'bg-emerald-500 text-white' : 'bg-blue-50 text-[#1746b8]'}`}
-          >
-            Done
-          </button>
           <button
             type="button"
             disabled={busy}
             onClick={() => setLift('rest')}
             className={`px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${today && !today.lift_avail ? 'bg-slate-500 text-white' : 'bg-slate-100 text-slate-500'}`}
           >
-            Rest
+            {today && !today.lift_avail ? 'Rest day' : 'Rest'}
           </button>
         </div>
       ),
@@ -92,7 +86,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0 }: { athlete
     {
       label: 'Throwing',
       state: !today?.throw_avail ? 'off' : today.throw_ok ? 'earned' : 'open',
-      hint: !today?.throw_avail ? 'No throwing assigned today' : today.throw_ok ? 'All sets logged' : 'Log every throwing set',
+      hint: !today?.throw_avail ? 'No throwing assigned today' : today.throw_ok ? 'Complete' : 'Check it off in your Day plan',
       action:
         today?.throw_avail && !today.throw_ok ? (
           <Link href="/training" className="px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold bg-blue-50 text-[#1746b8]">Go</Link>
@@ -101,7 +95,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0 }: { athlete
     {
       label: 'Arm readiness check-in',
       state: today?.readiness_ok ? 'earned' : 'open',
-      hint: today?.readiness_ok ? 'Checked in' : 'Fill out the check-in above',
+      hint: today?.readiness_ok ? 'Checked in · tap to see your score' : 'Tap to check in',
     },
   ]
 
@@ -119,7 +113,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0 }: { athlete
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Daily points</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Today’s points</span>
         <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
           {earned}/{available} today
         </span>
@@ -149,16 +143,28 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0 }: { athlete
       </div>
 
       <ul className="space-y-2">
-        {rows.map((r) => (
-          <li key={r.label} className="flex items-center gap-3">
-            {icon(r.state)}
-            <div className="flex-1 min-w-0">
-              <div className={`text-sm font-extrabold ${r.state === 'off' ? 'text-slate-400' : 'text-slate-900'}`}>{r.label}</div>
-              <div className="text-[11px] font-semibold text-slate-500 truncate">{r.hint}</div>
-            </div>
-            {r.action}
-          </li>
-        ))}
+        {rows.map((r) => {
+          const isReadiness = r.label === 'Arm readiness check-in' && !!readiness
+          // Open the check-in automatically until it's done; after that, tap to expand.
+          const expanded = isReadiness && (readinessOpen ?? !today?.readiness_ok)
+          return (
+            <li key={r.label}>
+              <div
+                className={`flex items-center gap-3 ${isReadiness ? 'cursor-pointer' : ''}`}
+                onClick={isReadiness ? () => setReadinessOpen(!expanded) : undefined}
+              >
+                {icon(r.state)}
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-extrabold ${r.state === 'off' ? 'text-slate-400' : 'text-slate-900'}`}>{r.label}</div>
+                  <div className="text-[11px] font-semibold text-slate-500 truncate">{r.hint}</div>
+                </div>
+                {r.action}
+                {isReadiness && <span className={`text-slate-400 text-lg leading-none transition ${expanded ? 'rotate-180' : ''}`}>⌄</span>}
+              </div>
+              {expanded && <div className="mt-3 rounded-2xl bg-slate-50 border border-slate-200 p-4">{readiness}</div>}
+            </li>
+          )
+        })}
       </ul>
       <p className="text-[10px] font-semibold text-slate-400">Score is points earned out of what’s scheduled for you today. A dash means it doesn’t count today.</p>
     </section>

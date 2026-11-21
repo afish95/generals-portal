@@ -24,3 +24,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Day plan check-off: "+1" pop inside the circle and a floating "+1 point" */
+@keyframes gen-pop {
+  0% { transform: scale(0.5); }
+  60% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+@keyframes gen-float-up {
+  0% { transform: translate(-50%, 0) scale(0.7); opacity: 0; }
+  15% { transform: translate(-50%, -4px) scale(1.05); opacity: 1; }
+  100% { transform: translate(-50%, -30px) scale(1); opacity: 0; }
+}
+.animate-gen-pop { animation: gen-pop 0.35s ease-out; }
+.animate-gen-float { animation: gen-float-up 1.3s ease-out forwards; }
