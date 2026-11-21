@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Check, ChevronDown, Crosshair, Dumbbell, ExternalLink, GraduationCap, MapPin, Play, Target, Trophy, Users } from 'lucide-react'
+import { Check, ChevronDown, Crosshair, FileDown, Pencil, Dumbbell, ExternalLink, GraduationCap, MapPin, Play, Target, Trophy, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { itemLabel, localDate, phaseLabel, prettyDate, type Exercise, type Group, type Workout, type WorkoutItem } from '@/lib/training'
 import { withPointsDelta } from '@/lib/pointsDelta'
 import { PopCircle, buzz } from '@/components/points/PointBurst'
+import PracticePlanView from '@/components/practice/PracticePlanView'
+import { normalizePlan } from '@/lib/practicePlan'
 
 const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id6445937141'
 
-type Event = { id: number; title: string; event_type: string; start_time: string | null; location: string | null; practice_plan: string | null }
+type Event = { id: number; title: string; event_type: string; start_time: string | null; location: string | null; practice_plan: string | null; plan: unknown }
 type Tool = { id: number; workout_id: number; script_id: number; notes: string | null }
 type Script = { id: number; title: string; pitch_count: number }
 
@@ -72,7 +74,7 @@ export default function DayPlan({
     let cancelled = false
     const load = async () => {
       const [{ data: ev }, { data: w }, { data: gr }] = await Promise.all([
-        supabase.from('team_schedule').select('id, title, event_type, start_time, location, practice_plan').eq('event_date', day).order('start_time'),
+        supabase.from('team_schedule').select('id, title, event_type, start_time, location, practice_plan, plan').eq('event_date', day).order('start_time'),
         supabase.from('workouts').select('*').eq('workout_date', day).order('sort_order'),
         supabase.from('team_groups').select('id, name'),
       ])
@@ -211,13 +213,36 @@ export default function DayPlan({
                 onCheck={() => toggleCheck('event', e.id)}
               />
               {open === k && (
-                <div className="px-5 pb-4 pl-[4.25rem] space-y-1.5">
+                <div className="px-4 pb-4 space-y-2">
                   {e.location && (
                     <div className="text-xs font-semibold text-slate-600 flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5" /> {e.location}
                     </div>
                   )}
-                  <p className="text-xs text-slate-600 whitespace-pre-line">{e.practice_plan || 'No plan posted yet.'}</p>
+                  {(() => {
+                    const plan = normalizePlan(e.plan)
+                    if (!plan || plan.blocks.length === 0) return <p className="text-xs text-slate-600 whitespace-pre-line">{e.practice_plan || 'No plan posted yet.'}</p>
+                    return (
+                      <>
+                        <PracticePlanView plan={plan} startTime={e.start_time} />
+                        <div className="flex gap-2 pt-1">
+                          <a href={`/practice-print?event=${e.id}`} className="flex-1 py-2 rounded-xl bg-[#1746b8] text-white text-[11px] font-extrabold flex items-center justify-center gap-1">
+                            <FileDown className="w-3.5 h-3.5" /> Export 1-page
+                          </a>
+                          {isCoach && (
+                            <Link href={`/office?tab=practices&event=${e.id}`} className="flex-1 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-[11px] font-extrabold flex items-center justify-center gap-1">
+                              <Pencil className="w-3.5 h-3.5" /> Edit plan
+                            </Link>
+                          )}
+                        </div>
+                      </>
+                    )
+                  })()}
+                  {isCoach && !normalizePlan(e.plan)?.blocks.length && (
+                    <Link href={`/office?tab=practices&event=${e.id}`} className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#1746b8]">
+                      <Pencil className="w-3.5 h-3.5" /> Build a practice plan
+                    </Link>
+                  )}
                 </div>
               )}
             </li>
