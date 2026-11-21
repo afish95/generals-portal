@@ -90,9 +90,9 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
         return n
       })
     } else {
-      const gained = await withPointsDelta(athleteId, today, () =>
-        supabase.from('plan_checks').insert({ athlete_id: athleteId, check_date: today, item_type: type, item_id: id }).then((r) => r)
-      )
+      const gained = await withPointsDelta(athleteId, today, async () => {
+        await supabase.from('plan_checks').insert({ athlete_id: athleteId, check_date: today, item_type: type, item_id: id })
+      })
       setChecks((c) => new Set(c).add(key))
       celebrate(key, gained)
     }
@@ -107,9 +107,9 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
       await supabase.from('habit_logs').delete().eq('athlete_id', athleteId).eq('log_date', today).eq('habit', 'lift')
       setLiftDone(false)
     } else {
-      const gained = await withPointsDelta(athleteId, today, () =>
-        supabase.from('habit_logs').upsert({ athlete_id: athleteId, log_date: today, habit: 'lift', status: 'done' }, { onConflict: 'athlete_id,log_date,habit' }).then((r) => r)
-      )
+      const gained = await withPointsDelta(athleteId, today, async () => {
+        await supabase.from('habit_logs').upsert({ athlete_id: athleteId, log_date: today, habit: 'lift', status: 'done' }, { onConflict: 'athlete_id,log_date,habit' })
+      })
       setLiftDone(true)
       celebrate('lift', gained)
     }
