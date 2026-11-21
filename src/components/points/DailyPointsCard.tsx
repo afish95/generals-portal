@@ -64,7 +64,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness, 
     {
       label: 'Attendance',
       state: !today?.attend_avail ? 'off' : today.attend_ok ? 'earned' : 'missed',
-      hint: !today?.attend_avail ? 'No practice today' : today.attend_ok ? 'Present' : 'Check off practice in your Day plan',
+      hint: !today?.attend_avail ? 'No school or practice today' : today.attend_ok ? 'Classes and practice done' : 'Check off classes and practice in your Day plan',
     },
     {
       label: 'Lift / workout / mobility',

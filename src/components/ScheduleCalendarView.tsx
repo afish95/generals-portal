@@ -35,9 +35,12 @@ function formatDateKey(date: Date): string {
 export default function ScheduleCalendarView({
   today,
   initialEvents,
+  renderDay,
 }: {
   today: string
   initialEvents: CalendarEvent[]
+  /** When given, the selected day's details are rendered by this (e.g. the Day plan) instead of the built-in list. */
+  renderDay?: (date: string) => React.ReactNode
 }) {
   const supabase = createClient()
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month')
@@ -227,7 +230,7 @@ export default function ScheduleCalendarView({
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-            Throwing &amp; Workouts
+            Training &amp; Workouts
           </span>
         </div>
 
@@ -275,6 +278,14 @@ export default function ScheduleCalendarView({
         </div>
       </div>
 
+      {renderDay ? (
+        <div className="space-y-2">
+          <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 px-1">
+            Day plan · {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </h3>
+          {renderDay(selectedDate)}
+        </div>
+      ) : (
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
@@ -386,6 +397,7 @@ export default function ScheduleCalendarView({
           )
         })}
       </div>
+      )}
     </section>
   )
 }
