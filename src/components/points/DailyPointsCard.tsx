@@ -68,7 +68,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness }
     {
       label: 'Lift / workout / mobility',
       state: today?.lift_ok ? 'earned' : today && !today.lift_avail ? 'off' : 'open',
-      hint: today?.lift_ok ? 'Done in TRAQ' : today && !today.lift_avail ? 'Rest day' : 'Tap Done after your TRAQ session',
+      hint: today?.lift_ok ? 'Done in Driveline Baseball' : today && !today.lift_avail ? 'Rest day' : 'Tap Done after your Driveline session',
       action: (
         <div className="flex gap-1.5">
           <button

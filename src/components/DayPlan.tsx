@@ -6,8 +6,7 @@ import { ChevronDown, Dumbbell, ExternalLink, MapPin, Target, Users } from 'luci
 import { createClient } from '@/lib/supabase'
 import { itemLabel, localDate, phaseLabel, type Exercise, type Workout, type WorkoutItem } from '@/lib/training'
 
-const TRAQ_URL = 'https://traq.drivelinebaseball.com/login'
-const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/id6445937141'
+const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id6445937141'
 
 type Event = { id: number; title: string; event_type: string; start_time: string | null; location: string | null; practice_plan: string | null }
 
@@ -141,18 +140,15 @@ export default function DayPlan({ athleteId }: { athleteId: string }) {
             icon={<Dumbbell className="w-4 h-4" />}
             tone="bg-slate-900 text-white"
             title="Lift / workout / mobility"
-            subtitle="In the Driveline Baseball app"
-            open={open === 'traq'}
-            onClick={() => toggle('traq')}
+            subtitle="Driveline Baseball strength & conditioning"
+            open={open === 'driveline'}
+            onClick={() => toggle('driveline')}
           />
-          {open === 'traq' && (
+          {open === 'driveline' && (
             <div className="px-5 pb-4 pl-[4.25rem] space-y-2">
-              <p className="text-xs text-slate-600">Your lift and mobility are programmed in Driveline TRAQ. When you finish, tap Done under Today’s Points.</p>
-              <a href={TRAQ_URL} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-extrabold">
-                Open Driveline <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-              <a href={DRIVELINE_APP_URL} target="_blank" rel="noreferrer" className="block text-center text-[11px] font-bold text-slate-500 underline">
-                Don’t have the app? Get it here
+              <p className="text-xs text-slate-600">Today’s lift and mobility are in the Driveline Baseball app. When you finish, tap Done under Today’s points.</p>
+              <a href={DRIVELINE_APP_URL} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-extrabold">
+                Open Driveline Baseball <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
           )}
