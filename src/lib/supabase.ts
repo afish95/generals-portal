@@ -25,6 +25,7 @@ const READ_RPCS = new Set([
   'drill_trends',
   'drill_ranks',
   'conversations_for',
+  'conversation_reads',
   'my_conversations',
 ])
 const WRITES = new Set(['insert', 'update', 'upsert', 'delete'])

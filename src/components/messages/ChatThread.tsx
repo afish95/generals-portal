@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { callApi } from '@/lib/api'
 
 type Msg = { id: number; sender_id: string; body: string; created_at: string }
+type Read = { profile_id: string; last_read_at: string }
 
 function stamp(iso: string) {
   const d = new Date(iso)
@@ -25,6 +26,8 @@ export default function ChatThread({
   names,
   onClose,
   readOnly = false,
+  direct = false,
+  members,
 }: {
   conversationId: number
   title: string
@@ -35,8 +38,14 @@ export default function ChatThread({
   onClose: () => void
   /** Coach previewing as a player: no sending, no read markers */
   readOnly?: boolean
+  /** 1:1 chat: receipts read "Seen 8:04 PM" instead of "Seen by …" */
+  direct?: boolean
+  /** For 1:1 chats: the two people in it (coaches reading for safeguarding don't count as "Seen") */
+  members?: string[]
 }) {
   const [messages, setMessages] = useState<Msg[]>([])
+  const [reads, setReads] = useState<Read[]>([])
+  const [showSeen, setShowSeen] = useState(false)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -53,6 +62,8 @@ export default function ChatThread({
       .limit(150)
     const list = ((data as Msg[]) || []).reverse()
     setMessages(list)
+    const { data: rd } = await supabase.rpc('conversation_reads', { p_conversation: conversationId })
+    setReads((rd as Read[]) || [])
     if (readOnly) return
     await supabase
       .from('message_reads')
@@ -90,6 +101,21 @@ export default function ChatThread({
     load()
   }
 
+  // Read receipts under my latest message: who has read the chat since it was sent
+  const lastMineId = [...messages].reverse().find((m) => m.sender_id === myId)?.id
+  const receipt = (m: Msg) => {
+    const seen = reads
+      .filter((r) => r.profile_id !== myId && (!members || members.includes(r.profile_id)) && new Date(r.last_read_at) >= new Date(m.created_at))
+      .sort((a, b) => a.last_read_at.localeCompare(b.last_read_at))
+    if (seen.length === 0) return <span className="text-[10px] font-bold text-slate-400 px-2">Delivered</span>
+    if (direct) return <span className="text-[10px] font-bold text-[#1746b8] px-2">Seen {stamp(seen[seen.length - 1].last_read_at)}</span>
+    return (
+      <button type="button" onClick={() => setShowSeen((v) => !v)} className="text-[10px] font-bold text-[#1746b8] px-2 text-right max-w-[80%] cursor-pointer">
+        {showSeen ? `Seen by ${seen.map((r) => names.get(r.profile_id) ?? 'Teammate').join(', ')}` : `Seen by ${seen.length} · tap to see who`}
+      </button>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-[#f3f5f9] flex flex-col">
       <div className="bg-gradient-to-b from-[#1746b8] to-[#1e54d4] text-white shrink-0" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -115,7 +141,7 @@ export default function ChatThread({
                 {showName && <span className="text-[10px] font-bold text-slate-400 px-2 mb-0.5">{names.get(m.sender_id) ?? 'Teammate'}</span>}
                 <button
                   type="button"
-                  onClick={() => (mine || isCoach) && remove(m)}
+                  onClick={() => !readOnly && (mine || isCoach) && remove(m)}
                   className={`max-w-[80%] text-left px-3.5 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
                     mine ? 'bg-[#1746b8] text-white rounded-br-md' : 'bg-white border border-slate-200 text-slate-900 rounded-bl-md'
                   }`}
@@ -123,6 +149,7 @@ export default function ChatThread({
                   {m.body}
                 </button>
                 <span className="text-[9px] font-semibold text-slate-400 px-2 mt-0.5">{stamp(m.created_at)}</span>
+                {mine && m.id === lastMineId && receipt(m)}
               </div>
             )
           })}

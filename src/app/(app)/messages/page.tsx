@@ -199,6 +199,8 @@ export default function MessagesPage() {
           myId={profile.id}
           isCoach={isCoach}
           readOnly={viewAs.active}
+          direct={open.kind === 'direct'}
+          members={open.kind === 'direct' ? [open.member_a, open.member_b].filter((x): x is string => !!x) : undefined}
           names={names}
           onClose={() => {
             setOpenId(null)
