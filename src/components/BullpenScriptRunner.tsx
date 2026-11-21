@@ -63,7 +63,19 @@ const CHASE_ZONES = [
 
 const PITCH_TYPES = ['FB', 'SNK', 'SL', 'CB', 'CH', 'SPL']
 
-export default function BullpenScriptRunner({ playerId }: { playerId: string }) {
+export default function BullpenScriptRunner({
+  playerId,
+  startScriptId,
+  workoutId,
+  onSaved,
+}: {
+  playerId: string
+  /** Open straight into this script (Training tools / prescribed bullpen) */
+  startScriptId?: number
+  /** The prescribed workout this session completes */
+  workoutId?: number
+  onSaved?: (sessionId: number) => void
+}) {
   const supabase = createClient()
   const [scripts, setScripts] = useState<BullpenScript[]>([])
   const [recentSessions, setRecentSessions] = useState<SavedSession[]>([])
@@ -98,6 +110,18 @@ export default function BullpenScriptRunner({ playerId }: { playerId: string }) 
   useEffect(() => {
     loadScriptsAndHistory()
   }, [loadScriptsAndHistory])
+
+  // Auto-start the requested script once scripts load
+  const [autoStarted, setAutoStarted] = useState(false)
+  useEffect(() => {
+    if (!startScriptId || autoStarted || scripts.length === 0) return
+    const s = scripts.find((x) => x.id === startScriptId)
+    if (s) {
+      startScript(s)
+      setAutoStarted(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startScriptId, scripts, autoStarted])
 
   const expandedPrompts: { pitch: string; target: string; zone: number }[] = []
   if (selectedScript && Array.isArray(selectedScript.steps)) {
@@ -182,6 +206,7 @@ export default function BullpenScriptRunner({ playerId }: { playerId: string }) 
       .insert({
         player_id: playerId,
         script_id: selectedScript.id,
+        workout_id: workoutId ?? null,
         session_title: selectedScript.title,
         total_pitches: pitches.length,
         strikes_count: strikesCount,
@@ -211,6 +236,7 @@ export default function BullpenScriptRunner({ playerId }: { playerId: string }) 
       setSelectedScript(null)
       setPitches([])
       await loadScriptsAndHistory()
+      onSaved?.(sessionRow.id)
     }
     setSaving(false)
   }
