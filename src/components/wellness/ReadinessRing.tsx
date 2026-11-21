@@ -1,4 +1,18 @@
-export default function ReadinessRing({ score, color, size = 80 }: { score: number | null; color: string; size?: number }) {
+export default function ReadinessRing({
+  score,
+  color,
+  size = 80,
+  display,
+  suffix = '/100',
+}: {
+  score: number | null
+  color: string
+  size?: number
+  /** Text in the middle (defaults to the score) */
+  display?: string
+  /** Small text under it (defaults to /100) */
+  suffix?: string
+}) {
   const radius = 32
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (Math.min(100, Math.max(0, score ?? 0)) / 100) * circumference
@@ -20,8 +34,8 @@ export default function ReadinessRing({ score, color, size = 80 }: { score: numb
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-        <span className="text-xl font-black text-slate-900">{score ?? '–'}</span>
-        <span className="text-[10px] font-bold text-slate-400 mt-0.5">/100</span>
+        <span className="text-xl font-black text-slate-900">{display ?? score ?? '–'}</span>
+        <span className="text-[10px] font-bold text-slate-400 mt-0.5">{suffix}</span>
       </div>
     </div>
   )

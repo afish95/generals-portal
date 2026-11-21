@@ -120,7 +120,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness, 
       </div>
 
       <div className="flex items-center gap-4">
-        <ReadinessRing score={score} color={ring} />
+        <ReadinessRing score={score} color={ring} display={String(earned)} suffix={`/${available} pts`} />
         <div className="min-w-0">
           <h2 className="text-base font-extrabold text-slate-900">
             {score === 100 ? 'Perfect day! 🔥' : earned === 0 ? 'Start stacking points' : `${available - earned} to go for a perfect day`}
