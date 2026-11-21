@@ -8,8 +8,7 @@ import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
 import DayPlan from '@/components/DayPlan'
 import LoggedWorkout from '@/components/training/LoggedWorkout'
 import ProgressTrends from '@/components/training/ProgressTrends'
-import MyRanks from '@/components/training/MyRanks'
-import Leaderboard from '@/components/stats/Leaderboard'
+import PositionLeaderboard from '@/components/stats/PositionLeaderboard'
 import TrainingTools from '@/components/training/TrainingTools'
 import ToolRunnerSheet from '@/components/training/ToolRunnerSheet'
 import PrCelebration from '@/components/training/PrCelebration'
@@ -95,10 +94,9 @@ export default function TrainingPage() {
       <ProgressTrends athleteId={profile.id} key={`trends-${refreshKey}`} />
 
       {/* 4. Leaderboards with your percentile ranks */}
-      <MyRanks athleteId={profile.id} key={`ranks-${refreshKey}`} />
       <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
         <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Leaderboards</div>
-        <Leaderboard myId={profile.id} />
+        <PositionLeaderboard myId={profile.id} myPosition={profile.position_group} key={`lb-${refreshKey}`} />
       </section>
 
       {/* 5. Training tools */}

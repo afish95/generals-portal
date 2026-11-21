@@ -7,7 +7,7 @@ import { PageTitle } from '@/components/ui'
 import TeamPrFeed from '@/components/TeamPrFeed'
 import GameStats from '@/components/stats/GameStats'
 import WeeklyRecap from '@/components/stats/WeeklyRecap'
-import Leaderboard from '@/components/stats/Leaderboard'
+import PositionLeaderboard from '@/components/stats/PositionLeaderboard'
 import Progressions from '@/components/stats/Progressions'
 import CompareAthletes from '@/components/stats/CompareAthletes'
 import { Pill } from '@/components/ui'
@@ -75,7 +75,11 @@ export default function StatsPage() {
         <Pill active={sub === 'progressions'} onClick={() => setSub('progressions')}>Progressions</Pill>
         {isCoach && <Pill active={sub === 'compare'} onClick={() => setSub('compare')}>Compare</Pill>}
       </div>
-      {sub === 'leaderboard' && <Leaderboard myId={profile.id} />}
+      {sub === 'leaderboard' && (
+        <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
+          <PositionLeaderboard myId={profile.id} myPosition={isCoach ? null : profile.position_group} />
+        </section>
+      )}
       {sub === 'progressions' && <Progressions isCoach={isCoach} />}
       {sub === 'compare' && isCoach && <CompareAthletes />}
       {sub === 'overview' && (
