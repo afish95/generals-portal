@@ -10,7 +10,7 @@ import ReadinessRing from '@/components/wellness/ReadinessRing'
 
 type State = 'earned' | 'missed' | 'open' | 'off'
 
-export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness }: { athleteId: string; refreshKey?: number; readiness?: React.ReactNode }) {
+export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness, onChange }: { athleteId: string; refreshKey?: number; readiness?: React.ReactNode; onChange?: () => void }) {
   const [week, setWeek] = useState<DayPoints[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [reload, setReload] = useState(0)
@@ -42,6 +42,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness }
     }
     setBusy(false)
     setReload((n) => n + 1)
+    onChange?.()
   }
 
   if (!week) return <div className="h-64 rounded-3xl bg-white/60 animate-pulse" />
@@ -63,29 +64,21 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness }
     {
       label: 'Attendance',
       state: !today?.attend_avail ? 'off' : today.attend_ok ? 'earned' : 'missed',
-      hint: !today?.attend_avail ? 'No practice marked today' : today.attend_ok ? 'Present' : 'Not marked present',
+      hint: !today?.attend_avail ? 'No practice today' : today.attend_ok ? 'Present' : 'Check off practice in your Day plan',
     },
     {
       label: 'Lift / workout / mobility',
       state: today?.lift_ok ? 'earned' : today && !today.lift_avail ? 'off' : 'open',
-      hint: today?.lift_ok ? 'Done in Driveline Baseball' : today && !today.lift_avail ? 'Rest day' : 'Tap Done after your Driveline session',
+      hint: today?.lift_ok ? 'Done in Driveline Baseball' : today && !today.lift_avail ? 'Rest day' : 'Check it off in your Day plan',
       action: (
         <div className="flex gap-1.5">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setLift('done')}
-            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${today?.lift_ok ? 'bg-emerald-500 text-white' : 'bg-blue-50 text-[#1746b8]'}`}
-          >
-            Done
-          </button>
           <button
             type="button"
             disabled={busy}
             onClick={() => setLift('rest')}
             className={`px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${today && !today.lift_avail ? 'bg-slate-500 text-white' : 'bg-slate-100 text-slate-500'}`}
           >
-            Rest
+            {today && !today.lift_avail ? 'Rest day' : 'Rest'}
           </button>
         </div>
       ),
@@ -93,7 +86,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness }
     {
       label: 'Throwing',
       state: !today?.throw_avail ? 'off' : today.throw_ok ? 'earned' : 'open',
-      hint: !today?.throw_avail ? 'No throwing assigned today' : today.throw_ok ? 'All sets logged' : 'Log every throwing set',
+      hint: !today?.throw_avail ? 'No throwing assigned today' : today.throw_ok ? 'Complete' : 'Check it off in your Day plan',
       action:
         today?.throw_avail && !today.throw_ok ? (
           <Link href="/training" className="px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold bg-blue-50 text-[#1746b8]">Go</Link>

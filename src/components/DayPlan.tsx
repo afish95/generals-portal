@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ChevronDown, Dumbbell, ExternalLink, MapPin, Target, Users } from 'lucide-react'
+import { Check, ChevronDown, Dumbbell, ExternalLink, MapPin, Target, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { itemLabel, localDate, phaseLabel, type Exercise, type Workout, type WorkoutItem } from '@/lib/training'
 
@@ -10,7 +10,7 @@ const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id64
 
 type Event = { id: number; title: string; event_type: string; start_time: string | null; location: string | null; practice_plan: string | null }
 
-export default function DayPlan({ athleteId }: { athleteId: string }) {
+export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athleteId: string; onChange?: () => void; refreshKey?: number }) {
   const [events, setEvents] = useState<Event[]>([])
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [items, setItems] = useState<WorkoutItem[]>([])
@@ -18,6 +18,9 @@ export default function DayPlan({ athleteId }: { athleteId: string }) {
   const [logged, setLogged] = useState<Map<number, number>>(new Map())
   const [open, setOpen] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
+  const [checks, setChecks] = useState<Set<string>>(new Set())
+  const [liftDone, setLiftDone] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -36,10 +39,16 @@ export default function DayPlan({ athleteId }: { athleteId: string }) {
       ])
       const itemList = (it as WorkoutItem[]) || []
       const itemIds = itemList.map((i) => i.id)
-      const { data: lg } = itemIds.length
-        ? await supabase.from('set_logs').select('workout_item_id').eq('athlete_id', athleteId).in('workout_item_id', itemIds)
-        : { data: [] }
+      const [{ data: lg }, { data: pc }, { data: hl }] = await Promise.all([
+        itemIds.length
+          ? supabase.from('set_logs').select('workout_item_id').eq('athlete_id', athleteId).in('workout_item_id', itemIds)
+          : Promise.resolve({ data: [] }),
+        supabase.from('plan_checks').select('item_type, item_id').eq('athlete_id', athleteId).eq('check_date', today),
+        supabase.from('habit_logs').select('status').eq('athlete_id', athleteId).eq('log_date', today).eq('habit', 'lift').maybeSingle(),
+      ])
       if (cancelled) return
+      setChecks(new Set(((pc as { item_type: string; item_id: number }[]) || []).map((c) => `${c.item_type}:${c.item_id}`)))
+      setLiftDone((hl as { status: string } | null)?.status === 'done')
       const counts = new Map<number, number>()
       for (const l of (lg as { workout_item_id: number }[]) || []) counts.set(l.workout_item_id, (counts.get(l.workout_item_id) || 0) + 1)
       setEvents((ev as Event[]) || [])
@@ -53,7 +62,44 @@ export default function DayPlan({ athleteId }: { athleteId: string }) {
     return () => {
       cancelled = true
     }
-  }, [athleteId])
+  }, [athleteId, refreshKey])
+
+  // Each check-off saves (or removes) just that one record, then refreshes Today's points.
+  const toggleCheck = async (type: 'event' | 'workout', id: number) => {
+    const key = `${type}:${id}`
+    const supabase = createClient()
+    const today = localDate()
+    setBusy(key)
+    if (checks.has(key)) {
+      await supabase.from('plan_checks').delete().eq('athlete_id', athleteId).eq('check_date', today).eq('item_type', type).eq('item_id', id)
+      setChecks((c) => {
+        const n = new Set(c)
+        n.delete(key)
+        return n
+      })
+    } else {
+      await supabase.from('plan_checks').insert({ athlete_id: athleteId, check_date: today, item_type: type, item_id: id })
+      setChecks((c) => new Set(c).add(key))
+      if ('vibrate' in navigator) navigator.vibrate?.(40)
+    }
+    setBusy(null)
+    onChange?.()
+  }
+  const toggleLift = async () => {
+    const supabase = createClient()
+    const today = localDate()
+    setBusy('lift')
+    if (liftDone) {
+      await supabase.from('habit_logs').delete().eq('athlete_id', athleteId).eq('log_date', today).eq('habit', 'lift')
+      setLiftDone(false)
+    } else {
+      await supabase.from('habit_logs').upsert({ athlete_id: athleteId, log_date: today, habit: 'lift', status: 'done' }, { onConflict: 'athlete_id,log_date,habit' })
+      setLiftDone(true)
+      if ('vibrate' in navigator) navigator.vibrate?.(40)
+    }
+    setBusy(null)
+    onChange?.()
+  }
 
   if (!loaded) return <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />
 
@@ -78,6 +124,9 @@ export default function DayPlan({ athleteId }: { athleteId: string }) {
                 subtitle={[e.event_type, e.start_time, e.location].filter(Boolean).join(' · ')}
                 open={open === k}
                 onClick={() => toggle(k)}
+                checked={checks.has(`event:${e.id}`)}
+                busy={busy === `event:${e.id}`}
+                onCheck={() => toggleCheck('event', e.id)}
               />
               {open === k && (
                 <div className="px-5 pb-4 pl-[4.25rem] space-y-1.5">
@@ -110,7 +159,9 @@ export default function DayPlan({ athleteId }: { athleteId: string }) {
                 subtitle={`${phaseLabel(w.phase)} · ${done}/${total} sets logged`}
                 open={open === k}
                 onClick={() => toggle(k)}
-                done={total > 0 && done >= total}
+                checked={checks.has(`workout:${w.id}`) || (total > 0 && done >= total)}
+                busy={busy === `workout:${w.id}`}
+                onCheck={() => toggleCheck('workout', w.id)}
               />
               {open === k && (
                 <div className="px-5 pb-4 pl-[4.25rem] space-y-2">
@@ -143,10 +194,13 @@ export default function DayPlan({ athleteId }: { athleteId: string }) {
             subtitle="Driveline Baseball strength & conditioning"
             open={open === 'driveline'}
             onClick={() => toggle('driveline')}
+            checked={liftDone}
+            busy={busy === 'lift'}
+            onCheck={toggleLift}
           />
           {open === 'driveline' && (
             <div className="px-5 pb-4 pl-[4.25rem] space-y-2">
-              <p className="text-xs text-slate-600">Today’s lift and mobility are in the Driveline Baseball app. When you finish, tap Done under Today’s points.</p>
+              <p className="text-xs text-slate-600">Today’s lift and mobility are in the Driveline Baseball app. When you finish, tap the circle to mark it complete.</p>
               <a href={DRIVELINE_APP_URL} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-extrabold">
                 Open Driveline Baseball <ExternalLink className="w-3.5 h-3.5" />
               </a>
@@ -168,7 +222,9 @@ function Row({
   subtitle,
   open,
   onClick,
-  done,
+  checked,
+  busy,
+  onCheck,
 }: {
   icon: React.ReactNode
   tone: string
@@ -176,16 +232,32 @@ function Row({
   subtitle: string
   open: boolean
   onClick: () => void
-  done?: boolean
+  checked: boolean
+  busy: boolean
+  onCheck: () => void
 }) {
   return (
-    <button type="button" onClick={onClick} className="w-full flex items-center gap-3 px-5 py-3 text-left cursor-pointer">
-      <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${done ? 'bg-emerald-500 text-white' : tone}`}>{icon}</span>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-extrabold text-slate-900 truncate">{title}</div>
-        <div className="text-[11px] font-semibold text-slate-500 truncate capitalize">{subtitle}</div>
-      </div>
-      <ChevronDown className={`w-5 h-5 text-slate-400 transition ${open ? 'rotate-180' : ''}`} />
-    </button>
+    <div className="flex items-center gap-2 pr-4">
+      <button type="button" onClick={onClick} className="flex-1 min-w-0 flex items-center gap-3 pl-5 py-3 text-left cursor-pointer">
+        <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>{icon}</span>
+        <div className="flex-1 min-w-0">
+          <div className={`text-sm font-extrabold truncate ${checked ? 'text-slate-400 line-through decoration-2' : 'text-slate-900'}`}>{title}</div>
+          <div className="text-[11px] font-semibold text-slate-500 truncate capitalize">{subtitle}</div>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-slate-300 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <button
+        type="button"
+        onClick={onCheck}
+        disabled={busy}
+        aria-label={checked ? `Mark ${title} not done` : `Mark ${title} complete`}
+        aria-pressed={checked}
+        className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center transition active:scale-90 cursor-pointer ${
+          checked ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white border-[3px] border-slate-300 text-slate-300'
+        } ${busy ? 'opacity-60' : ''}`}
+      >
+        <Check className="w-7 h-7" strokeWidth={3} />
+      </button>
+    </div>
   )
 }

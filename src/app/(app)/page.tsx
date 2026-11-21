@@ -39,10 +39,11 @@ export default function HomePage() {
     <div className="space-y-4">
       <NotificationSetup hideWhenOn />
       <AnnouncementsFeed limit={3} topSlot={<ThoughtLine />} />
-      <DayPlan athleteId={profile.id} />
+      <DayPlan athleteId={profile.id} refreshKey={pointsKey} onChange={() => setPointsKey((n) => n + 1)} />
       <DailyPointsCard
         athleteId={profile.id}
         refreshKey={pointsKey}
+        onChange={() => setPointsKey((n) => n + 1)}
         readiness={<ReadinessCheckIn athleteId={profile.id} embedded onSaved={() => setPointsKey((n) => n + 1)} />}
       />
       <ClassStandings myClass={profile.grad_year} />
