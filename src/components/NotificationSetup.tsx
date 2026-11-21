@@ -26,7 +26,7 @@ function isStandalone() {
   )
 }
 
-export default function NotificationSetup() {
+export default function NotificationSetup({ hideWhenOn = false }: { hideWhenOn?: boolean }) {
   const supabase = createClient()
   const [status, setStatus] = useState<Status>('checking')
 
@@ -114,6 +114,7 @@ export default function NotificationSetup() {
   if (status === 'checking') return null
 
   if (status === 'on') {
+    if (hideWhenOn) return null
     return (
       <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
         <BellRing className="w-4 h-4" />

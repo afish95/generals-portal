@@ -13,7 +13,7 @@ const SCALES = [
 ] as const
 type ScaleKey = (typeof SCALES)[number]['key']
 
-export default function ReadinessCheckIn({ athleteId, onSaved }: { athleteId: string; onSaved?: () => void }) {
+export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false }: { athleteId: string; onSaved?: () => void; embedded?: boolean }) {
   const [today, setToday] = useState<Checkin | null | undefined>(undefined)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState<Record<ScaleKey, number | null>>({ sleep_quality: null, soreness: null, stress: null })
@@ -86,9 +86,9 @@ export default function ReadinessCheckIn({ athleteId, onSaved }: { athleteId: st
   const showForm = !today || editing
 
   return (
-    <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+    <section className={embedded ? 'space-y-4' : 'bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4'}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Daily readiness</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{embedded ? 'Readiness score' : 'Daily readiness'}</span>
         <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${meta.chip}`}>{meta.label}</span>
       </div>
 

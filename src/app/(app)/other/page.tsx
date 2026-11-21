@@ -7,6 +7,7 @@ import { useProfile } from '@/components/shell/AppShell'
 import { PageTitle } from '@/components/ui'
 import NotificationSetup from '@/components/NotificationSetup'
 import BullpenScriptRunner from '@/components/BullpenScriptRunner'
+import BodyWeightCard from '@/components/wellness/BodyWeightCard'
 
 export default function OtherPage() {
   const { profile, isCoach } = useProfile()
@@ -25,6 +26,7 @@ export default function OtherPage() {
         <div className="text-xs font-semibold text-slate-500">@{profile.username} · {isCoach ? 'Coach' : 'Player'}</div>
       </section>
       <NotificationSetup />
+      {!isCoach && <BodyWeightCard athleteId={profile.id} />}
       {!isCoach && (
         <div>
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Bullpen scripts</div>
