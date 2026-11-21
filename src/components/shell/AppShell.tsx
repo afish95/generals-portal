@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { House, MessageCircle, Calendar, Target, Activity, LayoutGrid, Shield, Eye, X } from 'lucide-react'
+import { House, MessageCircle, Calendar, Target, TrendingUp, LayoutGrid, Shield, Eye, X } from 'lucide-react'
 import { createClient, READ_ONLY_EVENT, setReadOnlyMode } from '@/lib/supabase'
 import type { Profile } from '@/lib/training'
 
@@ -30,13 +30,13 @@ export function useProfile(): ShellContext {
 const PLAYER_TABS = [
   { href: '/', label: 'Home', icon: House },
   { href: '/training', label: 'Training', icon: Target },
-  { href: '/stats', label: 'Stats', icon: Activity },
+  { href: '/stats', label: 'Stats', icon: TrendingUp },
   { href: '/other', label: 'Other', icon: LayoutGrid },
 ]
 const COACH_TABS = [
   { href: '/', label: 'Home', icon: House },
   { href: '/office', label: 'Coach Office', icon: Shield },
-  { href: '/stats', label: 'Stats', icon: Activity },
+  { href: '/stats', label: 'Stats', icon: TrendingUp },
   { href: '/other', label: 'Other', icon: LayoutGrid },
 ]
 
