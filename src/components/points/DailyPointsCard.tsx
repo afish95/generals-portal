@@ -10,7 +10,9 @@ import ReadinessRing from '@/components/wellness/ReadinessRing'
 
 type State = 'earned' | 'missed' | 'open' | 'off'
 
-export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness, onChange }: { athleteId: string; refreshKey?: number; readiness?: React.ReactNode; onChange?: () => void }) {
+export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness, onChange, date }: { athleteId: string; refreshKey?: number; readiness?: React.ReactNode; onChange?: () => void; date?: string }) {
+  const day = date ?? localDate()
+  const isToday = day === localDate()
   const [week, setWeek] = useState<DayPoints[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [reload, setReload] = useState(0)
@@ -18,20 +20,19 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness, 
 
   useEffect(() => {
     let cancelled = false
-    const today = localDate()
     createClient()
-      .rpc('daily_points', { p_from: addDays(today, -6), p_to: today })
+      .rpc('daily_points', { p_from: addDays(day, -6), p_to: day })
       .then(({ data }) => {
         if (!cancelled) setWeek(normalizePoints(data).filter((r) => r.athlete_id === athleteId).sort((a, b) => a.d.localeCompare(b.d)))
       })
     return () => {
       cancelled = true
     }
-  }, [athleteId, refreshKey, reload])
+  }, [athleteId, refreshKey, reload, day])
 
   const setLift = async (status: 'done' | 'rest') => {
     const supabase = createClient()
-    const today = localDate()
+    const today = day
     setBusy(true)
     const t = week?.find((r) => r.d === today)
     const current = t ? (t.lift_ok ? 'done' : !t.lift_avail ? 'rest' : null) : null
@@ -47,7 +48,7 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness, 
 
   if (!week) return <div className="h-64 rounded-3xl bg-white/60 animate-pulse" />
 
-  const today = week.find((r) => r.d === localDate())
+  const today = week.find((r) => r.d === day)
   const earned = today?.earned ?? 0
   const available = today?.available ?? 5
   const score = pct(earned, available)
@@ -113,9 +114,9 @@ export default function DailyPointsCard({ athleteId, refreshKey = 0, readiness, 
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Today’s points</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{isToday ? 'Today’s points' : `Points · ${prettyDate(day, { weekday: 'short', month: 'short', day: 'numeric' })}`}</span>
         <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
-          {earned}/{available} today
+          {earned}/{available} {isToday ? 'today' : 'that day'}
         </span>
       </div>
 

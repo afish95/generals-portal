@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { localDate } from '@/lib/training'
+import { localDate, prettyDate } from '@/lib/training'
 import { readinessMeta, type Checkin } from '@/lib/wellness'
 import ReadinessRing from './ReadinessRing'
 import { withPointsDelta } from '@/lib/pointsDelta'
@@ -15,7 +15,9 @@ const SCALES = [
 ] as const
 type ScaleKey = (typeof SCALES)[number]['key']
 
-export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false }: { athleteId: string; onSaved?: () => void; embedded?: boolean }) {
+export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false, date }: { athleteId: string; onSaved?: () => void; embedded?: boolean; date?: string }) {
+  const day = date ?? localDate()
+  const isToday = day === localDate()
   const [today, setToday] = useState<Checkin | null | undefined>(undefined)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState<Record<ScaleKey, number | null>>({ sleep_quality: null, soreness: null, stress: null })
@@ -26,11 +28,15 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false 
 
   useEffect(() => {
     let cancelled = false
+    setToday(undefined)
+    setEditing(false)
+    setForm({ sleep_quality: null, soreness: null, stress: null })
+    setHours('')
     createClient()
       .from('daily_checkins')
       .select('*')
       .eq('athlete_id', athleteId)
-      .eq('check_date', localDate())
+      .eq('check_date', day)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return
@@ -44,7 +50,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false 
     return () => {
       cancelled = true
     }
-  }, [athleteId])
+  }, [athleteId, day])
 
   const save = async () => {
     const h = parseFloat(hours)
@@ -59,13 +65,13 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false 
     setSaving(true)
     setError(null)
     let result: { data: unknown; error: { message: string } | null } = { data: null, error: null }
-    const gained = await withPointsDelta(athleteId, localDate(), async () => {
+    const gained = await withPointsDelta(athleteId, day, async () => {
       result = await createClient()
         .from('daily_checkins')
         .upsert(
           {
             athlete_id: athleteId,
-            check_date: localDate(),
+            check_date: day,
             sleep_quality: form.sleep_quality,
             soreness: form.soreness,
             stress: form.stress,
@@ -124,7 +130,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false 
 
       {showForm && (
         <div className="space-y-3">
-          {!today && <p className="text-sm font-bold text-slate-700">How are you feeling today?</p>}
+          {!today && <p className="text-sm font-bold text-slate-700">{isToday ? 'How are you feeling today?' : `How were you feeling on ${prettyDate(day, { weekday: 'long' })}?`}</p>}
           {SCALES.map((s) => (
             <div key={s.key}>
               <div className="flex items-center justify-between text-xs font-extrabold text-slate-700 mb-1.5">
