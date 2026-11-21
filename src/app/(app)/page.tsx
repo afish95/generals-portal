@@ -14,6 +14,8 @@ import DailyPointsCard from '@/components/points/DailyPointsCard'
 import ClassStandings from '@/components/points/ClassStandings'
 import BodyWeightCard from '@/components/wellness/BodyWeightCard'
 import ViewAsPicker from '@/components/shell/ViewAsPicker'
+import StreakCard from '@/components/points/StreakCard'
+import StreakAlerts from '@/components/coach/StreakAlerts'
 
 export default function HomePage() {
   const { profile, isCoach, viewAs } = useProfile()
@@ -28,6 +30,7 @@ export default function HomePage() {
         </div>
         <ViewAsPicker />
         <NotificationSetup />
+        <StreakAlerts />
         <ThoughtOfWeek />
         <CoachDashboard />
         <ClassStandings />
@@ -37,11 +40,12 @@ export default function HomePage() {
     )
   }
 
-  // Player Home, in Coach's order: Announcements → Day plan → Today's points (with readiness) → Class Cup → Body weight
+  // Player Home, in Coach's order: Announcements → Streak → Day plan → Today's points (with readiness) → Class Cup → Body weight
   return (
     <div className="space-y-4">
       {!viewAs.active && <NotificationSetup hideWhenOn />}
       <AnnouncementsFeed limit={3} topSlot={<ThoughtLine />} />
+      <StreakCard athleteId={profile.id} refreshKey={pointsKey} />
       <DayPlan athleteId={profile.id} refreshKey={pointsKey} onChange={() => setPointsKey((n) => n + 1)} />
       <DailyPointsCard
         athleteId={profile.id}

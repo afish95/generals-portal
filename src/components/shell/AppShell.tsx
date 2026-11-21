@@ -275,11 +275,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Royal blue footer with the segmented navigation */}
         <nav
-          className="fixed bottom-0 inset-x-0 z-40 bg-gradient-to-b from-[#1e54d4] to-[#1746b8] shadow-[0_-4px_12px_rgba(23,70,184,0.25)]"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          className="fixed bottom-0 inset-x-0 z-40 pointer-events-none"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
         >
-          <div className="max-w-xl mx-auto px-4 py-2.5">
-            <div className="grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl bg-[#113694]/70 border border-white/15">
+          <div className="max-w-xl mx-auto px-4 pt-2.5">
+            <div className="pointer-events-auto grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl bg-[#113694] border border-white/15 shadow-[0_10px_28px_rgba(17,54,148,0.45)]">
               {tabs.map((t) => {
                 const active = pathname.startsWith(t.href)
                 const Icon = t.icon
