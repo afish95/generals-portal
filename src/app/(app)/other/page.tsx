@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { useProfile } from '@/components/shell/AppShell'
 import { PageTitle } from '@/components/ui'
 import NotificationSetup from '@/components/NotificationSetup'
+import ThoughtOfWeek from '@/components/ThoughtOfWeek'
 
 export default function OtherPage() {
   const { profile, isCoach, viewAs } = useProfile()
@@ -23,6 +24,7 @@ export default function OtherPage() {
         <div className="text-sm font-extrabold text-slate-900">{profile.full_name}</div>
         <div className="text-xs font-semibold text-slate-500">@{profile.username} · {isCoach ? 'Coach' : 'Player'}</div>
       </section>
+      <ThoughtOfWeek />
       {viewAs.active ? (
         <button type="button" onClick={viewAs.exit} className="w-full py-3 rounded-2xl bg-amber-400 text-amber-950 text-sm font-extrabold cursor-pointer">
           Exit player view
