@@ -12,6 +12,8 @@ import CoachDashboard from '@/components/coach/CoachDashboard'
 import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
 import BodyWeightCard from '@/components/wellness/BodyWeightCard'
 import ThoughtOfWeek from '@/components/ThoughtOfWeek'
+import DailyPointsCard from '@/components/points/DailyPointsCard'
+import ClassStandings from '@/components/points/ClassStandings'
 import { addDays, firstName, localDate, type Group, type Workout, type WorkoutItem } from '@/lib/training'
 
 type TodayRow = { workout: Workout; total: number; done: number }
@@ -23,6 +25,7 @@ export default function HomePage() {
   const [weekSets, setWeekSets] = useState(0)
   const [today, setToday] = useState<TodayRow[]>([])
   const [coachToday, setCoachToday] = useState<CoachRow[]>([])
+  const [pointsKey, setPointsKey] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
@@ -115,10 +118,15 @@ export default function HomePage() {
       <ThoughtOfWeek />
 
       {isCoach ? (
-        <CoachDashboard />
+        <>
+          <CoachDashboard />
+          <ClassStandings />
+        </>
       ) : (
         <>
-          <ReadinessCheckIn athleteId={profile.id} />
+          <ReadinessCheckIn athleteId={profile.id} onSaved={() => setPointsKey((n) => n + 1)} />
+          <DailyPointsCard athleteId={profile.id} refreshKey={pointsKey} />
+          <ClassStandings myClass={profile.grad_year} />
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-3xl bg-gradient-to-br from-orange-400 to-rose-500 text-white p-4">
               <Flame className="w-5 h-5" />

@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Award, Flame, Target } from 'lucide-react'
+import { Award, Flame, Star, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { localDate } from '@/lib/training'
 import { weekStart } from './WeeklyRecap'
 
-type Row = { athlete_id: string; full_name: string; volume: number; sets: number; quality: number | null; prs: number }
+type Row = { athlete_id: string; full_name: string; volume: number; sets: number; quality: number | null; prs: number; points?: number; pointsAvail?: number }
 const CATS = [
+  { key: 'points', label: 'Points', icon: Star, unit: '% of daily points earned' },
   { key: 'volume', label: 'Volume', icon: Flame, unit: 'throws & swings' },
   { key: 'quality', label: 'Quality', icon: Target, unit: '% of sets done' },
   { key: 'prs', label: 'PRs', icon: Award, unit: 'PRs' },
@@ -15,27 +16,44 @@ const CATS = [
 
 export default function Leaderboard({ myId }: { myId: string }) {
   const [period, setPeriod] = useState<'today' | 'week'>('today')
-  const [cat, setCat] = useState<(typeof CATS)[number]['key']>('volume')
+  const [cat, setCat] = useState<(typeof CATS)[number]['key']>('points')
   const [rows, setRows] = useState<Row[] | null>(null)
 
   useEffect(() => {
     let cancelled = false
     const today = localDate()
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles'
-    createClient()
-      .rpc('leaderboard', { p_from: period === 'today' ? today : weekStart(today), p_to: today, p_tz: tz })
-      .then(({ data }) => {
-        if (cancelled) return
-        setRows(
-          ((data as Row[]) || []).map((r) => ({ ...r, volume: Number(r.volume), sets: Number(r.sets), prs: Number(r.prs), quality: r.quality == null ? null : Number(r.quality) }))
-        )
-      })
+    const supabase = createClient()
+    const from = period === 'today' ? today : weekStart(today)
+    Promise.all([
+      supabase.rpc('leaderboard', { p_from: from, p_to: today, p_tz: tz }),
+      supabase.rpc('daily_points', { p_from: from, p_to: today }),
+    ]).then(([lb, dp]) => {
+      if (cancelled) return
+      const pts = new Map<string, { e: number; a: number }>()
+      for (const r of (dp.data as { athlete_id: string; earned: number; available: number }[]) || []) {
+        const cur = pts.get(r.athlete_id) || { e: 0, a: 0 }
+        pts.set(r.athlete_id, { e: cur.e + Number(r.earned), a: cur.a + Number(r.available) })
+      }
+      setRows(
+        ((lb.data as Row[]) || []).map((r) => ({
+          ...r,
+          volume: Number(r.volume),
+          sets: Number(r.sets),
+          prs: Number(r.prs),
+          quality: r.quality == null ? null : Number(r.quality),
+          points: pts.get(r.athlete_id)?.e ?? 0,
+          pointsAvail: pts.get(r.athlete_id)?.a ?? 0,
+        }))
+      )
+    })
     return () => {
       cancelled = true
     }
   }, [period])
 
-  const value = (r: Row) => (cat === 'volume' ? r.volume : cat === 'prs' ? r.prs : r.quality ?? -1)
+  const pointsPct = (r: Row) => (r.pointsAvail ? Math.round((100 * (r.points || 0)) / r.pointsAvail) : 0)
+  const value = (r: Row) => (cat === 'points' ? pointsPct(r) : cat === 'volume' ? r.volume : cat === 'prs' ? r.prs : r.quality ?? -1)
   const ranked = (rows || []).filter((r) => (cat === 'quality' ? r.quality != null : true)).sort((a, b) => value(b) - value(a) || a.full_name.localeCompare(b.full_name))
   const meta = CATS.find((c) => c.key === cat)!
   const medal = ['🥇', '🥈', '🥉']
@@ -49,7 +67,7 @@ export default function Leaderboard({ myId }: { myId: string }) {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {CATS.map((c) => {
           const Icon = c.icon
           return (
@@ -78,7 +96,8 @@ export default function Leaderboard({ myId }: { myId: string }) {
                 <span className="w-7 text-center text-sm font-black text-slate-400">{i < 3 && value(r) > 0 ? medal[i] : i + 1}</span>
                 <span className={`flex-1 text-sm truncate ${r.athlete_id === myId ? 'font-black text-[#1746b8]' : 'font-bold text-slate-800'}`}>{r.full_name}</span>
                 <span className="text-right">
-                  <span className="text-base font-black text-slate-900">{cat === 'quality' ? `${r.quality}%` : value(r)}</span>
+                  <span className="text-base font-black text-slate-900">{cat === 'quality' ? `${r.quality}%` : cat === 'points' ? `${pointsPct(r)}%` : value(r)}</span>
+                  {cat === 'points' && <span className="block text-[10px] font-bold text-slate-400">{r.points}/{r.pointsAvail} pts</span>}
                 </span>
               </li>
             ))}

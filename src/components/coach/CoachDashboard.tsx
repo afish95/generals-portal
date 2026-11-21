@@ -15,6 +15,7 @@ type Row = {
   attendance?: AttendanceStatus
   flagged: boolean
   flagReason: string | null
+  points?: { earned: number; available: number }
 }
 
 export default function CoachDashboard() {
@@ -33,7 +34,7 @@ export default function CoachDashboard() {
     const today = localDate()
     const dayStart = new Date(`${today}T00:00:00`).toISOString()
     const load = async () => {
-      const [p, g, m, c, a, f, w] = await Promise.all([
+      const [p, g, m, c, a, f, w, dp] = await Promise.all([
         supabase.from('profiles').select('id, username, full_name, role, position_group, grad_year, is_active, is_demo').eq('role', 'player').eq('is_active', true).order('full_name'),
         supabase.from('team_groups').select('*').order('sort_order'),
         supabase.from('group_members').select('group_id, athlete_id'),
@@ -41,6 +42,7 @@ export default function CoachDashboard() {
         supabase.from('attendance').select('athlete_id, status').eq('attend_date', today),
         supabase.from('athlete_flags').select('athlete_id, reason'),
         supabase.from('workouts').select('*').eq('workout_date', today).order('sort_order'),
+        supabase.rpc('daily_points', { p_from: today, p_to: today }),
       ])
       const wList = (w.data as Workout[]) || []
       const wIds = wList.map((x) => x.id)
@@ -56,6 +58,7 @@ export default function CoachDashboard() {
       const checkins = new Map(((c.data as Checkin[]) || []).map((x) => [x.athlete_id, x]))
       const att = new Map(((a.data as { athlete_id: string; status: AttendanceStatus }[]) || []).map((x) => [x.athlete_id, x.status]))
       const flags = new Map(((f.data as { athlete_id: string; reason: string | null }[]) || []).map((x) => [x.athlete_id, x.reason]))
+      const pts = new Map(((dp.data as { athlete_id: string; earned: number; available: number }[]) || []).map((x) => [x.athlete_id, { earned: Number(x.earned), available: Number(x.available) }]))
       const sets = new Map<string, number>()
       logList.forEach((l) => sets.set(l.athlete_id, (sets.get(l.athlete_id) || 0) + 1))
 
@@ -69,6 +72,7 @@ export default function CoachDashboard() {
           attendance: att.get(athlete.id),
           flagged: flags.has(athlete.id),
           flagReason: flags.get(athlete.id) ?? null,
+          points: pts.get(athlete.id),
         }))
       )
       setWorkouts(
@@ -159,7 +163,7 @@ export default function CoachDashboard() {
 
       <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
         <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Athletes today</span>
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Athletes today · pts · readiness · attendance</span>
           <Link href="/office" className="text-[11px] font-extrabold text-[#1746b8]">Take attendance</Link>
         </div>
         <ul className="divide-y divide-slate-100">
@@ -178,6 +182,11 @@ export default function CoachDashboard() {
                       {r.flagged && r.flagReason ? r.flagReason : `${r.sets} set${r.sets === 1 ? '' : 's'} logged`}
                     </div>
                   </div>
+                  {r.points && (
+                    <span className={`text-[10px] font-extrabold px-2 py-1 rounded-full ${r.points.earned === r.points.available ? 'bg-emerald-500 text-white' : 'bg-amber-100 text-amber-700'}`}>
+                      {r.points.earned}/{r.points.available}
+                    </span>
+                  )}
                   <span className={`text-[10px] font-extrabold px-2 py-1 rounded-full ${meta.chip}`}>
                     {r.checkin ? r.checkin.readiness : '—'}
                   </span>
