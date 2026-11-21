@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { House, MessageCircle, Calendar, Target, Activity, LayoutGrid, Shield, Eye, X } from 'lucide-react'
+import { House, MessageCircle, Calendar, Target, TrendingUp, LayoutGrid, Shield, Eye, X } from 'lucide-react'
 import { createClient, READ_ONLY_EVENT, setReadOnlyMode } from '@/lib/supabase'
 import type { Profile } from '@/lib/training'
 
@@ -28,15 +28,15 @@ export function useProfile(): ShellContext {
 }
 
 const PLAYER_TABS = [
-  { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/', label: 'Home', icon: House },
   { href: '/training', label: 'Training', icon: Target },
-  { href: '/stats', label: 'Stats', icon: Activity },
+  { href: '/stats', label: 'Stats', icon: TrendingUp },
   { href: '/other', label: 'Other', icon: LayoutGrid },
 ]
 const COACH_TABS = [
-  { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/', label: 'Home', icon: House },
   { href: '/office', label: 'Coach Office', icon: Shield },
-  { href: '/stats', label: 'Stats', icon: Activity },
+  { href: '/stats', label: 'Stats', icon: TrendingUp },
   { href: '/other', label: 'Other', icon: LayoutGrid },
 ]
 
@@ -189,7 +189,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     )
   }
 
-  const homeActive = pathname === '/'
+  const calendarActive = pathname.startsWith('/calendar')
   const messagesActive = pathname.startsWith('/messages')
   const iconBtn = (active: boolean) =>
     `w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 transition ${
@@ -211,8 +211,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <div className="max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
-            <Link href="/" aria-label="Home" className={iconBtn(homeActive)}>
-              <House className="w-5 h-5" />
+            <Link href="/calendar" aria-label="Calendar" className={iconBtn(calendarActive)}>
+              <Calendar className="w-5 h-5" />
             </Link>
             <div className="min-w-0 flex-1 text-center">
               <div className="flex items-center justify-center gap-2">
@@ -281,7 +281,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="max-w-xl mx-auto px-4 pt-2.5">
             <div className="pointer-events-auto grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl bg-[#113694] border border-white/15 shadow-[0_10px_28px_rgba(17,54,148,0.45)]">
               {tabs.map((t) => {
-                const active = pathname.startsWith(t.href)
+                const active = t.href === '/' ? pathname === '/' : pathname.startsWith(t.href)
                 const Icon = t.icon
                 return (
                   <Link
