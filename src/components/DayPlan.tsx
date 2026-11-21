@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Check, ChevronDown, Dumbbell, ExternalLink, GraduationCap, MapPin, Target, Trophy, Users } from 'lucide-react'
+import { Check, ChevronDown, Crosshair, Dumbbell, ExternalLink, GraduationCap, MapPin, Play, Target, Trophy, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { itemLabel, localDate, phaseLabel, prettyDate, type Exercise, type Group, type Workout, type WorkoutItem } from '@/lib/training'
 import { withPointsDelta } from '@/lib/pointsDelta'
@@ -11,6 +11,8 @@ import { PopCircle, buzz } from '@/components/points/PointBurst'
 const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id6445937141'
 
 type Event = { id: number; title: string; event_type: string; start_time: string | null; location: string | null; practice_plan: string | null }
+type Tool = { id: number; workout_id: number; script_id: number; notes: string | null }
+type Script = { id: number; title: string; pitch_count: number }
 
 // Two color families, used on Home and Calendar:
 //   Games & Practice (schedule + attendance) = indigo, Training & Workouts = amber
@@ -30,6 +32,8 @@ export default function DayPlan({
   onChange,
   refreshKey = 0,
   showHeader = true,
+  onStartTool,
+  renderWorkout,
 }: {
   athleteId: string
   date?: string
@@ -37,6 +41,10 @@ export default function DayPlan({
   onChange?: () => void
   refreshKey?: number
   showHeader?: boolean
+  /** Start a prescribed training tool; when absent, the Start button links to the Training tab */
+  onStartTool?: (scriptId: number, workoutId: number, title: string) => void
+  /** Replaces the simple drill list inside an open workout (the Training tab uses this for set logging) */
+  renderWorkout?: (workout: Workout, items: WorkoutItem[]) => React.ReactNode
 }) {
   const day = date ?? localDate()
   const today = localDate()
@@ -55,6 +63,9 @@ export default function DayPlan({
   const [liftDone, setLiftDone] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const [pop, setPop] = useState<{ key: string; amount: number } | null>(null)
+  const [tools, setTools] = useState<Tool[]>([])
+  const [scripts, setScripts] = useState<Map<number, Script>>(new Map())
+  const [toolDone, setToolDone] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const supabase = createClient()
@@ -67,9 +78,14 @@ export default function DayPlan({
       ])
       const wList = (w as Workout[]) || []
       const ids = wList.map((x) => x.id)
-      const [{ data: it }, { data: ex }] = await Promise.all([
+      const [{ data: it }, { data: ex }, { data: tl }, { data: sc }, { data: bs }] = await Promise.all([
         ids.length ? supabase.from('workout_items').select('*').in('workout_id', ids) : Promise.resolve({ data: [] }),
         supabase.from('exercises').select('*'),
+        ids.length ? supabase.from('workout_tools').select('id, workout_id, script_id, notes').in('workout_id', ids).order('sort_order') : Promise.resolve({ data: [] }),
+        supabase.from('bullpen_scripts').select('id, title, pitch_count'),
+        !isCoach && ids.length
+          ? supabase.from('bullpen_sessions').select('workout_id, script_id').eq('player_id', athleteId).in('workout_id', ids)
+          : Promise.resolve({ data: [] }),
       ])
       const itemList = (it as WorkoutItem[]) || []
       const itemIds = itemList.map((i) => i.id)
@@ -95,6 +111,9 @@ export default function DayPlan({
       setExercises(new Map(((ex as Exercise[]) || []).map((e) => [e.id, e])))
       setGroups(new Map(((gr as Pick<Group, 'id' | 'name'>[]) || []).map((g) => [g.id, g.name])))
       setLogged(counts)
+      setTools((tl as Tool[]) || [])
+      setScripts(new Map(((sc as Script[]) || []).map((x) => [x.id, x])))
+      setToolDone(new Set(((bs as { workout_id: number; script_id: number }[]) || []).map((b) => `${b.workout_id}:${b.script_id}`)))
       setLoadedFor(day)
     }
     load()
@@ -240,13 +259,19 @@ export default function DayPlan({
           const total = its.reduce((n, i) => n + i.sets, 0)
           const done = its.reduce((n, i) => n + Math.min(i.sets, logged.get(i.id) || 0), 0)
           const group = w.group_id ? groups.get(w.group_id) : 'Whole team'
+          const wTools = tools.filter((t) => t.workout_id === w.id)
+          const toolsDone = wTools.filter((t) => toolDone.has(`${w.id}:${t.script_id}`)).length
           return (
             <li key={k} className={`border-l-4 ${TRAINING.stripe}`}>
               <Row
                 icon={<Target className="w-4 h-4" />}
                 tone={TRAINING.tone}
                 title={w.title}
-                subtitle={isCoach ? `${group} · ${phaseLabel(w.phase)}` : `${phaseLabel(w.phase)} · ${done}/${total} sets logged`}
+                subtitle={
+                  isCoach
+                    ? `${group} · ${phaseLabel(w.phase)}${wTools.length ? ` · ${wTools.length} tool${wTools.length === 1 ? '' : 's'}` : ''}`
+                    : [phaseLabel(w.phase), total ? `${done}/${total} sets` : null, wTools.length ? `${toolsDone}/${wTools.length} bullpen` : null].filter(Boolean).join(' · ')
+                }
                 open={open === k}
                 onClick={() => toggle(k)}
                 showCheck={showCheck}
@@ -258,22 +283,54 @@ export default function DayPlan({
                 onCheck={() => toggleCheck('workout', w.id)}
               />
               {open === k && (
-                <div className="px-5 pb-4 pl-[4.25rem] space-y-2">
-                  <ul className="space-y-1.5">
-                    {its.map((i) => (
-                      <li key={i.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                        <span className="w-7 h-6 rounded-md bg-amber-50 text-amber-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">
-                          {itemLabel(i.block_index, i.item_index, counts.get(i.block_index) || 1)}
-                        </span>
-                        <span className="flex-1">{exercises.get(i.exercise_id)?.name ?? 'Drill'}</span>
-                        <span className="text-slate-400">{i.sets}× {i.reps || ''}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {!isCoach && (
-                    <Link href="/training" className="block text-center py-2.5 rounded-xl bg-[#1746b8] text-white text-xs font-extrabold">
-                      Log it in Training
-                    </Link>
+                <div className="px-4 pb-4 space-y-2">
+                  {wTools.length > 0 && (
+                    <ul className="space-y-1.5">
+                      {wTools.map((t) => {
+                        const sc = scripts.get(t.script_id)
+                        const finished = toolDone.has(`${w.id}:${t.script_id}`)
+                        return (
+                          <li key={t.id} className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
+                            <Crosshair className="w-4 h-4 text-amber-700 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-extrabold text-slate-900 truncate">{sc?.title ?? 'Bullpen'}</div>
+                              <div className="text-[10px] font-semibold text-slate-500">{sc ? `${sc.pitch_count} pitches` : ''}{t.notes ? ` · ${t.notes}` : ''}</div>
+                            </div>
+                            {isCoach ? null : finished ? (
+                              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">Done</span>
+                            ) : onStartTool ? (
+                              <button type="button" onClick={() => onStartTool(t.script_id, w.id, sc?.title ?? 'Bullpen')} className="px-2.5 py-1.5 rounded-lg bg-[#1746b8] text-white text-[11px] font-extrabold flex items-center gap-1 cursor-pointer">
+                                <Play className="w-3 h-3" /> Start
+                              </button>
+                            ) : (
+                              <Link href="/training" className="px-2.5 py-1.5 rounded-lg bg-[#1746b8] text-white text-[11px] font-extrabold">Start</Link>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                  {renderWorkout ? (
+                    its.length > 0 && renderWorkout(w, its)
+                  ) : (
+                    <div className="pl-[3.25rem] space-y-2">
+                      <ul className="space-y-1.5">
+                        {its.map((i) => (
+                          <li key={i.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                            <span className="w-7 h-6 rounded-md bg-amber-50 text-amber-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">
+                              {itemLabel(i.block_index, i.item_index, counts.get(i.block_index) || 1)}
+                            </span>
+                            <span className="flex-1">{exercises.get(i.exercise_id)?.name ?? 'Drill'}</span>
+                            <span className="text-slate-400">{i.sets}× {i.reps || ''}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {!isCoach && its.length > 0 && (
+                        <Link href="/training" className="block text-center py-2.5 rounded-xl bg-[#1746b8] text-white text-xs font-extrabold">
+                          Log it in Training
+                        </Link>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

@@ -47,6 +47,7 @@ export default function WorkoutLogger({
   athleteId,
   onLogsChange,
   onPr,
+  compact = false,
 }: {
   workout: Workout
   items: WorkoutItem[]
@@ -55,6 +56,8 @@ export default function WorkoutLogger({
   athleteId: string
   onLogsChange: (next: SetLog[]) => void
   onPr: (hit: PrHit) => void
+  /** Inside a Day plan dropdown: no card chrome or title header */
+  compact?: boolean
 }) {
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
   const [busy, setBusy] = useState<string | null>(null)
@@ -161,8 +164,8 @@ export default function WorkoutLogger({
   }
 
   return (
-    <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-      <div className="px-4 pt-4 pb-3 border-b border-slate-100">
+    <section className={compact ? 'rounded-2xl border border-slate-200 overflow-hidden' : 'bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden'}>
+      <div className={compact ? 'hidden' : 'px-4 pt-4 pb-3 border-b border-slate-100'}>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-extrabold text-slate-900">{workout.title}</h2>
           <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full bg-blue-50 text-[#1746b8]">

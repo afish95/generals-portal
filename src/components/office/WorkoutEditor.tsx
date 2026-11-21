@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { inputClass } from '@/components/ui'
@@ -59,6 +59,8 @@ function toBlocks(items: WorkoutItem[]): DraftItem[][] {
   return blocks
 }
 
+type DraftTool = { id?: number; key: string; script_id: number; notes: string }
+
 const norm = (s: string) => (s.trim() === '' ? null : s.trim())
 
 export default function WorkoutEditor({
@@ -98,6 +100,27 @@ export default function WorkoutEditor({
   const [blocks, setBlocks] = useState<DraftItem[][]>(() => (workout ? toBlocks(items) : [[]]))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Prescribed training tools (bullpen games / command drills)
+  const [scripts, setScripts] = useState<{ id: number; title: string; pitch_count: number }[]>([])
+  const [origTools, setOrigTools] = useState<DraftTool[]>([])
+  const [tools, setTools] = useState<DraftTool[]>([])
+  useEffect(() => {
+    const supabase = createClient()
+    let cancelled = false
+    Promise.all([
+      supabase.from('bullpen_scripts').select('id, title, pitch_count').eq('is_active', true).order('sort_order'),
+      workout ? supabase.from('workout_tools').select('id, script_id, notes').eq('workout_id', workout.id).order('sort_order') : Promise.resolve({ data: [] }),
+    ]).then(([sc, wt]) => {
+      if (cancelled) return
+      setScripts((sc.data as { id: number; title: string; pitch_count: number }[]) || [])
+      const loaded = ((wt.data as { id: number; script_id: number; notes: string | null }[]) || []).map((t) => ({ id: t.id, key: newKey(), script_id: t.script_id, notes: t.notes ?? '' }))
+      setOrigTools(loaded)
+      setTools(loaded)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [workout])
 
   const activeExercises = exercises.filter((e) => e.is_active)
   const exName = (id: number) => exercises.find((e) => e.id === id)?.name ?? 'Exercise'
@@ -132,8 +155,8 @@ export default function WorkoutEditor({
     const flat = blocks
       .filter((blk) => blk.length > 0)
       .flatMap((blk, bi) => blk.map((it, ii) => ({ ...it, block_index: bi, item_index: ii })))
-    if (flat.length === 0) {
-      setError('Add at least one drill.')
+    if (flat.length === 0 && tools.length === 0) {
+      setError('Add at least one drill or training tool.')
       return
     }
     setSaving(true)
@@ -213,6 +236,28 @@ export default function WorkoutEditor({
       if (inserts.length) {
         const { error: e } = await supabase.from('workout_items').insert(inserts)
         if (e) throw e
+      }
+
+      // Tools: delete removed, update changed, insert new.
+      const keptTools = new Set(tools.filter((t) => t.id).map((t) => t.id as number))
+      const removedTools = origTools.filter((t) => !keptTools.has(t.id as number)).map((t) => t.id as number)
+      if (removedTools.length) {
+        const { error: e } = await supabase.from('workout_tools').delete().in('id', removedTools)
+        if (e) throw e
+      }
+      const origById = new Map(origTools.map((t, i) => [t.id as number, { ...t, sort_order: i }]))
+      for (const [i, t] of tools.entries()) {
+        const row = { workout_id: workoutId, script_id: t.script_id, notes: norm(t.notes), sort_order: i }
+        if (!t.id) {
+          const { error: e } = await supabase.from('workout_tools').insert(row)
+          if (e) throw e
+        } else {
+          const o = origById.get(t.id)!
+          if (o.script_id !== row.script_id || norm(o.notes) !== row.notes || o.sort_order !== i) {
+            const { error: e } = await supabase.from('workout_tools').update(row).eq('id', t.id)
+            if (e) throw e
+          }
+        }
       }
       onSaved()
     } catch (e) {
@@ -332,6 +377,35 @@ export default function WorkoutEditor({
             </select>
           </section>
         ))}
+
+        <section className="bg-white rounded-3xl border border-amber-200 p-5 shadow-xs space-y-3">
+          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700">Training tools · bullpens</div>
+          {tools.map((t, i) => (
+            <div key={t.key} className="rounded-2xl border border-amber-200 bg-amber-50/40 p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 text-sm font-extrabold text-slate-900">{scripts.find((x) => x.id === t.script_id)?.title ?? 'Bullpen'}</div>
+                <IconBtn label="Remove tool" onClick={() => setTools((ts) => ts.filter((_, ii) => ii !== i))}><X className="w-4 h-4" /></IconBtn>
+              </div>
+              <input
+                value={t.notes}
+                onChange={(e) => setTools((ts) => ts.map((x, ii) => (ii === i ? { ...x, notes: e.target.value } : x)))}
+                placeholder="Note for athletes (optional)"
+                className={inputClass}
+              />
+            </div>
+          ))}
+          <select
+            value=""
+            onChange={(e) => e.target.value && setTools((ts) => [...ts, { key: newKey(), script_id: Number(e.target.value), notes: '' }])}
+            className={`${inputClass} text-amber-700 font-bold`}
+          >
+            <option value="">+ Prescribe a bullpen game or drill</option>
+            {scripts.map((sc) => (
+              <option key={sc.id} value={sc.id}>{sc.title} ({sc.pitch_count} pitches)</option>
+            ))}
+          </select>
+          <p className="text-[11px] text-slate-500">Players start it from their Day plan. Finishing it checks off this workout.</p>
+        </section>
 
         <button
           type="button"

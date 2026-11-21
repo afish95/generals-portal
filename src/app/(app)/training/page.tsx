@@ -1,88 +1,118 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useProfile } from '@/components/shell/AppShell'
 import { DateStepper, EmptyState, PageTitle } from '@/components/ui'
-import WorkoutLogger, { type PrHit } from '@/components/training/WorkoutLogger'
+import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
+import DayPlan from '@/components/DayPlan'
+import LoggedWorkout from '@/components/training/LoggedWorkout'
+import ProgressTrends from '@/components/training/ProgressTrends'
+import MyRanks from '@/components/training/MyRanks'
+import Leaderboard from '@/components/stats/Leaderboard'
+import TrainingTools from '@/components/training/TrainingTools'
+import ToolRunnerSheet from '@/components/training/ToolRunnerSheet'
 import PrCelebration from '@/components/training/PrCelebration'
-import { localDate, type Exercise, type SetLog, type Workout, type WorkoutItem } from '@/lib/training'
+import { PointBubble, buzz } from '@/components/points/PointBurst'
+import type { PrHit } from '@/components/training/WorkoutLogger'
+import { withPointsDelta } from '@/lib/pointsDelta'
+import { localDate } from '@/lib/training'
+
+type Running = { scriptId: number; title: string; workoutId?: number }
 
 export default function TrainingPage() {
   const { profile, isCoach } = useProfile()
   const [date, setDate] = useState(localDate())
-  const [workouts, setWorkouts] = useState<Workout[]>([])
-  const [items, setItems] = useState<WorkoutItem[]>([])
-  const [exercises, setExercises] = useState<Exercise[]>([])
-  const [logs, setLogs] = useState<SetLog[]>([])
-  const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
   const [pr, setPr] = useState<PrHit | null>(null)
+  const [running, setRunning] = useState<Running | null>(null)
+  const [toast, setToast] = useState<number>(0)
   const clearPr = useCallback(() => setPr(null), [])
+  const refresh = useCallback(() => setRefreshKey((n) => n + 1), [])
 
-  useEffect(() => {
-    const supabase = createClient()
-    let cancelled = false
-    const load = async () => {
-      setLoading(true)
-      const [{ data: w }, { data: ex }] = await Promise.all([
-        supabase.from('workouts').select('*').eq('workout_date', date).order('sort_order').order('id'),
-        supabase.from('exercises').select('*'),
-      ])
-      // Coaches see every group; players only theirs (enforced by RLS).
-      let visible = (w as Workout[]) || []
-      if (isCoach) visible = visible.filter((x) => x.group_id === null)
-      const ids = visible.map((x) => x.id)
-      const { data: it } = ids.length
-        ? await supabase.from('workout_items').select('*').in('workout_id', ids)
-        : { data: [] as WorkoutItem[] }
-      const itemIds = ((it as WorkoutItem[]) || []).map((x) => x.id)
-      const { data: lg } = itemIds.length
-        ? await supabase.from('set_logs').select('*').eq('athlete_id', profile.id).in('workout_item_id', itemIds)
-        : { data: [] as SetLog[] }
-      if (cancelled) return
-      setWorkouts(visible)
-      setItems((it as WorkoutItem[]) || [])
-      setExercises((ex as Exercise[]) || [])
-      setLogs((lg as SetLog[]) || [])
-      setLoading(false)
+  // A finished prescribed bullpen checks off its workout (today only), which can earn the throwing point.
+  const onBullpenSaved = async (workoutId?: number) => {
+    if (workoutId && date === localDate()) {
+      const supabase = createClient()
+      const today = localDate()
+      const { data: existing } = await supabase
+        .from('plan_checks')
+        .select('id')
+        .eq('athlete_id', profile.id)
+        .eq('check_date', today)
+        .eq('item_type', 'workout')
+        .eq('item_id', workoutId)
+        .maybeSingle()
+      if (!existing) {
+        const gained = await withPointsDelta(profile.id, today, async () => {
+          await supabase.from('plan_checks').insert({ athlete_id: profile.id, check_date: today, item_type: 'workout', item_id: workoutId })
+        })
+        if (gained > 0) {
+          buzz()
+          setToast(gained)
+          setTimeout(() => setToast(0), 2200)
+        }
+      }
     }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [date, profile.id, isCoach])
+    refresh()
+  }
 
-  const exMap = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises])
+  if (isCoach) {
+    return <EmptyState title="Training is the player view" body="Build workouts and prescribe tools in Coach Office." />
+  }
 
   return (
-    <div>
+    <div className="space-y-4">
       <PrCelebration hit={pr} onDone={clearPr} />
-      <PageTitle title="Training" subtitle="Log every set. PRs get celebrated automatically." />
-      <DateStepper value={date} onChange={setDate} />
-      {loading ? (
-        <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />
-      ) : workouts.length === 0 ? (
-        <EmptyState title="No training scheduled" body="Enjoy the recovery day, or check the next day." />
-      ) : (
-        <div className="space-y-4">
-          {workouts.map((w) => (
-            <WorkoutLogger
-              key={w.id}
-              workout={w}
-              items={items.filter((i) => i.workout_id === w.id)}
-              exercises={exMap}
-              logs={logs.filter((l) => items.some((i) => i.id === l.workout_item_id && i.workout_id === w.id))}
-              athleteId={profile.id}
-              onLogsChange={(next) =>
-                setLogs((all) => {
-                  const mine = new Set(items.filter((i) => i.workout_id === w.id).map((i) => i.id))
-                  return [...all.filter((l) => !mine.has(l.workout_item_id)), ...next]
-                })
-              }
-              onPr={setPr}
-            />
-          ))}
+      {toast > 0 && (
+        <div className="fixed inset-x-0 z-50 flex justify-center px-4" style={{ top: 'calc(env(safe-area-inset-top) + 100px)' }}>
+          <div className="relative rounded-2xl bg-emerald-500 text-white px-4 py-3 text-sm font-extrabold shadow-xl animate-gen-pop">
+            Bullpen complete. Workout checked off!
+            <PointBubble amount={toast} className="-top-4" />
+          </div>
         </div>
+      )}
+
+      <PageTitle title="Training" />
+
+      {/* 1. Arm readiness survey (same check-in as Home) */}
+      <ReadinessCheckIn athleteId={profile.id} onSaved={refresh} />
+
+      {/* 2. Day plan with set logging and prescribed tools */}
+      <div>
+        <DateStepper value={date} onChange={setDate} />
+        <DayPlan
+          athleteId={profile.id}
+          date={date}
+          refreshKey={refreshKey}
+          onChange={refresh}
+          onStartTool={(scriptId, workoutId, title) => setRunning({ scriptId, workoutId, title })}
+          renderWorkout={(w, items) => <LoggedWorkout workout={w} items={items} athleteId={profile.id} onPr={setPr} onChanged={refresh} />}
+        />
+      </div>
+
+      {/* 3. Progress & trends */}
+      <ProgressTrends athleteId={profile.id} key={`trends-${refreshKey}`} />
+
+      {/* 4. Leaderboards with your percentile ranks */}
+      <MyRanks athleteId={profile.id} key={`ranks-${refreshKey}`} />
+      <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
+        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Leaderboards</div>
+        <Leaderboard myId={profile.id} />
+      </section>
+
+      {/* 5. Training tools */}
+      <TrainingTools athleteId={profile.id} refreshKey={refreshKey} onStart={(scriptId, title) => setRunning({ scriptId, title })} />
+
+      {running && (
+        <ToolRunnerSheet
+          playerId={profile.id}
+          scriptId={running.scriptId}
+          workoutId={running.workoutId}
+          title={running.title}
+          onClose={() => setRunning(null)}
+          onSaved={() => onBullpenSaved(running.workoutId)}
+        />
       )}
     </div>
   )
