@@ -9,8 +9,6 @@ import AnnouncementsFeed from '@/components/AnnouncementsFeed'
 import TeamPrFeed from '@/components/TeamPrFeed'
 import CoachDashboard from '@/components/coach/CoachDashboard'
 import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
-import ThoughtOfWeek from '@/components/ThoughtOfWeek'
-import ThoughtLine from '@/components/ThoughtLine'
 import DayPlan from '@/components/DayPlan'
 import DailyPointsCard from '@/components/points/DailyPointsCard'
 import ClassStandings from '@/components/points/ClassStandings'
@@ -34,7 +32,6 @@ export default function HomePage() {
         <ViewAsPicker />
         <NotificationSetup />
         <StreakAlerts />
-        <ThoughtOfWeek />
         <CoachDashboard />
         <ClassStandings />
         <TeamPrFeed limit={6} />
@@ -60,7 +57,7 @@ export default function HomePage() {
         onToday={() => setDay(today)}
       />
       {!viewAs.active && <NotificationSetup hideWhenOn />}
-      <AnnouncementsFeed limit={3} topSlot={<ThoughtLine />} />
+      <AnnouncementsFeed limit={3} />
       <StreakCard athleteId={profile.id} refreshKey={pointsKey} />
       <DayPlan athleteId={profile.id} date={day} refreshKey={pointsKey} onChange={refresh} />
       <DailyPointsCard
