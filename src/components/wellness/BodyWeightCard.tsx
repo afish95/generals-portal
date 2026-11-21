@@ -21,7 +21,9 @@ export function WeightSparkline({ entries, height = 44 }: { entries: Entry[]; he
   )
 }
 
-export default function BodyWeightCard({ athleteId }: { athleteId: string }) {
+export default function BodyWeightCard({ athleteId, date }: { athleteId: string; date?: string }) {
+  const day = date ?? localDate()
+  const isToday = day === localDate()
   const [entries, setEntries] = useState<Entry[] | null>(null)
   const [value, setValue] = useState('')
   const [saving, setSaving] = useState(false)
@@ -54,7 +56,7 @@ export default function BodyWeightCard({ athleteId }: { athleteId: string }) {
     setError(null)
     const { error: e } = await createClient()
       .from('body_weights')
-      .upsert({ athlete_id: athleteId, measured_on: localDate(), weight_lb: w }, { onConflict: 'athlete_id,measured_on' })
+      .upsert({ athlete_id: athleteId, measured_on: day, weight_lb: w }, { onConflict: 'athlete_id,measured_on' })
     setSaving(false)
     if (e) return setError(e.message)
     setValue('')
@@ -88,7 +90,7 @@ export default function BodyWeightCard({ athleteId }: { athleteId: string }) {
           inputMode="decimal"
           value={value}
           onChange={(e) => setValue(e.target.value.replace(/[^0-9.]/g, ''))}
-          placeholder="Today’s weight (lb)"
+          placeholder={isToday ? 'Today’s weight (lb)' : `Weight for ${prettyDate(day, { month: 'short', day: 'numeric' })} (lb)`}
           className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-900"
         />
         <button type="button" onClick={save} disabled={saving} className="px-4 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-60 cursor-pointer">

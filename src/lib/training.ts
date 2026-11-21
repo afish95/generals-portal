@@ -153,3 +153,9 @@ export function timeAgo(iso: string) {
 export function firstName(full: string | null | undefined) {
   return (full || '').split(' ')[0] || 'Athlete'
 }
+
+/** Players can log today and this many days back (forgotten check-offs, check-ins, weights). */
+export const LOG_BACK_DAYS = 7
+export function canLogDay(day: string, today = localDate()) {
+  return day <= today && day >= addDays(today, -LOG_BACK_DAYS)
+}

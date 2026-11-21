@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Check, ChevronDown, Crosshair, FileDown, Pencil, Dumbbell, ExternalLink, GraduationCap, MapPin, Play, Target, Trophy, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
-import { itemLabel, localDate, phaseLabel, prettyDate, type Exercise, type Group, type Workout, type WorkoutItem } from '@/lib/training'
+import { canLogDay, itemLabel, localDate, phaseLabel, prettyDate, type Exercise, type Group, type Workout, type WorkoutItem } from '@/lib/training'
 import { withPointsDelta } from '@/lib/pointsDelta'
 import { PopCircle, buzz } from '@/components/points/PointBurst'
 import PracticePlanView from '@/components/practice/PracticePlanView'
@@ -50,8 +50,8 @@ export default function DayPlan({
 }) {
   const day = date ?? localDate()
   const today = localDate()
-  // Players check items off for today only; other days show what was done.
-  const interactive = !isCoach && day === today
+  // Players check items off for today and the past week (to catch up on forgotten items); older days are read-only.
+  const interactive = !isCoach && canLogDay(day, today)
 
   const [events, setEvents] = useState<Event[]>([])
   const [workouts, setWorkouts] = useState<Workout[]>([])
@@ -406,8 +406,10 @@ export default function DayPlan({
           )}
         </li>
       </ul>
-      {!interactive && !isCoach && day !== today && (
-        <p className="px-5 py-3 text-[10px] font-semibold text-slate-400">{day < today ? 'Past day: showing what you completed.' : 'Upcoming: you can check items off on the day.'}</p>
+      {!isCoach && day !== today && (
+        <p className="px-5 py-3 text-[10px] font-semibold text-slate-400">
+          {interactive ? 'Past day: check off anything you forgot to log.' : day < today ? 'More than a week ago: showing what you completed.' : 'Upcoming: you can check items off on the day.'}
+        </p>
       )}
     </section>
   )
