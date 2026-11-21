@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase'
 import { localDate } from '@/lib/training'
 import { readinessMeta, type Checkin } from '@/lib/wellness'
 import ReadinessRing from './ReadinessRing'
+import { withPointsDelta } from '@/lib/pointsDelta'
+import { PointBubble, buzz } from '@/components/points/PointBurst'
 
 const SCALES = [
   { key: 'sleep_quality', label: 'Sleep', low: 'Rough', high: 'Great' },
@@ -20,6 +22,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false 
   const [hours, setHours] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [burst, setBurst] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -55,25 +58,34 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false 
     }
     setSaving(true)
     setError(null)
-    const { data, error: e } = await createClient()
-      .from('daily_checkins')
-      .upsert(
-        {
-          athlete_id: athleteId,
-          check_date: localDate(),
-          sleep_quality: form.sleep_quality,
-          soreness: form.soreness,
-          stress: form.stress,
-          sleep_hours: Number.isFinite(h) ? h : null,
-        },
-        { onConflict: 'athlete_id,check_date' }
-      )
-      .select('*')
-      .single()
+    let result: { data: unknown; error: { message: string } | null } = { data: null, error: null }
+    const gained = await withPointsDelta(athleteId, localDate(), async () => {
+      result = await createClient()
+        .from('daily_checkins')
+        .upsert(
+          {
+            athlete_id: athleteId,
+            check_date: localDate(),
+            sleep_quality: form.sleep_quality,
+            soreness: form.soreness,
+            stress: form.stress,
+            sleep_hours: h,
+          },
+          { onConflict: 'athlete_id,check_date' }
+        )
+        .select('*')
+        .single()
+    })
+    const { data, error: e } = result
     setSaving(false)
     if (e || !data) {
       setError(e?.message || 'Could not save')
       return
+    }
+    if (gained > 0) {
+      buzz()
+      setBurst(gained)
+      setTimeout(() => setBurst(0), 1400)
     }
     setToday(data as Checkin)
     setEditing(false)
@@ -94,7 +106,10 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false 
 
       {!showForm && today && (
         <div className="flex items-center gap-4">
-          <ReadinessRing score={today.readiness} color={meta.ring} />
+          <span key={burst > 0 ? 'pop' : 'still'} className={`relative inline-flex ${burst > 0 ? 'animate-gen-pop' : ''}`}>
+            <ReadinessRing score={today.readiness} color={meta.ring} />
+            <PointBubble amount={burst} />
+          </span>
           <div className="min-w-0">
             <h2 className="text-base font-extrabold text-slate-900">{meta.headline}</h2>
             <p className="text-xs text-slate-500 mt-0.5">

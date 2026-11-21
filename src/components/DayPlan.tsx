@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Check, ChevronDown, Dumbbell, ExternalLink, MapPin, Target, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { itemLabel, localDate, phaseLabel, type Exercise, type Workout, type WorkoutItem } from '@/lib/training'
+import { withPointsDelta } from '@/lib/pointsDelta'
+import { PopCircle, buzz } from '@/components/points/PointBurst'
 
 const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id6445937141'
 
@@ -21,7 +23,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
   const [checks, setChecks] = useState<Set<string>>(new Set())
   const [liftDone, setLiftDone] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
-  const [pop, setPop] = useState<string | null>(null)
+  const [pop, setPop] = useState<{ key: string; amount: number } | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -65,11 +67,14 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
     }
   }, [athleteId, refreshKey])
 
-  const celebrate = (key: string) => {
-    setPop(key)
-    if ('vibrate' in navigator) navigator.vibrate?.(40)
-    setTimeout(() => setPop((p) => (p === key ? null : p)), 1300)
+  // Plays the "+N point" animation only when the check-off actually earned points.
+  const celebrate = (key: string, amount: number) => {
+    buzz()
+    if (amount <= 0) return
+    setPop({ key, amount })
+    setTimeout(() => setPop((p) => (p?.key === key ? null : p)), 1300)
   }
+  const popFor = (key: string) => (pop?.key === key ? pop.amount : 0)
 
   // Each check-off saves (or removes) just that one record, then refreshes Today's points.
   const toggleCheck = async (type: 'event' | 'workout', id: number) => {
@@ -85,9 +90,11 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
         return n
       })
     } else {
-      await supabase.from('plan_checks').insert({ athlete_id: athleteId, check_date: today, item_type: type, item_id: id })
+      const gained = await withPointsDelta(athleteId, today, () =>
+        supabase.from('plan_checks').insert({ athlete_id: athleteId, check_date: today, item_type: type, item_id: id }).then((r) => r)
+      )
       setChecks((c) => new Set(c).add(key))
-      celebrate(key)
+      celebrate(key, gained)
     }
     setBusy(null)
     onChange?.()
@@ -100,9 +107,11 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
       await supabase.from('habit_logs').delete().eq('athlete_id', athleteId).eq('log_date', today).eq('habit', 'lift')
       setLiftDone(false)
     } else {
-      await supabase.from('habit_logs').upsert({ athlete_id: athleteId, log_date: today, habit: 'lift', status: 'done' }, { onConflict: 'athlete_id,log_date,habit' })
+      const gained = await withPointsDelta(athleteId, today, () =>
+        supabase.from('habit_logs').upsert({ athlete_id: athleteId, log_date: today, habit: 'lift', status: 'done' }, { onConflict: 'athlete_id,log_date,habit' }).then((r) => r)
+      )
       setLiftDone(true)
-      celebrate('lift')
+      celebrate('lift', gained)
     }
     setBusy(null)
     onChange?.()
@@ -133,7 +142,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
                 onClick={() => toggle(k)}
                 checked={checks.has(`event:${e.id}`)}
                 busy={busy === `event:${e.id}`}
-                popping={pop === `event:${e.id}`}
+                popping={popFor(`event:${e.id}`)}
                 onCheck={() => toggleCheck('event', e.id)}
               />
               {open === k && (
@@ -169,7 +178,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
                 onClick={() => toggle(k)}
                 checked={checks.has(`workout:${w.id}`) || (total > 0 && done >= total)}
                 busy={busy === `workout:${w.id}`}
-                popping={pop === `workout:${w.id}`}
+                popping={popFor(`workout:${w.id}`)}
                 onCheck={() => toggleCheck('workout', w.id)}
               />
               {open === k && (
@@ -205,7 +214,7 @@ export default function DayPlan({ athleteId, onChange, refreshKey = 0 }: { athle
             onClick={() => toggle('driveline')}
             checked={liftDone}
             busy={busy === 'lift'}
-            popping={pop === 'lift'}
+            popping={popFor('lift')}
             onCheck={toggleLift}
           />
           {open === 'driveline' && (
@@ -235,7 +244,7 @@ function Row({
   checked,
   busy,
   onCheck,
-  popping = false,
+  popping = 0,
 }: {
   icon: React.ReactNode
   tone: string
@@ -246,7 +255,7 @@ function Row({
   checked: boolean
   busy: boolean
   onCheck: () => void
-  popping?: boolean
+  popping?: number
 }) {
   return (
     <div className="flex items-center gap-1 pr-2">
@@ -266,21 +275,15 @@ function Row({
         aria-pressed={checked}
         className={`shrink-0 w-[4.5rem] flex flex-col items-center gap-1 py-2 cursor-pointer ${busy ? 'opacity-60' : ''}`}
       >
-        <span className="relative">
-          <span
-            key={popping ? 'pop' : checked ? 'on' : 'off'}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition active:scale-90 ${
-              checked ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30 animate-gen-pop' : 'bg-white border-[2.5px] border-slate-300 text-slate-300'
-            }`}
-          >
-            {popping ? <span className="text-sm font-black leading-none">+1</span> : <Check className="w-5 h-5" strokeWidth={3} />}
+        {checked ? (
+          <PopCircle amount={popping}>
+            <Check className="w-5 h-5" strokeWidth={3} />
+          </PopCircle>
+        ) : (
+          <span className="w-10 h-10 rounded-full flex items-center justify-center bg-white border-[2.5px] border-slate-300 text-slate-300 transition active:scale-90">
+            <Check className="w-5 h-5" strokeWidth={3} />
           </span>
-          {popping && (
-            <span className="pointer-events-none absolute left-1/2 -top-2 whitespace-nowrap rounded-full bg-amber-400 text-white text-[10px] font-black px-2 py-0.5 shadow animate-gen-float">
-              +1 point
-            </span>
-          )}
-        </span>
+        )}
         <span className={`text-[9px] font-extrabold uppercase tracking-wide leading-none ${checked ? 'text-emerald-600' : 'text-slate-400'}`}>
           {checked ? 'Complete' : 'Mark complete'}
         </span>
