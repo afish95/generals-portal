@@ -28,6 +28,73 @@ export async function POST(req: Request) {
   }
   const action = String(body.action || '')
 
+  // Bulk roster import: add people (no login) and update existing ones in one go.
+  if (action === 'bulk') {
+    const creates = Array.isArray(body.creates) ? (body.creates as Record<string, unknown>[]).slice(0, 300) : []
+    const updates = Array.isArray(body.updates) ? (body.updates as Record<string, unknown>[]).slice(0, 500) : []
+    const created: Record<string, string> = {}
+    const errors: string[] = []
+    const cleanSize = (v: unknown) => (SIZES.includes(String(v || '').toUpperCase()) ? String(v).toUpperCase() : null)
+    const cleanGrad = (v: unknown) => {
+      const n = Number(v)
+      return Number.isInteger(n) && n > 2000 && n < 2100 ? n : null
+    }
+    const { data: existing } = await admin.from('profiles').select('username')
+    const taken = new Set((existing || []).map((r) => r.username as string))
+
+    for (const c of creates) {
+      const full_name = String(c.full_name || '').trim().slice(0, 80)
+      if (!full_name) continue
+      const role = c.role === 'coach' ? 'coach' : 'player'
+      let base = cleanUsername(String(c.username || '')) || cleanUsername(full_name.replace(/\s+/g, '.'))
+      if (base.length < 3) base = `${base}user`
+      let username = base
+      for (let i = 2; taken.has(username); i++) username = `${base}${i}`
+      taken.add(username)
+      const { data: u, error: ue } = await admin.auth.admin.createUser({ email: `${username}@${EMAIL_DOMAIN}`, email_confirm: true })
+      if (ue || !u.user) {
+        errors.push(`${full_name}: ${ue?.message || 'could not create'}`)
+        continue
+      }
+      const { error: pe } = await admin.from('profiles').insert({
+        id: u.user.id,
+        username,
+        full_name,
+        role,
+        position_group: role === 'coach' ? 'coach' : POSITIONS.includes(String(c.position_group)) ? String(c.position_group) : 'two_way',
+        grad_year: role === 'coach' ? null : cleanGrad(c.grad_year),
+        is_active: true,
+        has_login: false,
+        contact_email: String(c.contact_email || '').trim().toLowerCase().slice(0, 120) || null,
+        top_size: cleanSize(c.top_size),
+        bottom_size: cleanSize(c.bottom_size),
+      })
+      if (pe) {
+        await admin.auth.admin.deleteUser(u.user.id)
+        errors.push(`${full_name}: ${pe.message}`)
+        continue
+      }
+      created[String(c.key ?? username)] = u.user.id
+    }
+
+    for (const u of updates) {
+      const id = String(u.id || '')
+      if (!id) continue
+      const patch: Record<string, unknown> = {}
+      if (typeof u.full_name === 'string' && u.full_name.trim()) patch.full_name = u.full_name.trim().slice(0, 80)
+      if ('grad_year' in u) patch.grad_year = cleanGrad(u.grad_year)
+      if (POSITIONS.includes(String(u.position_group))) patch.position_group = String(u.position_group)
+      if ('contact_email' in u) patch.contact_email = String(u.contact_email || '').trim().toLowerCase().slice(0, 120) || null
+      if ('top_size' in u) patch.top_size = cleanSize(u.top_size)
+      if ('bottom_size' in u) patch.bottom_size = cleanSize(u.bottom_size)
+      if (typeof u.is_active === 'boolean' && id !== auth.userId) patch.is_active = u.is_active
+      if (!Object.keys(patch).length) continue
+      const { error: e } = await admin.from('profiles').update(patch).eq('id', id).in('role', ['player', 'coach'])
+      if (e) errors.push(`${String(u.full_name || id)}: ${e.message}`)
+    }
+    return Response.json({ ok: true, created, errors })
+  }
+
   if (action === 'create') {
     const full_name = String(body.full_name || '').trim().slice(0, 80)
     const username = cleanUsername(String(body.username || ''))

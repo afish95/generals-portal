@@ -33,14 +33,14 @@ export default function CoachOfficePage() {
   const [reload, setReload] = useState(0)
   const refresh = useCallback(() => setReload((n) => n + 1), [])
   const [openEventId, setOpenEventId] = useState<number | null>(null)
-  const [rosterSub, setRosterSub] = useState<'players' | 'coaches' | 'groups' | 'sandbox'>('players')
+  const [rosterSub, setRosterSub] = useState<'players' | 'coaches' | 'groups' | 'sandbox' | 'transfer'>('players')
   useSubnav(TABS as unknown as { key: string; label: string }[], tab, (k) => setTab(k as TabKey))
 
   // Deep links, e.g. /office?tab=practices&event=12 from the Day plan
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
     const t = q.get('tab')
-    if (t === 'groups' || t === 'sandbox' || t === 'coaches') {
+    if (t === 'groups' || t === 'sandbox' || t === 'coaches' || t === 'transfer') {
       setTab('roster')
       setRosterSub(t)
     } else if (t && TABS.some((x) => x.key === t)) setTab(t as TabKey)
