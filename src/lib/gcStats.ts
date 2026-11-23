@@ -2,7 +2,7 @@
 
 export type GcType = 'batting' | 'pitching' | 'fielding'
 export type GcStats = Record<string, number | string | null>
-export type SeasonType = 'Spring' | 'Summer' | 'JV' | 'Fall'
+export type SeasonType = 'Spring' | 'Summer' | 'JV'
 export type GcLine = { id: number; player_id: string | null; player_name: string; season_year: number; season_type: SeasonType; stat_type: GcType; stats: GcStats }
 
 export const COLS = {

@@ -233,7 +233,8 @@ export function parseGameChangerFull(text: string): { rows: GcRow[]; warnings: s
 // Program history file: one row per player per season, with columns
 // Season ("2025 Summer"), Year, Last, First, Batting-…, Pitching-…, Fielding-…, Image URL.
 // ---------------------------------------------------------------------------
-export type SeasonType = 'Spring' | 'Summer' | 'JV' | 'Fall'
+/** Teams that keep stats: Spring Varsity ('Spring'), Spring JV ('JV') and Summer */
+export type SeasonType = 'Spring' | 'Summer' | 'JV'
 export type HistoryRow = GcRow & { season_year: number; season_type: SeasonType }
 
 export function isProgramHistory(text: string) {
@@ -259,7 +260,7 @@ export function parseProgramHistory(text: string): { rows: HistoryRow[]; warning
     return t
   }
   const PREFIX: [string, GcSection][] = [['Batting-', 'batting'], ['Pitching-', 'pitching'], ['Fielding-', 'fielding']]
-  const types: Record<string, SeasonType> = { spring: 'Spring', summer: 'Summer', jv: 'JV', fall: 'Fall' }
+  const types: Record<string, SeasonType> = { spring: 'Spring', summer: 'Summer', jv: 'JV' }
   const seen = new Set<string>()
   const rows: HistoryRow[] = []
   for (const r of grid.slice(1)) {
@@ -268,7 +269,7 @@ export function parseProgramHistory(text: string): { rows: HistoryRow[]; warning
     const year = Number(r[iYear]) || Number(season.slice(0, 4))
     const type = types[(season.split(/\s+/)[1] || 'spring').toLowerCase()]
     if (!year || !type) {
-      warnings.push(`Skipped a row with season "${season}".`)
+      warnings.push(`Skipped "${season}" (only Spring Varsity, Spring JV and Summer are kept).`)
       continue
     }
     const name = `${(r[iFirst] || '').trim()} ${(r[iLast] || '').trim()}`.trim()

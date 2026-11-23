@@ -127,10 +127,9 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
         <label className="flex items-center justify-between gap-3 text-xs font-extrabold text-slate-700">
           Team
           <select value={seasonType} onChange={(e) => setSeasonType(e.target.value as SeasonType)} className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold">
-            <option value="Spring">Spring (Varsity)</option>
+            <option value="Spring">Spring Varsity</option>
+            <option value="JV">Spring JV</option>
             <option value="Summer">Summer</option>
-            <option value="JV">JV</option>
-            <option value="Fall">Fall</option>
           </select>
         </label>
         <label className="flex items-center justify-between gap-3 text-xs font-extrabold text-slate-700">
@@ -160,7 +159,7 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
         <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Program history file</div>
           <p className="text-xs font-semibold text-slate-600">
-            {historySeasons.length} seasons, {new Set(history.map((r) => r.player_name)).size} players. Spring, Summer and JV are kept separate.
+            {historySeasons.length} seasons, {new Set(history.map((r) => r.player_name)).size} players. Spring Varsity, Spring JV and Summer are kept separate.
           </p>
           <div className="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 divide-y divide-slate-100">
             {historySeasons.map(([label, list]) => (

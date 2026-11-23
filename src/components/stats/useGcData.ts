@@ -39,5 +39,5 @@ export function useGcData() {
   return { lines, ea }
 }
 
-export const TYPE_ORDER: SeasonType[] = ['Spring', 'Summer', 'JV', 'Fall']
-export const TYPE_LABEL: Record<SeasonType, string> = { Spring: 'Spring (Varsity)', Summer: 'Summer', JV: 'JV', Fall: 'Fall' }
+export const TYPE_ORDER: SeasonType[] = ['Spring', 'JV', 'Summer']
+export const TYPE_LABEL: Record<SeasonType, string> = { Spring: 'Spring Varsity', JV: 'Spring JV', Summer: 'Summer' }
