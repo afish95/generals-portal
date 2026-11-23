@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react'
 import { Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
-import { parseGameChanger, type ImportRow } from '@/lib/gcImport'
+import { parseGameChangerFull, type GcRow } from '@/lib/gcImport'
 import type { Profile } from '@/lib/training'
 
 export default function GameStatsImport({ players }: { players: Profile[] }) {
   const [season, setSeason] = useState(String(new Date().getFullYear()))
-  const [rows, setRows] = useState<ImportRow[]>([])
+  const [rows, setRows] = useState<GcRow[]>([])
   const [warnings, setWarnings] = useState<string[]>([])
   const [fileName, setFileName] = useState('')
   const [busy, setBusy] = useState(false)
@@ -37,7 +37,7 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
     if (!file) return
     setFileName(file.name)
     const text = await file.text()
-    const res = parseGameChanger(text)
+    const res = parseGameChangerFull(text)
     setRows(res.rows)
     setWarnings(res.warnings)
   }
@@ -46,13 +46,12 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
     const yr = Number(season)
     if (!Number.isInteger(yr) || yr < 1990 || yr > 2100) return setMessage('Enter a season year like 2027.')
     if (!rows.length) return
-    if (!window.confirm(`Import ${rows.length} rows into the ${yr} season? Any earlier GameChanger import for ${yr} will be replaced.`)) return
+    if (!window.confirm(`Import ${rows.length} stat lines into the ${yr} season? Any earlier GameChanger import for ${yr} will be replaced.`)) return
     setBusy(true)
-    const payload = rows.map((r) => ({ ...r, player_id: matched(r.player_name) ?? null }))
-    const { data, error } = await createClient().rpc('import_game_stats', { p_season: yr, p_rows: payload })
+    const { data, error } = await createClient().rpc('import_gc_season', { p_season: yr, p_rows: rows })
     setBusy(false)
     if (error) return setMessage(error.message)
-    setMessage(`Imported ${data} rows into ${yr}. See Stats → Game.`)
+    setMessage(`Imported ${data} stat lines into ${yr}. See Stats → Game stats.`)
     setRows([])
     setFileName('')
   }
@@ -63,8 +62,9 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
     setMessage(error ? error.message : 'Demo game stats deleted.')
   }
 
-  const batting = rows.filter((r) => r.stat_category === 'batting')
-  const pitching = rows.filter((r) => r.stat_category === 'pitching')
+  const batting = rows.filter((r) => r.stat_type === 'batting')
+  const pitching = rows.filter((r) => r.stat_type === 'pitching')
+  const fielding = rows.filter((r) => r.stat_type === 'fielding')
   const unmatched = [...new Set(rows.map((r) => r.player_name).filter((n) => !matched(n)))]
 
   return (
@@ -102,24 +102,28 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
       {rows.length > 0 && (
         <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Preview</div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-2xl bg-slate-50 p-3">
-              <div className="text-2xl font-black text-slate-900">{batting.length}</div>
-              <div className="text-[11px] font-bold text-slate-500">batting lines</div>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-3">
-              <div className="text-2xl font-black text-slate-900">{pitching.length}</div>
-              <div className="text-[11px] font-bold text-slate-500">pitching lines</div>
-            </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { n: batting.length, label: 'hitters' },
+              { n: pitching.length, label: 'pitchers' },
+              { n: fielding.length, label: 'fielders' },
+            ].map((x) => (
+              <div key={x.label} className="rounded-2xl bg-slate-50 p-3">
+                <div className="text-2xl font-black text-slate-900">{x.n}</div>
+                <div className="text-[11px] font-bold text-slate-500">{x.label}</div>
+              </div>
+            ))}
           </div>
           <div className="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 divide-y divide-slate-100">
             {rows.slice(0, 60).map((r, i) => (
               <div key={i} className="px-3 py-2 text-xs flex justify-between gap-2">
                 <span className={`font-bold ${matched(r.player_name) ? 'text-slate-800' : 'text-amber-700'}`}>{r.player_name}</span>
                 <span className="text-slate-500 tabular-nums">
-                  {r.stat_category === 'batting'
-                    ? `${r.hits ?? 0}-${r.at_bats ?? 0}, ${r.home_runs ?? 0} HR, ${r.rbis ?? 0} RBI`
-                    : `${r.innings_pitched} IP, ${r.strikeouts ?? 0} K, ${r.earned_runs ?? 0} ER`}
+                  {r.stat_type === 'batting'
+                    ? `${r.stats.H ?? 0}-${r.stats.AB ?? 0}, ${r.stats.AVG ?? '–'} AVG, ${r.stats.RBI ?? 0} RBI`
+                    : r.stat_type === 'pitching'
+                      ? `${r.stats.IP ?? 0} IP, ${r.stats.SO ?? 0} K, ${r.stats.ERA ?? '–'} ERA`
+                      : `${r.stats.Total ?? 0} inn, ${r.stats.E ?? 0} E`}
                 </span>
               </div>
             ))}

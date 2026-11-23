@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useProfile, useSubnav } from '@/components/shell/AppShell'
 import { PageTitle } from '@/components/ui'
 import TeamPrFeed from '@/components/TeamPrFeed'
-import GameStats from '@/components/stats/GameStats'
+import GameStatsHub from '@/components/stats/GameStatsHub'
 import WeeklyRecap from '@/components/stats/WeeklyRecap'
 import PositionLeaderboard from '@/components/stats/PositionLeaderboard'
 import Progressions from '@/components/stats/Progressions'
@@ -85,7 +85,7 @@ export default function StatsPage() {
         ))}
       </div>
       {mode === 'game' ? (
-        <GameStats myId={profile.id} />
+        <GameStatsHub myId={profile.id} isCoach={isCoach} />
       ) : (
       <>
       <div className={`flex gap-2 overflow-x-auto pb-1 ${isCoach ? 'lg:hidden' : ''}`}>

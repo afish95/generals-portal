@@ -160,3 +160,71 @@ export function parseGameChanger(text: string): { rows: ImportRow[]; warnings: s
   if (!rows.length) warnings.push('No player rows found.')
   return { rows, warnings }
 }
+
+// ---------------------------------------------------------------------------
+// Full season import: every GameChanger column, kept per section.
+// Stored in gc_season_stats.stats as { "AVG": 0.31, "QAB%": 48.05, ... } (numbers; blanks/N/A become null).
+// ---------------------------------------------------------------------------
+export type GcSection = 'batting' | 'pitching' | 'fielding'
+export type GcRow = { player_name: string; stat_type: GcSection; stats: Record<string, number | string | null> }
+
+export function parseGameChangerFull(text: string): { rows: GcRow[]; warnings: string[] } {
+  const grid = parseCsv(text).filter((r) => r.some((c) => c !== ''))
+  const warnings: string[] = []
+  const headerIdx = grid.findIndex((r) => {
+    const l = r.map((c) => c.toLowerCase())
+    return l.includes('last') && l.includes('first')
+  })
+  if (headerIdx < 0) return { rows: [], warnings: ['Couldn’t find the header row (looking for First and Last columns).'] }
+  const header = grid[headerIdx]
+  const sectionRow = headerIdx > 0 ? grid[headerIdx - 1].map((c) => c.toLowerCase()) : []
+  if (!sectionRow.some((c) => /batting|pitching|fielding/.test(c))) {
+    return { rows: [], warnings: ['This doesn’t look like a GameChanger season export (no Batting / Pitching / Fielding row above the headers).'] }
+  }
+  const sections: (GcSection | null)[] = []
+  let current: GcSection | null = null
+  header.forEach((_, i) => {
+    const s = sectionRow[i] || ''
+    if (s.includes('batting')) current = 'batting'
+    else if (s.includes('pitching')) current = 'pitching'
+    else if (s.includes('fielding') || s.includes('catching')) current = 'fielding'
+    sections.push(current)
+  })
+  const iNum = header.findIndex((h) => h.toLowerCase() === 'number')
+  const iFirst = header.findIndex((h) => h.toLowerCase() === 'first')
+  const iLast = header.findIndex((h) => h.toLowerCase() === 'last')
+
+  const value = (v: string | undefined): number | string | null => {
+    if (v == null) return null
+    const t = v.trim()
+    if (!t || t === '-' || t === '—' || t.toUpperCase() === 'N/A') return null
+    if (/^-?\d*\.?\d+$/.test(t)) return Number(t)
+    return t // e.g. "18-18" (SB-ATT)
+  }
+  const seen = new Set<string>()
+  const rows: GcRow[] = []
+  for (const r of grid.slice(headerIdx + 1)) {
+    const first = r[iFirst] || ''
+    const last = r[iLast] || ''
+    if (/^(totals?|glossary)$/i.test((r[0] || '').trim()) || (!first && !last)) continue
+    const name = [first, last].filter(Boolean).join(' ').trim()
+    // GameChanger sometimes lists a player twice (a second line without a number); keep the first.
+    if (seen.has(name.toLowerCase())) {
+      warnings.push(`${name} appears twice; kept the first line.`)
+      continue
+    }
+    seen.add(name.toLowerCase())
+    const bySection: Record<GcSection, Record<string, number | string | null>> = { batting: {}, pitching: {}, fielding: {} }
+    header.forEach((h, i) => {
+      const sec = sections[i]
+      if (sec && h) bySection[sec][h] = value(r[i])
+    })
+    const number = iNum >= 0 ? value(r[iNum]) : null
+    const n = (o: Record<string, number | string | null>, k: string) => (typeof o[k] === 'number' ? (o[k] as number) : 0)
+    if (n(bySection.batting, 'PA') > 0) rows.push({ player_name: name, stat_type: 'batting', stats: { number, ...bySection.batting } })
+    if (n(bySection.pitching, 'BF') > 0 || n(bySection.pitching, 'IP') > 0) rows.push({ player_name: name, stat_type: 'pitching', stats: { number, ...bySection.pitching } })
+    if (n(bySection.fielding, 'TC') > 0 || n(bySection.fielding, 'Total') > 0) rows.push({ player_name: name, stat_type: 'fielding', stats: { number, ...bySection.fielding } })
+  }
+  if (!rows.length) warnings.push('No player rows found.')
+  return { rows, warnings }
+}
