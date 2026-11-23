@@ -28,6 +28,8 @@ export default function ChatThread({
   readOnly = false,
   direct = false,
   members,
+  embedded = false,
+  headerRight,
 }: {
   conversationId: number
   title: string
@@ -42,6 +44,9 @@ export default function ChatThread({
   direct?: boolean
   /** For 1:1 chats: the two people in it (coaches reading for safeguarding don't count as "Seen") */
   members?: string[]
+  /** Desktop Messages: sits in the right-hand pane instead of covering the screen */
+  embedded?: boolean
+  headerRight?: React.ReactNode
 }) {
   const [messages, setMessages] = useState<Msg[]>([])
   const [reads, setReads] = useState<Read[]>([])
@@ -117,21 +122,24 @@ export default function ChatThread({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#f3f5f9] flex flex-col lg:left-[220px]">
-      <div className="bg-gradient-to-b from-[#1746b8] to-[#1e54d4] text-white shrink-0" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button type="button" onClick={onClose} aria-label="Back" className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center cursor-pointer">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="min-w-0">
+    <div className={embedded ? 'h-full bg-[#f3f5f9] flex flex-col rounded-3xl border border-slate-200 overflow-hidden' : 'fixed inset-0 z-50 bg-[#f3f5f9] flex flex-col lg:left-[220px]'}>
+      <div className="bg-gradient-to-b from-[#1746b8] to-[#1e54d4] text-white shrink-0" style={embedded ? undefined : { paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className={`${embedded ? '' : 'max-w-xl mx-auto'} px-4 py-3 flex items-center gap-3`}>
+          {!embedded && (
+            <button type="button" onClick={onClose} aria-label="Back" className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center cursor-pointer">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div className="min-w-0 flex-1">
             <div className="text-base font-extrabold leading-tight truncate">{title}</div>
             <div className="text-[11px] text-blue-100/90 font-medium truncate">{subtitle}</div>
           </div>
+          {headerRight}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-xl mx-auto px-4 py-4 space-y-2">
+        <div className={`${embedded ? 'max-w-3xl' : 'max-w-xl'} mx-auto px-4 py-4 space-y-2`}>
           {messages.length === 0 && <p className="text-center text-xs font-semibold text-slate-400 py-10">No messages yet. Say hi.</p>}
           {messages.map((m, i) => {
             const mine = m.sender_id === myId
@@ -162,11 +170,17 @@ export default function ChatThread({
           Player view: read-only
         </div>
       ) : (
-      <div className="shrink-0 bg-white border-t border-slate-200" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="max-w-xl mx-auto px-3 py-2.5 flex items-end gap-2">
+      <div className="shrink-0 bg-white border-t border-slate-200" style={embedded ? undefined : { paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className={`${embedded ? 'max-w-3xl' : 'max-w-xl'} mx-auto px-3 py-2.5 flex items-end gap-2`}>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (embedded && e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                send()
+              }
+            }}
             rows={1}
             placeholder="Message"
             className="flex-1 resize-none max-h-32 px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 text-base text-slate-900"

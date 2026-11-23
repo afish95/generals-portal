@@ -20,7 +20,7 @@ export type ViewAs = {
 export type Subnav = { tabs: { key: string; label: string }[]; active: string; onChange: (key: string) => void }
 type ShellContext = { profile: Profile; isCoach: boolean; viewAs: ViewAs; setSubnav: (s: Subnav | null) => void }
 const VIEW_KEY = 'generals.viewAs'
-const PROFILE_COLS = 'id, username, full_name, role, position_group, grad_year, is_active, is_demo'
+const PROFILE_COLS = 'id, username, full_name, role, position_group, grad_year, is_active, is_demo, has_login'
 const ProfileContext = createContext<ShellContext | null>(null)
 
 export function useProfile(): ShellContext {

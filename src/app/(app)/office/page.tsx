@@ -5,20 +5,18 @@ import { createClient } from '@/lib/supabase'
 import { useProfile, useSubnav } from '@/components/shell/AppShell'
 import { EmptyState, PageTitle, Pill } from '@/components/ui'
 import WorkoutsTab from '@/components/office/WorkoutsTab'
-import GroupsTab from '@/components/office/GroupsTab'
-import RosterTab from '@/components/office/RosterTab'
+import RosterArea from '@/components/office/roster/RosterArea'
 import DrillsTab from '@/components/office/DrillsTab'
 import AttendanceTab from '@/components/office/AttendanceTab'
 import ThoughtTab from '@/components/office/ThoughtTab'
 import GameStatsImport from '@/components/office/GameStatsImport'
 import PracticePlansTab from '@/components/office/PracticePlansTab'
-import type { Exercise, Group, Profile } from '@/lib/training'
+import { PROFILE_FIELDS, type Exercise, type Group, type Profile } from '@/lib/training'
 
 const TABS = [
   { key: 'workouts', label: 'Workouts' },
   { key: 'practices', label: 'Practice plans' },
   { key: 'attendance', label: 'Attendance' },
-  { key: 'groups', label: 'Groups' },
   { key: 'roster', label: 'Roster' },
   { key: 'drills', label: 'Drills' },
   { key: 'thought', label: 'Thought of the Week' },
@@ -35,13 +33,17 @@ export default function CoachOfficePage() {
   const [reload, setReload] = useState(0)
   const refresh = useCallback(() => setReload((n) => n + 1), [])
   const [openEventId, setOpenEventId] = useState<number | null>(null)
+  const [rosterSub, setRosterSub] = useState<'players' | 'coaches' | 'groups' | 'sandbox'>('players')
   useSubnav(TABS as unknown as { key: string; label: string }[], tab, (k) => setTab(k as TabKey))
 
   // Deep links, e.g. /office?tab=practices&event=12 from the Day plan
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
     const t = q.get('tab')
-    if (t && TABS.some((x) => x.key === t)) setTab(t as TabKey)
+    if (t === 'groups' || t === 'sandbox' || t === 'coaches') {
+      setTab('roster')
+      setRosterSub(t)
+    } else if (t && TABS.some((x) => x.key === t)) setTab(t as TabKey)
     const ev = Number(q.get('event'))
     if (ev) setOpenEventId(ev)
   }, [])
@@ -52,7 +54,7 @@ export default function CoachOfficePage() {
     let cancelled = false
     Promise.all([
       supabase.from('team_groups').select('*').order('sort_order').order('name'),
-      supabase.from('profiles').select('id, username, full_name, role, position_group, grad_year, is_active, is_demo').eq('role', 'player').order('full_name'),
+      supabase.from('profiles').select(PROFILE_FIELDS).eq('role', 'player').order('full_name'),
       supabase.from('exercises').select('*').order('name'),
     ]).then(([g, p, e]) => {
       if (cancelled) return
@@ -80,8 +82,7 @@ export default function CoachOfficePage() {
       {tab === 'workouts' && <WorkoutsTab groups={groups} exercises={exercises} />}
       {tab === 'practices' && <PracticePlansTab openEventId={openEventId} />}
       {tab === 'attendance' && <AttendanceTab players={players} groups={groups} />}
-      {tab === 'groups' && <GroupsTab groups={groups} players={players} onChanged={refresh} />}
-      {tab === 'roster' && <RosterTab players={players} groups={groups} onChanged={refresh} />}
+      {tab === 'roster' && <RosterArea initial={rosterSub} onChanged={refresh} />}
       {tab === 'drills' && <DrillsTab exercises={exercises} onChanged={refresh} />}
       {tab === 'thought' && <ThoughtTab />}
       {tab === 'gamestats' && <GameStatsImport players={players} />}
