@@ -2,7 +2,8 @@
 
 export type GcType = 'batting' | 'pitching' | 'fielding'
 export type GcStats = Record<string, number | string | null>
-export type GcLine = { id: number; player_id: string | null; player_name: string; season_year: number; stat_type: GcType; stats: GcStats }
+export type SeasonType = 'Spring' | 'Summer' | 'JV' | 'Fall'
+export type GcLine = { id: number; player_id: string | null; player_name: string; season_year: number; season_type: SeasonType; stat_type: GcType; stats: GcStats }
 
 export const COLS = {
   batting: {
@@ -61,9 +62,10 @@ export const ipOuts = (ip: number | null) => (ip == null ? 0 : Math.trunc(ip) * 
 
 /** Enough playing time for rate stats to count on leaderboards */
 export function qualifies(type: GcType, s: GcStats) {
-  if (type === 'batting') return (num(s.PA) ?? 0) >= 20
-  if (type === 'pitching') return ipOuts(num(s.IP)) >= 15
-  return (num(s.TC) ?? 0) >= 10
+  const career = s._career === 1
+  if (type === 'batting') return (num(s.PA) ?? 0) >= (career ? 50 : 20)
+  if (type === 'pitching') return ipOuts(num(s.IP)) >= (career ? 45 : 15)
+  return (num(s.TC) ?? 0) >= (career ? 25 : 10)
 }
 
 const COUNTING = new Set(['GP', 'PA', 'AB', 'H', '2B', '3B', 'HR', 'RBI', 'R', 'BB', 'SO', 'SB', 'QAB', 'HHB', 'XBH', 'TB', '2OUTRBI', 'GS', 'W', 'L', 'SV', '#P', '123INN', '0BBINN', 'TC', 'PO', 'A', 'DP'])
@@ -115,10 +117,13 @@ export const pitcherCalc = {
     const b = ratio(num(s.BB), num(s.BF))
     return k == null || b == null ? null : k - b
   },
+  /** Coach-entered counts win; otherwise use Early/Ahead from the stats file. Career lines use only the BF from seasons that tracked them. */
   ea: (s: GcStats, ea?: EarlyAhead) => {
-    if (!ea || ea.early == null || ea.ahead == null) return null
-    const bf = num(s.BF)
-    return bf ? (100 * (ea.early + ea.ahead)) / bf : null
+    const early = ea?.early ?? num(s.Early)
+    const ahead = ea?.ahead ?? num(s.Ahead)
+    if (early == null || ahead == null) return null
+    const bf = num(s._eaBF) ?? num(s.BF)
+    return bf ? (100 * (early + ahead)) / bf : null
   },
   /** Coach's Pitcher Score = (FPS% + TS% + E+A% + K-BB%) ÷ 2 */
   score: (s: GcStats, ea?: EarlyAhead) => {
@@ -221,3 +226,119 @@ export const SPIDER: Record<'hitter' | 'pitcher', string[]> = {
 }
 export const findMetric = (kind: 'hitter' | 'pitcher', key: string) =>
   (kind === 'hitter' ? HITTER_METRICS : PITCHER_METRICS).flatMap((g) => g.metrics).find((m) => m.key === key)!
+
+// ---------------------------------------------------------------------------
+// All-time (career) lines: add up counting stats across seasons and recompute rates.
+// Rates that can't be rebuilt from counts are averaged, weighted by PA / BF, over seasons that tracked them.
+// ---------------------------------------------------------------------------
+const SUMS: Record<GcType, string[]> = {
+  batting: ['GP', 'PA', 'AB', 'H', '1B', '2B', '3B', 'HR', 'RBI', 'R', 'BB', 'SO', 'K-L', 'HBP', 'SAC', 'SF', 'ROE', 'FC', 'SB', 'CS', 'PIK', 'QAB', 'HHB', 'LOB', '2OUTRBI', 'XBH', 'TB', 'PS', '2S+3', '6+', 'GIDP'],
+  pitching: ['GP', 'GS', 'BF', '#P', 'W', 'L', 'SV', 'SVO', 'BS', 'H', 'R', 'ER', 'BB', 'SO', 'K-L', 'HBP', 'WP', 'BK', 'HR', 'LOO', '123INN', '0BBINN', '<13', 'Early', 'Ahead'],
+  fielding: ['TC', 'A', 'PO', 'E', 'DP', 'TP', 'PB', 'SB', 'CS', 'PIK', 'CI', 'INN', 'P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SF', 'Total'],
+}
+const WEIGHTED: Record<GcType, string[]> = {
+  batting: ['LD%', 'FB%', 'GB%', 'BABIP', 'BA/RISP'],
+  pitching: ['S%', 'FPS%', '<3%', 'FPSO%', 'SM%', 'WEAK%', 'HHB%', 'LD%', 'FB%', 'GB%', 'BABIP', 'BA/RISP', 'FIP'],
+  fielding: [],
+}
+const INNING_KEYS = new Set(['INN', 'P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SF', 'Total'])
+const outsToIp = (outs: number) => Number(`${Math.floor(outs / 3)}.${outs % 3}`)
+const r3 = (x: number) => Math.round(x * 1000) / 1000
+const r2 = (x: number) => Math.round(x * 100) / 100
+
+export function careerLines(lines: GcLine[]): GcLine[] {
+  const by = new Map<string, GcLine[]>()
+  for (const l of lines) {
+    const k = `${l.stat_type}|${l.player_name.toLowerCase()}`
+    by.set(k, [...(by.get(k) || []), l])
+  }
+  const out: GcLine[] = []
+  let id = -1
+  for (const group of by.values()) {
+    const type = group[0].stat_type
+    const s: GcStats = { _career: 1, seasons: group.length }
+    const add = (k: string, v: number | null) => {
+      if (v == null) return
+      s[k] = (num(s[k]) ?? 0) + v
+    }
+    for (const g of group) {
+      for (const k of SUMS[type]) add(k, INNING_KEYS.has(k) ? ipOuts(num(g.stats[k])) : num(g.stats[k]))
+      if (type === 'pitching') {
+        add('_outs', ipOuts(num(g.stats.IP)))
+        if (num(g.stats.Early) != null && num(g.stats.Ahead) != null) add('_eaBF', num(g.stats.BF))
+      }
+      const w = num(type === 'batting' ? g.stats.PA : g.stats.BF) ?? 0
+      for (const k of WEIGHTED[type]) {
+        const v = num(g.stats[k])
+        if (v == null || !w) continue
+        add(`_w${k}`, v * w)
+        add(`_n${k}`, w)
+      }
+      for (const k of ['QAB', 'PS', 'HHB', '2S+3', '6+']) if (num(g.stats[k]) != null) add(`_pa${k}`, num(g.stats.PA))
+      if (g.stats.photo) s.photo = g.stats.photo
+    }
+    for (const k of WEIGHTED[type]) {
+      const n = num(s[`_n${k}`])
+      if (n) s[k] = r2((num(s[`_w${k}`]) ?? 0) / n)
+    }
+    const n = (k: string) => num(s[k]) ?? 0
+    if (type === 'batting') {
+      if (s.TB == null) s.TB = n('1B') + 2 * n('2B') + 3 * n('3B') + 4 * n('HR')
+      if (n('AB')) {
+        s.AVG = r3(n('H') / n('AB'))
+        s.SLG = r3(n('TB') / n('AB'))
+        s['C%'] = r2((100 * (n('AB') - n('SO'))) / n('AB'))
+      }
+      const obpDen = n('AB') + n('BB') + n('HBP') + n('SF')
+      if (obpDen) s.OBP = r3((n('H') + n('BB') + n('HBP')) / obpDen)
+      if (s.OBP != null && s.SLG != null) s.OPS = r3(n('OBP') + n('SLG'))
+      if (n('_paQAB')) s['QAB%'] = r2((100 * n('QAB')) / n('_paQAB'))
+      if (n('_paPS')) s['PS/PA'] = r3(n('PS') / n('_paPS'))
+      if (n('_pa2S+3')) s['2S+3%'] = r2((100 * n('2S+3')) / n('_pa2S+3'))
+      if (n('_pa6+')) s['6+%'] = r2((100 * n('6+')) / n('_pa6+'))
+      if (n('SO')) s['BB/K'] = r3(n('BB') / n('SO'))
+      if (n('SB') + n('CS')) s['SB%'] = r2((100 * n('SB')) / (n('SB') + n('CS')))
+    } else if (type === 'pitching') {
+      const outs = n('_outs')
+      const ip = outs / 3
+      s.IP = outsToIp(outs)
+      if (ip) {
+        s.ERA = r3((7 * n('ER')) / ip)
+        s.WHIP = r3((n('BB') + n('H')) / ip)
+        s['BB/INN'] = r3(n('BB') / ip)
+        if (n('#P')) s['P/IP'] = Math.round((10 * n('#P')) / ip) / 10
+      }
+      if (n('BF')) {
+        s['K/BF'] = r3(n('SO') / n('BF'))
+        if (n('#P')) s['P/BF'] = r3(n('#P') / n('BF'))
+        const ab = n('BF') - n('BB') - n('HBP')
+        if (ab > 0) s.BAA = r3(n('H') / ab)
+      }
+      if (n('BB')) s['K/BB'] = r3(n('SO') / n('BB'))
+    } else {
+      for (const k of SUMS.fielding) if (INNING_KEYS.has(k) && s[k] != null) s[k] = outsToIp(n(k))
+      if (n('TC')) s.FPCT = r3((n('PO') + n('A')) / n('TC'))
+    }
+    for (const k of Object.keys(s)) if (k.startsWith('_w') || k.startsWith('_n') || k.startsWith('_pa')) delete s[k]
+    const first = group.find((g) => g.player_id) ?? group[0]
+    out.push({ id: id--, player_id: first.player_id, player_name: group[0].player_name, season_year: 0, season_type: group[0].season_type, stat_type: type, stats: s })
+  }
+  return out
+}
+
+/** The lines for a filter: one season, or all-time career lines for that season type. */
+export function linesFor(all: GcLine[], type: SeasonType, period: 'all' | number) {
+  const same = all.filter((l) => l.season_type === type)
+  return period === 'all' ? careerLines(same) : same.filter((l) => l.season_year === period)
+}
+
+/** Put coach-entered Early/Ahead counts into the pitching lines (they override the file's numbers). */
+export function applyEarlyAhead(lines: GcLine[], ea: (EarlyAhead & { season_year: number; season_type: SeasonType })[]) {
+  if (!ea.length) return lines
+  return lines.map((l) => {
+    if (l.stat_type !== 'pitching') return l
+    const e = ea.find((x) => x.season_year === l.season_year && x.season_type === l.season_type && x.player_name === l.player_name)
+    if (!e || (e.early == null && e.ahead == null)) return l
+    return { ...l, stats: { ...l.stats, Early: e.early ?? l.stats.Early ?? null, Ahead: e.ahead ?? l.stats.Ahead ?? null } }
+  })
+}

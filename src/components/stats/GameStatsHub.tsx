@@ -1,75 +1,52 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp } from 'lucide-react'
-import { createClient } from '@/lib/supabase'
 import { ordinal } from '@/lib/rank'
-import { COLS, LABELS, LOWER_BETTER, fmt, ipOuts, leaders, num, rankIn, type GcLine, type GcType } from '@/lib/gcStats'
+import { COLS, LABELS, LOWER_BETTER, applyEarlyAhead, fmt, ipOuts, leaders, linesFor, num, rankIn, type GcLine, type GcType, type SeasonType } from '@/lib/gcStats'
+import { useGcData } from './useGcData'
+import SeasonFilter, { type Period } from './SeasonFilter'
 
 /** Game stats from GameChanger: my season (players), team leaders, and the full team table. */
 export default function GameStatsHub({ myId, isCoach }: { myId: string; isCoach: boolean }) {
-  const [seasons, setSeasons] = useState<number[] | null>(null)
-  const [season, setSeason] = useState<number | null>(null)
-  const [lines, setLines] = useState<GcLine[] | null>(null)
+  const { lines: all, ea } = useGcData()
+  const [type, setType] = useState<SeasonType>('Spring')
+  const [period, setPeriod] = useState<Period | null>(null)
 
-  useEffect(() => {
-    createClient()
-      .from('gc_season_stats')
-      .select('season_year')
-      .then(({ data }) => {
-        const s = [...new Set(((data as { season_year: number }[]) || []).map((r) => r.season_year))].sort((a, b) => b - a)
-        setSeasons(s)
-        setSeason((cur) => cur ?? s[0] ?? null)
-      })
-  }, [])
+  const merged = useMemo(() => (all ? applyEarlyAhead(all, ea) : null), [all, ea])
+  const latest = useMemo(() => (merged ? Math.max(0, ...merged.filter((l) => l.season_type === type).map((l) => l.season_year)) : 0), [merged, type])
+  const p: Period = period ?? latest
+  const lines = useMemo(() => (merged ? linesFor(merged, type, p) : null), [merged, type, p])
 
-  useEffect(() => {
-    if (season == null) return
-    let cancelled = false
-    setLines(null)
-    createClient()
-      .from('gc_season_stats')
-      .select('id, player_id, player_name, season_year, stat_type, stats')
-      .eq('season_year', season)
-      .then(({ data }) => {
-        if (!cancelled) setLines((data as GcLine[]) || [])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [season])
-
-  if (seasons === null) return <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />
-  if (seasons.length === 0)
+  if (!merged || !lines) return <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />
+  if (merged.length === 0)
     return (
       <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs text-sm text-slate-600">
-        No game stats yet. {isCoach ? 'Import a GameChanger season export in Coach Office → Game stats.' : 'Your coach will add them after the season.'}
+        No game stats yet. {isCoach ? 'Import a GameChanger export in Coach Office → Game stats.' : 'Your coach will add them after the season.'}
       </section>
     )
 
-  const mine = lines?.filter((l) => l.player_id === myId) ?? []
+  const mine = lines.filter((l) => l.player_id === myId)
   const myName = mine[0]?.player_name
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1.5 overflow-x-auto">
-        {seasons.map((s) => (
-          <button key={s} type="button" onClick={() => setSeason(s)} className={`px-3 py-1.5 rounded-full text-xs font-extrabold cursor-pointer ${season === s ? 'bg-[#1746b8] text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
-            {s} season
-          </button>
-        ))}
+      <SeasonFilter
+        lines={merged}
+        type={type}
+        period={p}
+        onType={(t) => {
+          setType(t)
+          setPeriod(null)
+        }}
+        onPeriod={setPeriod}
+      />
+      {p === 'all' && <p className="text-[11px] font-semibold text-slate-500 -mt-2">All-time = career totals across every {type} season in program history. Rates need 50+ PA or 15+ IP.</p>}
+      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+        {!isCoach && (myName ? <MySeason lines={lines} mine={mine} name={myName} /> : <NotLinked />)}
+        <TeamLeaders lines={lines} />
       </div>
-      {!lines ? (
-        <div className="h-64 rounded-3xl bg-white/60 animate-pulse" />
-      ) : (
-        <>
-          <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-            {!isCoach && (myName ? <MySeason lines={lines} mine={mine} name={myName} /> : <NotLinked />)}
-            <TeamLeaders lines={lines} />
-          </div>
-          <TeamTable lines={lines} myName={myName} />
-        </>
-      )}
+      <TeamTable lines={lines} myName={myName} career={p === 'all'} />
     </div>
   )
 }
@@ -167,7 +144,7 @@ function TeamLeaders({ lines }: { lines: GcLine[] }) {
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
       <div>
         <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Team leaders</div>
-        <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Rates need 20+ plate appearances or 5+ innings.</p>
+        <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Rate stats need enough playing time to qualify.</p>
       </div>
       <div className="grid grid-cols-2 gap-2">
         {LEADER_STATS.map(({ type, key }) => {
@@ -191,7 +168,7 @@ function TeamLeaders({ lines }: { lines: GcLine[] }) {
   )
 }
 
-function TeamTable({ lines, myName }: { lines: GcLine[]; myName?: string }) {
+function TeamTable({ lines, myName, career = false }: { lines: GcLine[]; myName?: string; career?: boolean }) {
   const [type, setType] = useState<GcType>('batting')
   const [view, setView] = useState<'standard' | 'advanced'>('standard')
   const [sort, setSort] = useState<{ key: string; desc: boolean }>({ key: 'PA', desc: true })
@@ -222,7 +199,7 @@ function TeamTable({ lines, myName }: { lines: GcLine[]; myName?: string }) {
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
       <div className="p-4 flex flex-wrap items-center gap-2 border-b border-slate-100">
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mr-auto">Team stats</div>
+        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mr-auto">{career ? 'Program history' : 'Team stats'}</div>
         <div className="flex p-1 rounded-xl bg-slate-100">
           {(['batting', 'pitching', 'fielding'] as const).map((t) => (
             <button key={t} type="button" onClick={() => pick(t)} className={`px-3 py-1.5 rounded-lg text-xs font-extrabold capitalize cursor-pointer ${type === t ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
@@ -259,8 +236,9 @@ function TeamTable({ lines, myName }: { lines: GcLine[]; myName?: string }) {
               return (
                 <tr key={l.id} className={me ? 'bg-blue-50' : ''}>
                   <td className={`sticky left-0 z-10 px-3 py-2 whitespace-nowrap font-bold ${me ? 'bg-blue-50 text-[#1746b8]' : 'bg-white text-slate-900'}`}>
-                    <span className="text-slate-400 font-semibold mr-1.5">{l.stats.number ?? ''}</span>
+                    {!career && <span className="text-slate-400 font-semibold mr-1.5">{l.stats.number ?? ''}</span>}
                     {l.player_name}
+                    {career && <span className="text-slate-400 font-semibold ml-1.5">{String(l.stats.seasons)} szn</span>}
                   </td>
                   {cols.map((k) => (
                     <td key={k} className={`px-2.5 py-2 text-right tabular-nums whitespace-nowrap ${sort.key === k ? 'font-extrabold text-slate-900' : 'text-slate-700'}`}>

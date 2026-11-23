@@ -1,9 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useMemo, useState } from 'react'
+import { useGcData } from './useGcData'
+import SeasonFilter, { type Period } from './SeasonFilter'
 import {
   HITTER_METRICS,
+  applyEarlyAhead,
+  linesFor,
+  pitcherCalc,
+  type SeasonType,
   PITCHER_METRICS,
   SPIDER,
   findMetric,
@@ -19,48 +24,23 @@ type Kind = 'hitter' | 'pitcher'
 
 /** Baseball Savant-style percentile bars plus a spider chart, ranked against teammates. */
 export default function PercentileRankings({ myId, isCoach }: { myId: string; isCoach: boolean }) {
-  const [seasons, setSeasons] = useState<number[]>([])
-  const [season, setSeason] = useState<number | null>(null)
-  const [lines, setLines] = useState<GcLine[] | null>(null)
-  const [ea, setEa] = useState<EarlyAhead[]>([])
-  const [kind, setKind] = useState<Kind>('hitter')
-  const [who, setWho] = useState<number | null>(null)
-  const [compare, setCompare] = useState<number | null>(null)
+  const { lines: all, ea } = useGcData()
+  const [seasonType, setSeasonType] = useState<SeasonType>('Spring')
+  const [period, setPeriod] = useState<Period | null>(null)
+  const [kindPick, setKind] = useState<Kind | null>(null)
+  const [who, setWho] = useState<string | null>(null)
+  const [compare, setCompare] = useState<string | null>(null)
 
-  useEffect(() => {
-    createClient()
-      .from('gc_season_stats')
-      .select('season_year')
-      .then(({ data }) => {
-        const s = [...new Set(((data as { season_year: number }[]) || []).map((r) => r.season_year))].sort((a, b) => b - a)
-        setSeasons(s)
-        setSeason(s[0] ?? null)
-        if (!s.length) setLines([])
-      })
-  }, [])
-
-  useEffect(() => {
-    if (season == null) return
-    let cancelled = false
-    const supabase = createClient()
-    Promise.all([
-      supabase.from('gc_season_stats').select('id, player_id, player_name, season_year, stat_type, stats').eq('season_year', season),
-      supabase.from('pitcher_early_ahead').select('player_name, early, ahead').eq('season_year', season),
-    ]).then(([g, e]) => {
-      if (cancelled) return
-      const ls = (g.data as GcLine[]) || []
-      setLines(ls)
-      setEa((e.data as EarlyAhead[]) || [])
-      const mine = ls.filter((l) => l.player_id === myId)
-      const startKind: Kind = !isCoach && mine.some((l) => l.stat_type === 'pitching') && !mine.some((l) => l.stat_type === 'batting') ? 'pitcher' : 'hitter'
-      setKind(startKind)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [season, myId, isCoach])
-
-  const type = kind === 'hitter' ? 'batting' : 'pitching'
+  const merged = useMemo(() => (all ? applyEarlyAhead(all, ea) : null), [all, ea])
+  const latest = useMemo(() => (merged ? Math.max(0, ...merged.filter((l) => l.season_type === seasonType).map((l) => l.season_year)) : 0), [merged, seasonType])
+  const p: Period = period ?? latest
+  const scoped = useMemo(() => (merged ? linesFor(merged, seasonType, p) : null), [merged, seasonType, p])
+  const lines = scoped
+  // Players open on their own pitching card if they only pitch
+  const mineAll = merged?.filter((l) => l.player_id === myId) ?? []
+  const defaultKind: Kind = !isCoach && mineAll.some((l) => l.stat_type === 'pitching') && !mineAll.some((l) => l.stat_type === 'batting') ? 'pitcher' : 'hitter'
+  const k: Kind = kindPick ?? defaultKind
+  const type = k === 'hitter' ? 'batting' : 'pitching'
   const pool = useMemo(
     () =>
       (lines || [])
@@ -69,39 +49,41 @@ export default function PercentileRankings({ myId, isCoach }: { myId: string; is
     [lines, type]
   )
 
-  // Default to me, else the player with the most playing time
-  useEffect(() => {
-    if (!pool.length) return
-    const mine = pool.find((l) => l.player_id === myId)
-    setWho((cur) => (cur != null && pool.some((l) => l.id === cur) ? cur : (mine ?? pool[0]).id))
-    setCompare(null)
-  }, [pool, myId])
+  const myName = pool.find((l) => l.player_id === myId)?.player_name
+  const player = pool.find((l) => l.player_name === who) ?? pool.find((l) => l.player_name === myName) ?? pool[0]
+  const other = pool.find((l) => l.player_name === compare && l.player_name !== player?.player_name)
 
-  if (lines === null) return <div className="h-64 rounded-3xl bg-white/60 animate-pulse" />
-  if (!seasons.length) return <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs text-sm text-slate-600">No game stats yet.</section>
+  if (!merged || !lines) return <div className="h-64 rounded-3xl bg-white/60 animate-pulse" />
+  if (!merged.length) return <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs text-sm text-slate-600">No game stats yet.</section>
 
-  const eaFor = (name: string) => ea.find((x) => x.player_name === name)
-  const player = pool.find((l) => l.id === who) ?? pool[0]
-  const other = pool.find((l) => l.id === compare)
-  const groups = kind === 'hitter' ? HITTER_METRICS : PITCHER_METRICS
+  const eaFor = (): EarlyAhead | undefined => undefined
+  const groups = k === 'hitter' ? HITTER_METRICS : PITCHER_METRICS
+  const kind = k
 
   return (
     <div className="space-y-4">
+      <SeasonFilter
+        lines={merged}
+        type={seasonType}
+        period={p}
+        onType={(t) => {
+          setSeasonType(t)
+          setPeriod(null)
+        }}
+        onPeriod={setPeriod}
+      />
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex p-1 rounded-xl bg-white border border-slate-200">
-          {(['hitter', 'pitcher'] as const).map((k) => (
-            <button key={k} type="button" onClick={() => setKind(k)} className={`px-4 py-1.5 rounded-lg text-xs font-extrabold capitalize cursor-pointer ${kind === k ? 'bg-[#1746b8] text-white' : 'text-slate-500'}`}>
-              {k}s
+          {(['hitter', 'pitcher'] as const).map((x) => (
+            <button key={x} type="button" onClick={() => setKind(x)} className={`px-4 py-1.5 rounded-lg text-xs font-extrabold capitalize cursor-pointer ${kind === x ? 'bg-[#1746b8] text-white' : 'text-slate-500'}`}>
+              {x}s
             </button>
           ))}
         </div>
-        {seasons.length > 1 && (
-          <select value={season ?? ''} onChange={(e) => setSeason(Number(e.target.value))} className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold">
-            {seasons.map((s) => <option key={s} value={s}>{s} season</option>)}
-          </select>
-        )}
-        <select value={player?.id ?? ''} onChange={(e) => setWho(Number(e.target.value))} className="flex-1 min-w-[160px] px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-extrabold text-slate-900">
-          {pool.map((l) => <option key={l.id} value={l.id}>{l.player_name}{l.player_id === myId ? ' (you)' : ''}</option>)}
+        <select value={player?.player_name ?? ''} onChange={(e) => setWho(e.target.value)} className="flex-1 min-w-[160px] px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-extrabold text-slate-900">
+          {[...pool].sort((x, y) => x.player_name.localeCompare(y.player_name)).map((l) => (
+            <option key={l.id} value={l.player_name}>{l.player_name}{l.player_id === myId ? ' (you)' : ''}</option>
+          ))}
         </select>
       </div>
 
@@ -110,14 +92,19 @@ export default function PercentileRankings({ myId, isCoach }: { myId: string; is
       ) : (
         <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-6 lg:items-start">
           <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
-            <div className="flex items-baseline justify-between gap-2">
-              <div>
+            <div className="flex items-center justify-between gap-2">
+              {typeof player.stats.photo === 'string' && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={player.stats.photo} alt="" className="w-12 h-12 rounded-2xl object-cover bg-slate-100 shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
                 <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Percentile rankings</div>
                 <div className="text-lg font-black text-slate-900">{player.player_name}</div>
               </div>
               <div className="text-[10px] font-bold text-slate-400 text-right">
                 {kind === 'hitter' ? `${player.stats.PA ?? 0} PA` : `${player.stats.IP ?? 0} IP · ${player.stats.BF ?? 0} BF`}
-                <br />vs. teammates
+                <br />
+                {p === 'all' ? `All-time · ${String(player.stats.seasons)} seasons` : `${p} ${seasonType}`}
               </div>
             </div>
             <Legend />
@@ -132,18 +119,20 @@ export default function PercentileRankings({ myId, isCoach }: { myId: string; is
                 </div>
               </div>
             ))}
-            {kind === 'pitcher' && !eaFor(player.player_name) && (
+            {kind === 'pitcher' && pitcherCalc.ea(player.stats) == null && (
               <p className="text-[11px] font-semibold text-amber-700">E+A% and Pitcher Score need Early and Ahead counts. {isCoach ? 'Add them in Coach Office → Game stats.' : 'Your coach adds these.'}</p>
             )}
-            <p className="text-[10px] font-semibold text-slate-400">Ranked against teammates with 20+ plate appearances or 5+ innings. 50 is the team middle; 99 is the best.</p>
+            <p className="text-[10px] font-semibold text-slate-400">
+              {p === 'all' ? 'Ranked against every player in program history (career totals, 50+ PA or 15+ IP).' : 'Ranked against teammates that season (20+ PA or 5+ IP).'} 50 is the middle; 99 is the best.
+            </p>
           </section>
 
           <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{kind === 'hitter' ? 'Hitter' : 'Pitcher'} profile</div>
-              <select value={compare ?? ''} onChange={(e) => setCompare(e.target.value ? Number(e.target.value) : null)} className="px-2 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold max-w-[55%]">
+              <select value={compare ?? ''} onChange={(e) => setCompare(e.target.value || null)} className="px-2 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold max-w-[55%]">
                 <option value="">Compare with…</option>
-                {pool.filter((l) => l.id !== player.id).map((l) => <option key={l.id} value={l.id}>{l.player_name}</option>)}
+                {[...pool].sort((x, y) => x.player_name.localeCompare(y.player_name)).filter((l) => l.id !== player.id).map((l) => <option key={l.id} value={l.player_name}>{l.player_name}</option>)}
               </select>
             </div>
             <Spider kind={kind} lines={lines} a={player} b={other} eaFor={eaFor} />
