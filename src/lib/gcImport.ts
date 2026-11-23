@@ -228,3 +228,98 @@ export function parseGameChangerFull(text: string): { rows: GcRow[]; warnings: s
   if (!rows.length) warnings.push('No player rows found.')
   return { rows, warnings }
 }
+
+// ---------------------------------------------------------------------------
+// Program history file: one row per player per season, with columns
+// Season ("2025 Summer"), Year, Last, First, Batting-…, Pitching-…, Fielding-…, Image URL.
+// ---------------------------------------------------------------------------
+/** Teams that keep stats: Spring Varsity ('Spring'), Spring JV ('JV') and Summer */
+export type SeasonType = 'Spring' | 'Summer' | 'JV'
+export type HistoryRow = GcRow & { season_year: number; season_type: SeasonType }
+
+export function isProgramHistory(text: string) {
+  const first = parseCsv(text.slice(0, 5000))[0] || []
+  const l = first.map((c) => c.replace(/^﻿/, '').toLowerCase())
+  return l.includes('season') && l.includes('year') && first.some((c) => c.startsWith('Batting-'))
+}
+
+export function parseProgramHistory(text: string): { rows: HistoryRow[]; warnings: string[] } {
+  const grid = parseCsv(text.replace(/^﻿/, ''))
+  const header = grid[0] || []
+  const warnings: string[] = []
+  const at = (name: string) => header.findIndex((h) => h.toLowerCase() === name.toLowerCase())
+  const iSeason = at('season')
+  const iYear = at('year')
+  const iFirst = at('first')
+  const iLast = at('last')
+  const iPhoto = at('image url')
+  const value = (v: string | undefined): number | string | null => {
+    const t = (v ?? '').trim()
+    if (!t || t === '-' || t === '—' || t.toUpperCase() === 'N/A') return null
+    if (/^-?\d*\.?\d+$/.test(t)) return Number(t)
+    return t
+  }
+  const PREFIX: [string, GcSection][] = [['Batting-', 'batting'], ['Pitching-', 'pitching'], ['Fielding-', 'fielding']]
+  const types: Record<string, SeasonType> = { spring: 'Spring', summer: 'Summer', jv: 'JV' }
+  const seen = new Set<string>()
+  const rows: HistoryRow[] = []
+  for (const r of grid.slice(1)) {
+    const season = (r[iSeason] || '').trim()
+    if (!season) continue
+    const year = Number(r[iYear]) || Number(season.slice(0, 4))
+    const type = types[(season.split(/\s+/)[1] || 'spring').toLowerCase()]
+    if (!year || !type) {
+      warnings.push(`Skipped "${season}" (only Spring Varsity, Spring JV and Summer are kept).`)
+      continue
+    }
+    const name = `${(r[iFirst] || '').trim()} ${(r[iLast] || '').trim()}`.trim()
+    if (!name) continue
+    const key = `${year}|${type}|${name.toLowerCase()}`
+    if (seen.has(key)) {
+      warnings.push(`${name} appears twice in ${season}; kept the first line.`)
+      continue
+    }
+    seen.add(key)
+    const sec: Record<GcSection, Record<string, number | string | null>> = { batting: {}, pitching: {}, fielding: {} }
+    header.forEach((h, i) => {
+      for (const [p, s] of PREFIX) if (h.startsWith(p)) sec[s][h.slice(p.length)] = value(r[i])
+    })
+    let photo = iPhoto >= 0 ? (r[iPhoto] || '').trim() : ''
+    if (!photo.startsWith('https://') || photo.includes('generic-profile')) photo = ''
+    const n = (o: Record<string, number | string | null>, k: string) => (typeof o[k] === 'number' ? (o[k] as number) : 0)
+    const active: Record<GcSection, boolean> = {
+      batting: n(sec.batting, 'PA') > 0 || n(sec.batting, 'AB') > 0,
+      pitching: n(sec.pitching, 'BF') > 0 || n(sec.pitching, 'IP') > 0,
+      fielding: n(sec.fielding, 'TC') > 0 || n(sec.fielding, 'Total') > 0,
+    }
+    for (const s of ['batting', 'pitching', 'fielding'] as GcSection[]) {
+      if (!active[s]) continue
+      rows.push({ player_name: name, season_year: year, season_type: type, stat_type: s, stats: photo ? { ...sec[s], photo } : sec[s] })
+    }
+  }
+  // Stats nobody had in a season weren't tracked that year: drop them instead of counting zeros.
+  const groups = new Map<string, HistoryRow[]>()
+  for (const r of rows) {
+    const k = `${r.season_year}|${r.season_type}|${r.stat_type}`
+    groups.set(k, [...(groups.get(k) || []), r])
+  }
+  const mix = /^(FB|CT|CB|SL|CH|OS)(S|S%|SW%|SM%)?$|^MPH/
+  for (const list of groups.values()) {
+    const keys = new Set(list.flatMap((r) => Object.keys(r.stats)))
+    for (const k of keys) {
+      if (k === 'photo') continue
+      const tracked = list.some((r) => {
+        const v = r.stats[k]
+        return typeof v === 'number' ? v !== 0 : typeof v === 'string' && v !== '0-0'
+      })
+      if (!tracked) list.forEach((r) => delete r.stats[k])
+    }
+    for (const r of list) {
+      const s = r.stats
+      if (r.stat_type === 'batting' && !s.OPS && typeof s.OBP === 'number' && typeof s.SLG === 'number') s.OPS = Math.round((s.OBP + s.SLG) * 1000) / 1000
+      for (const k of Object.keys(s)) if (s[k] == null || (r.stat_type === 'pitching' && mix.test(k) && !s[k])) delete s[k]
+    }
+  }
+  if (!rows.length) warnings.push('No player rows found.')
+  return { rows, warnings }
+}
