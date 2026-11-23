@@ -286,7 +286,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           className={isCoach ? 'max-w-xl mx-auto px-4 pt-5 pb-[calc(env(safe-area-inset-bottom)+104px)] lg:max-w-none lg:mx-0 lg:ml-[220px] lg:px-0 lg:pt-0 lg:pb-12' : 'max-w-xl mx-auto px-4 pt-5 pb-[calc(env(safe-area-inset-bottom)+104px)]'}
         >
           {isCoach && <DesktopTopBar pathname={pathname} subnav={subnav} />}
-          <div className={isCoach ? `lg:px-8 lg:pt-6 ${['/', '/messages', '/other'].includes(pathname) ? 'lg:max-w-3xl' : 'lg:max-w-6xl'}` : ''}>{children}</div>
+          <div className={isCoach ? 'lg:px-8 lg:pt-6' : ''}>{children}</div>
         </main>
 
         {/* Royal blue footer with the segmented navigation */}
@@ -398,7 +398,7 @@ function DesktopTopBar({ pathname, subnav }: { pathname: string; subnav: Subnav 
   const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
   return (
     <div className="hidden lg:block sticky top-0 z-30 bg-white border-b border-slate-200">
-      <div className="max-w-6xl px-8 pt-4">
+      <div className="px-8 pt-4">
         <div className="flex items-baseline gap-3">
           <h1 className="text-xl font-extrabold text-slate-900">{section}</h1>
           <span className="text-xs font-semibold text-slate-500">{date}</span>

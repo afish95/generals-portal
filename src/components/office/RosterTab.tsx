@@ -69,7 +69,7 @@ export default function RosterTab({ players, groups, onChanged }: { players: Pro
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 lg:space-y-0 lg:columns-2 xl:columns-3 lg:gap-4 [&>*]:break-inside-avoid [&>*]:mb-4">
       {credential && (
         <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 space-y-1">
           <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-700">Login for {credential.name}</div>

@@ -74,7 +74,7 @@ export default function GroupsTab({
   const activePlayers = players.filter((p) => p.is_active)
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 lg:space-y-0 lg:columns-2 xl:columns-3 lg:gap-4 [&>*]:break-inside-avoid [&>*]:mb-4">
       <div className="flex gap-2">
         <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New group (e.g. Varsity Pitchers)" className={inputClass} />
         <button type="button" onClick={create} className="px-4 rounded-xl bg-[#1746b8] text-white cursor-pointer" aria-label="Create group">

@@ -61,7 +61,7 @@ export default function ThoughtTab() {
   const weeks = [-1, 0, 1, 2, 3].map((n) => addDays(thisWeek, n * 7))
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
       <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
         <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Week of</div>
         <div className="flex gap-1.5 overflow-x-auto pb-1">

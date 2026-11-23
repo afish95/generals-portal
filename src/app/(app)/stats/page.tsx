@@ -111,7 +111,7 @@ export default function StatsPage() {
         ) : bests.length === 0 ? (
           <p className="text-xs text-slate-500 font-medium">Log some training to see your bests here.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-6">
             {bests.map((b) => (
               <div key={b.exercise.id} className="rounded-2xl bg-slate-50 p-3">
                 <div className="text-[11px] font-bold text-slate-500 truncate">{b.exercise.name}</div>
