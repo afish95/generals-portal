@@ -11,7 +11,14 @@ export type Profile = {
   grad_year: number | null
   is_active: boolean
   is_demo?: boolean
+  has_login?: boolean
+  contact_email?: string | null
+  top_size?: string | null
+  bottom_size?: string | null
+  roster_note?: string | null
 }
+
+export const PROFILE_FIELDS = 'id, username, full_name, role, position_group, grad_year, is_active, is_demo, has_login, contact_email, top_size, bottom_size, roster_note'
 
 export type Tracking = 'velocity' | 'distance' | 'accuracy' | 'reps' | 'time' | 'weight_reps'
 export type Discipline = 'throwing' | 'hitting' | 'arm_care' | 'other'
@@ -28,7 +35,24 @@ export type Exercise = {
   is_active: boolean
 }
 
-export type Group = { id: number; name: string; color: string; sort_order: number }
+export type GroupCategory = 'Team' | 'Trip' | 'Position' | 'Status' | 'Workout' | 'Custom'
+export const GROUP_CATEGORIES: { key: GroupCategory; label: string; hint: string }[] = [
+  { key: 'Team', label: 'Teams', hint: 'Varsity, JV, JV2' },
+  { key: 'Trip', label: 'Trips & travel', hint: 'Travel rosters and bubbles' },
+  { key: 'Position', label: 'Positions', hint: 'Pitchers, catchers, hitters' },
+  { key: 'Status', label: 'Status', hint: 'Swing players and other labels' },
+  { key: 'Workout', label: 'Workout groups', hint: 'Used to assign training' },
+  { key: 'Custom', label: 'Custom', hint: 'Anything else' },
+]
+export type Group = {
+  id: number
+  name: string
+  color: string
+  sort_order: number
+  category?: GroupCategory
+  has_chat?: boolean
+  description?: string | null
+}
 
 export type Phase = 'off_season' | 'preseason' | 'in_season' | 'postseason'
 export const PHASES: { key: Phase; label: string }[] = [

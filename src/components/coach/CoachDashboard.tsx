@@ -35,7 +35,7 @@ export default function CoachDashboard() {
     const dayStart = new Date(`${today}T00:00:00`).toISOString()
     const load = async () => {
       const [p, g, m, c, a, f, w, dp] = await Promise.all([
-        supabase.from('profiles').select('id, username, full_name, role, position_group, grad_year, is_active, is_demo').eq('role', 'player').eq('is_active', true).order('full_name'),
+        supabase.from('profiles').select('id, username, full_name, role, position_group, grad_year, is_active, is_demo').eq('role', 'player').eq('is_active', true).eq('has_login', true).order('full_name'),
         supabase.from('team_groups').select('*').order('sort_order'),
         supabase.from('group_members').select('group_id, athlete_id'),
         supabase.from('daily_checkins').select('*').eq('check_date', today),
