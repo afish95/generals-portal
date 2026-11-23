@@ -196,7 +196,7 @@ export default function ScheduleCalendarView({
   }))
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-6 lg:items-start">
       <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
         <div className="flex items-center justify-between gap-2 mb-4">
           <div className="flex items-center gap-2">
@@ -287,7 +287,7 @@ export default function ScheduleCalendarView({
       </div>
 
       {renderDay ? (
-        <div className="space-y-2">
+        <div className="space-y-2 lg:sticky lg:top-24">
           <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 px-1">
             Day plan · {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </h3>

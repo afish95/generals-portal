@@ -88,7 +88,7 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
   const counts = Object.fromEntries(ATTENDANCE.map((s) => [s.key, attendance.filter((a) => a.status === s.key).length]))
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#f3f5f9] overflow-y-auto">
+    <div className="fixed inset-0 lg:left-[220px] z-50 bg-[#f3f5f9] overflow-y-auto">
       <div className="bg-gradient-to-b from-[#1746b8] to-[#1e54d4] text-white" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-xl mx-auto px-4 py-4 flex items-center gap-3">
           <button type="button" onClick={onClose} aria-label="Close" className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center cursor-pointer">
