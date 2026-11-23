@@ -6,6 +6,7 @@ import { useProfile, useSubnav } from '@/components/shell/AppShell'
 import { PageTitle } from '@/components/ui'
 import TeamPrFeed from '@/components/TeamPrFeed'
 import GameStatsHub from '@/components/stats/GameStatsHub'
+import PercentileRankings from '@/components/stats/PercentileRankings'
 import WeeklyRecap from '@/components/stats/WeeklyRecap'
 import PositionLeaderboard from '@/components/stats/PositionLeaderboard'
 import Progressions from '@/components/stats/Progressions'
@@ -18,7 +19,7 @@ type Best = { exercise: Exercise; value: number; who?: string }
 export default function StatsPage() {
   const { profile, isCoach } = useProfile()
   const [bests, setBests] = useState<Best[] | null>(null)
-  const [mode, setMode] = useState<'training' | 'game'>('training')
+  const [mode, setMode] = useState<'training' | 'game' | 'percentiles'>('training')
   const [sub, setSub] = useState<'overview' | 'leaderboard' | 'progressions' | 'compare'>('overview')
   useSubnav(
     [
@@ -27,10 +28,11 @@ export default function StatsPage() {
       { key: 'progressions', label: 'Progressions' },
       ...(isCoach ? [{ key: 'compare', label: 'Compare' }] : []),
       { key: 'game', label: 'Game stats' },
+      { key: 'percentiles', label: 'Percentiles' },
     ],
-    mode === 'game' ? 'game' : sub,
+    mode === 'training' ? sub : mode,
     (k) => {
-      if (k === 'game') setMode('game')
+      if (k === 'game' || k === 'percentiles') setMode(k)
       else {
         setMode('training')
         setSub(k as typeof sub)
@@ -68,10 +70,10 @@ export default function StatsPage() {
   return (
     <div className="space-y-4">
       <div className={isCoach ? 'lg:hidden' : ''}>
-        <PageTitle title="Stats" subtitle={mode === 'training' ? 'Training bests and PRs' : 'Program game stat history'} />
+        <PageTitle title="Stats" subtitle={mode === 'training' ? 'Training bests and PRs' : mode === 'game' ? 'Program game stat history' : 'How you rank against teammates'} />
       </div>
-      <div className={`grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-[#1746b8] ${isCoach ? 'lg:hidden' : ''}`}>
-        {(['training', 'game'] as const).map((m) => (
+      <div className={`grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-[#1746b8] ${isCoach ? 'lg:hidden' : ''}`}>
+        {(['training', 'game', 'percentiles'] as const).map((m) => (
           <button
             key={m}
             type="button"
@@ -84,7 +86,9 @@ export default function StatsPage() {
           </button>
         ))}
       </div>
-      {mode === 'game' ? (
+      {mode === 'percentiles' ? (
+        <PercentileRankings myId={profile.id} isCoach={isCoach} />
+      ) : mode === 'game' ? (
         <GameStatsHub myId={profile.id} isCoach={isCoach} />
       ) : (
       <>

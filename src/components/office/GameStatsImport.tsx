@@ -5,6 +5,7 @@ import { Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { parseGameChangerFull, type GcRow } from '@/lib/gcImport'
 import type { Profile } from '@/lib/training'
+import EarlyAheadEditor from './EarlyAheadEditor'
 
 export default function GameStatsImport({ players }: { players: Profile[] }) {
   const [season, setSeason] = useState(String(new Date().getFullYear()))
@@ -146,6 +147,10 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
           Delete demo game stats
         </button>
       )}
+
+      <div className="lg:col-span-2">
+        <EarlyAheadEditor key={message ?? 'ea'} />
+      </div>
     </div>
   )
 }

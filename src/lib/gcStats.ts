@@ -87,3 +87,137 @@ export function leaders(lines: GcLine[], type: GcType, key: string, top = 3) {
     .sort((a, b) => (lower ? num(a.stats[key])! - num(b.stats[key])! : num(b.stats[key])! - num(a.stats[key])!))
     .slice(0, top)
 }
+
+// ---------------------------------------------------------------------------
+// Percentile rankings and spider charts
+// ---------------------------------------------------------------------------
+export type EarlyAhead = { player_name: string; early: number | null; ahead: number | null }
+export type Metric = {
+  key: string
+  label: string
+  type: GcType
+  lowerIsBetter?: boolean
+  format: 'avg' | 'pct' | 'dec2' | 'int'
+  value: (s: GcStats, ea?: EarlyAhead) => number | null
+}
+
+const ratio = (a: number | null, b: number | null) => (a == null || b == null || b === 0 ? null : (100 * a) / b)
+const stat = (k: string) => (s: GcStats) => num(s[k])
+
+/** Pitcher helpers. E% = Early ÷ BF, A% = Ahead ÷ BF (Early/Ahead are entered by the coach). */
+export const pitcherCalc = {
+  ts: (s: GcStats) => num(s['S%']),
+  fps: (s: GcStats) => num(s['FPS%']),
+  k: (s: GcStats) => ratio(num(s.SO), num(s.BF)),
+  bb: (s: GcStats) => ratio(num(s.BB), num(s.BF)),
+  kbb: (s: GcStats) => {
+    const k = ratio(num(s.SO), num(s.BF))
+    const b = ratio(num(s.BB), num(s.BF))
+    return k == null || b == null ? null : k - b
+  },
+  ea: (s: GcStats, ea?: EarlyAhead) => {
+    if (!ea || ea.early == null || ea.ahead == null) return null
+    const bf = num(s.BF)
+    return bf ? (100 * (ea.early + ea.ahead)) / bf : null
+  },
+  /** Coach's Pitcher Score = (FPS% + TS% + E+A% + K-BB%) ÷ 2 */
+  score: (s: GcStats, ea?: EarlyAhead) => {
+    const parts = [pitcherCalc.fps(s), pitcherCalc.ts(s), pitcherCalc.ea(s, ea), pitcherCalc.kbb(s)]
+    return parts.some((p) => p == null) ? null : (parts as number[]).reduce((a, b) => a + b, 0) / 2
+  },
+}
+
+export const HITTER_METRICS: { group: string; metrics: Metric[] }[] = [
+  {
+    group: 'Results',
+    metrics: [
+      { key: 'AVG', label: 'Batting average', type: 'batting', format: 'avg', value: stat('AVG') },
+      { key: 'OBP', label: 'On-base %', type: 'batting', format: 'avg', value: stat('OBP') },
+      { key: 'SLG', label: 'Slugging', type: 'batting', format: 'avg', value: stat('SLG') },
+      { key: 'OPS', label: 'OPS', type: 'batting', format: 'avg', value: stat('OPS') },
+      { key: 'BA/RISP', label: 'Avg w/ RISP', type: 'batting', format: 'avg', value: stat('BA/RISP') },
+    ],
+  },
+  {
+    group: 'Approach',
+    metrics: [
+      { key: 'K%', label: 'K %', type: 'batting', lowerIsBetter: true, format: 'pct', value: (s) => ratio(num(s.SO), num(s.PA)) },
+      { key: 'BB%', label: 'BB %', type: 'batting', format: 'pct', value: (s) => ratio(num(s.BB), num(s.PA)) },
+      { key: 'QAB%', label: 'Quality AB %', type: 'batting', format: 'pct', value: stat('QAB%') },
+      { key: 'C%', label: 'Contact %', type: 'batting', format: 'pct', value: stat('C%') },
+      { key: 'PS/PA', label: 'Pitches seen / PA', type: 'batting', format: 'dec2', value: stat('PS/PA') },
+    ],
+  },
+  {
+    group: 'Contact quality',
+    metrics: [
+      { key: 'HH%', label: 'Hard-hit %', type: 'batting', format: 'pct', value: (s) => ratio(num(s.HHB), (num(s.AB) ?? 0) - (num(s.SO) ?? 0)) },
+      { key: 'LD%', label: 'Line drive %', type: 'batting', format: 'pct', value: stat('LD%') },
+      { key: 'XBH', label: 'Extra-base hits', type: 'batting', format: 'int', value: stat('XBH') },
+    ],
+  },
+  {
+    group: 'Running',
+    metrics: [{ key: 'SB', label: 'Stolen bases', type: 'batting', format: 'int', value: stat('SB') }],
+  },
+]
+
+export const PITCHER_METRICS: { group: string; metrics: Metric[] }[] = [
+  {
+    group: 'Run prevention',
+    metrics: [
+      { key: 'ERA', label: 'ERA', type: 'pitching', lowerIsBetter: true, format: 'dec2', value: stat('ERA') },
+      { key: 'WHIP', label: 'WHIP', type: 'pitching', lowerIsBetter: true, format: 'dec2', value: stat('WHIP') },
+      { key: 'FIP', label: 'FIP', type: 'pitching', lowerIsBetter: true, format: 'dec2', value: stat('FIP') },
+      { key: 'BAA', label: 'Opponent avg', type: 'pitching', lowerIsBetter: true, format: 'avg', value: stat('BAA') },
+    ],
+  },
+  {
+    group: 'Command',
+    metrics: [
+      { key: 'TS%', label: 'Total strike %', type: 'pitching', format: 'pct', value: pitcherCalc.ts },
+      { key: 'FPS%', label: 'First-pitch strike %', type: 'pitching', format: 'pct', value: pitcherCalc.fps },
+      { key: 'E+A%', label: 'Early + Ahead %', type: 'pitching', format: 'pct', value: pitcherCalc.ea },
+      { key: 'BB%', label: 'BB %', type: 'pitching', lowerIsBetter: true, format: 'pct', value: pitcherCalc.bb },
+      { key: 'Score', label: 'Pitcher Score', type: 'pitching', format: 'dec2', value: pitcherCalc.score },
+    ],
+  },
+  {
+    group: 'Stuff',
+    metrics: [
+      { key: 'K%', label: 'K %', type: 'pitching', format: 'pct', value: pitcherCalc.k },
+      { key: 'K-BB%', label: 'K-BB %', type: 'pitching', format: 'pct', value: pitcherCalc.kbb },
+      { key: 'SM%', label: 'Swing & miss %', type: 'pitching', format: 'pct', value: stat('SM%') },
+      { key: 'WEAK%', label: 'Weak contact %', type: 'pitching', format: 'pct', value: stat('WEAK%') },
+      { key: 'GB%', label: 'Ground ball %', type: 'pitching', format: 'pct', value: stat('GB%') },
+    ],
+  },
+]
+
+export function formatMetric(m: Metric, v: number | null) {
+  if (v == null) return '–'
+  if (m.format === 'avg') return v >= 1 ? v.toFixed(3) : v.toFixed(3).replace(/^0/, '')
+  if (m.format === 'pct') return `${v.toFixed(1)}%`
+  if (m.format === 'dec2') return v.toFixed(2)
+  return String(Math.round(v))
+}
+
+/** Percentile (1–99) of a player's metric among qualified teammates (the player is always included). */
+export function metricPercentile(m: Metric, lines: GcLine[], player: GcLine, eaFor: (name: string) => EarlyAhead | undefined) {
+  const mine = m.value(player.stats, eaFor(player.player_name))
+  if (mine == null) return { value: null, pctl: null, n: 0 }
+  const pool = lines.filter((l) => l.stat_type === m.type && (l.id === player.id || qualifies(m.type, l.stats)))
+  const vals = pool.map((l) => m.value(l.stats, eaFor(l.player_name))).filter((v): v is number => v != null)
+  const better = vals.filter((v) => (m.lowerIsBetter ? v < mine : v > mine)).length
+  const ties = vals.filter((v) => v === mine).length
+  const below = vals.length - better - ties
+  const pctl = vals.length <= 1 ? 50 : Math.round((100 * (below + ties / 2)) / vals.length)
+  return { value: mine, pctl: Math.max(1, Math.min(99, pctl)), n: vals.length }
+}
+
+export const SPIDER: Record<'hitter' | 'pitcher', string[]> = {
+  hitter: ['K%', 'BB%', 'QAB%', 'OPS', 'OBP'],
+  pitcher: ['TS%', 'FPS%', 'K-BB%', 'E+A%', 'Score'],
+}
+export const findMetric = (kind: 'hitter' | 'pitcher', key: string) =>
+  (kind === 'hitter' ? HITTER_METRICS : PITCHER_METRICS).flatMap((g) => g.metrics).find((m) => m.key === key)!
