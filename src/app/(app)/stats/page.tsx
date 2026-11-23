@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useProfile } from '@/components/shell/AppShell'
+import { useProfile, useSubnav } from '@/components/shell/AppShell'
 import { PageTitle } from '@/components/ui'
 import TeamPrFeed from '@/components/TeamPrFeed'
 import GameStats from '@/components/stats/GameStats'
@@ -20,6 +20,23 @@ export default function StatsPage() {
   const [bests, setBests] = useState<Best[] | null>(null)
   const [mode, setMode] = useState<'training' | 'game'>('training')
   const [sub, setSub] = useState<'overview' | 'leaderboard' | 'progressions' | 'compare'>('overview')
+  useSubnav(
+    [
+      { key: 'overview', label: 'Overview' },
+      { key: 'leaderboard', label: 'Leaderboards' },
+      { key: 'progressions', label: 'Progressions' },
+      ...(isCoach ? [{ key: 'compare', label: 'Compare' }] : []),
+      { key: 'game', label: 'Game stats' },
+    ],
+    mode === 'game' ? 'game' : sub,
+    (k) => {
+      if (k === 'game') setMode('game')
+      else {
+        setMode('training')
+        setSub(k as typeof sub)
+      }
+    }
+  )
 
   useEffect(() => {
     const supabase = createClient()
@@ -50,8 +67,10 @@ export default function StatsPage() {
 
   return (
     <div className="space-y-4">
-      <PageTitle title="Stats" subtitle={mode === 'training' ? 'Training bests and PRs' : 'Program game stat history'} />
-      <div className="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-[#1746b8]">
+      <div className={isCoach ? 'lg:hidden' : ''}>
+        <PageTitle title="Stats" subtitle={mode === 'training' ? 'Training bests and PRs' : 'Program game stat history'} />
+      </div>
+      <div className={`grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-[#1746b8] ${isCoach ? 'lg:hidden' : ''}`}>
         {(['training', 'game'] as const).map((m) => (
           <button
             key={m}
@@ -69,7 +88,7 @@ export default function StatsPage() {
         <GameStats myId={profile.id} />
       ) : (
       <>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className={`flex gap-2 overflow-x-auto pb-1 ${isCoach ? 'lg:hidden' : ''}`}>
         <Pill active={sub === 'overview'} onClick={() => setSub('overview')}>Overview</Pill>
         <Pill active={sub === 'leaderboard'} onClick={() => setSub('leaderboard')}>Leaderboard</Pill>
         <Pill active={sub === 'progressions'} onClick={() => setSub('progressions')}>Progressions</Pill>
@@ -92,7 +111,7 @@ export default function StatsPage() {
         ) : bests.length === 0 ? (
           <p className="text-xs text-slate-500 font-medium">Log some training to see your bests here.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-6">
             {bests.map((b) => (
               <div key={b.exercise.id} className="rounded-2xl bg-slate-50 p-3">
                 <div className="text-[11px] font-bold text-slate-500 truncate">{b.exercise.name}</div>

@@ -96,7 +96,7 @@ export default function AttendanceTab({ players, groups }: { players: Profile[];
           <Pill key={g.id} active={filter === g.id} onClick={() => setFilter(g.id)}>{g.name}</Pill>
         ))}
       </div>
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-4 gap-1.5 lg:max-w-xl">
         {counts.map((c) => (
           <div key={c.key} className="rounded-2xl bg-white border border-slate-200 py-2 text-center">
             <div className="text-lg font-black text-slate-900">{c.n}</div>
@@ -104,16 +104,16 @@ export default function AttendanceTab({ players, groups }: { players: Profile[];
           </div>
         ))}
       </div>
-      <button type="button" onClick={markAllPresent} className="w-full py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold cursor-pointer">
+      <button type="button" onClick={markAllPresent} className="w-full lg:w-auto lg:px-8 py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold cursor-pointer">
         Mark everyone else present
       </button>
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}
 
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs divide-y divide-slate-100">
+      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs divide-y divide-slate-100 lg:divide-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-px lg:bg-slate-100 lg:overflow-hidden">
         {active.map((p) => {
           const mark = marks.get(p.id)
           return (
-            <div key={`${date}-${p.id}`} className={`px-4 py-3 space-y-2 ${busy === p.id ? 'opacity-60' : ''}`}>
+            <div key={`${date}-${p.id}`} className={`px-4 py-3 space-y-2 lg:bg-white ${busy === p.id ? 'opacity-60' : ''}`}>
               <div className="text-sm font-extrabold text-slate-900">{p.full_name}</div>
               <div className="grid grid-cols-4 gap-1.5">
                 {ATTENDANCE.map((s) => (

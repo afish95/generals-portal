@@ -72,8 +72,8 @@ export default function PracticePlansTab({ openEventId }: { openEventId?: number
   const today = localDate()
 
   return (
-    <div className="space-y-4">
-      {message && <p className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">{message}</p>}
+    <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+      {message && <p className="lg:col-span-2 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">{message}</p>}
 
       <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between">

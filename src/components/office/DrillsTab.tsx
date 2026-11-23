@@ -48,7 +48,7 @@ export default function DrillsTab({ exercises, onChanged }: { exercises: Exercis
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 lg:space-y-0 lg:columns-2 xl:columns-3 lg:gap-4 [&>*]:break-inside-avoid [&>*]:mb-4">
       {!adding ? (
         <button type="button" onClick={() => setAdding(true)} className="w-full py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer">
           <Plus className="w-4 h-4" /> Add drill

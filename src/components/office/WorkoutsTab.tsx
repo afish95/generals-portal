@@ -117,7 +117,7 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
       </div>
       <DateStepper value={date} onChange={setDate} />
       {view === 'range' ? (
-        <div className="space-y-2">
+        <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-2">
           {Array.from({ length: 22 }, (_, i) => addDays(date, i - 7)).map((d) => {
             const list = range.filter((w) => w.workout_date === d && (filter === 'all' || (filter === 'team' ? w.group_id === null : w.group_id === filter)))
             const isToday = d === localDate()
@@ -172,7 +172,7 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
       {shown.length === 0 ? (
         <EmptyState title="Nothing scheduled" body="Create a workout or step to another day." />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 lg:items-start">
           {shown.map((w) => {
             const its = items
               .filter((i) => i.workout_id === w.id)

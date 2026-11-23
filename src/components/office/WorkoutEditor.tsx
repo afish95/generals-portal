@@ -268,9 +268,9 @@ export default function WorkoutEditor({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#f3f5f9] overflow-y-auto">
+    <div className="fixed inset-0 lg:left-[220px] z-50 bg-[#f3f5f9] overflow-y-auto">
       <div
-        className="max-w-xl mx-auto px-4 space-y-4"
+        className="max-w-xl lg:max-w-3xl mx-auto px-4 space-y-4"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)', paddingBottom: 'calc(max(env(safe-area-inset-bottom), 12px) + 90px)' }}
       >
         <div className="flex items-center justify-between pt-2">
@@ -418,8 +418,8 @@ export default function WorkoutEditor({
         {error && <p className="text-sm font-bold text-red-600">{error}</p>}
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 px-4" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
-        <div className="max-w-xl mx-auto">
+      <div className="fixed bottom-0 inset-x-0 lg:left-[220px] px-4" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
+        <div className="max-w-xl lg:max-w-3xl mx-auto">
           <button
             type="button"
             onClick={save}

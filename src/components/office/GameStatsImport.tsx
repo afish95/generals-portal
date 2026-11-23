@@ -68,7 +68,7 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
   const unmatched = [...new Set(rows.map((r) => r.player_name).filter((n) => !matched(n)))]
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
       <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
         <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Import from GameChanger</div>
         <ol className="text-xs font-semibold text-slate-600 space-y-1 list-decimal pl-4">

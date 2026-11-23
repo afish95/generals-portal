@@ -151,8 +151,8 @@ export default function PlanEditorSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#f3f5f9] overflow-y-auto">
-      <div className="max-w-xl mx-auto px-4 space-y-4" style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)', paddingBottom: 'calc(max(env(safe-area-inset-bottom), 12px) + 90px)' }}>
+    <div className="fixed inset-0 lg:left-[220px] z-50 bg-[#f3f5f9] overflow-y-auto">
+      <div className="max-w-xl lg:max-w-3xl mx-auto px-4 space-y-4" style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)', paddingBottom: 'calc(max(env(safe-area-inset-bottom), 12px) + 90px)' }}>
         <div className="flex items-center justify-between pt-2">
           <button type="button" onClick={onClose} className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center cursor-pointer" aria-label="Close">
             <X className="w-5 h-5" />
@@ -258,8 +258,8 @@ export default function PlanEditorSheet({
         {error && <p className="text-sm font-bold text-red-600">{error}</p>}
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 px-4" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
-        <div className="max-w-xl mx-auto">
+      <div className="fixed bottom-0 inset-x-0 lg:left-[220px] px-4" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
+        <div className="max-w-xl lg:max-w-3xl mx-auto">
           <button type="button" onClick={save} disabled={saving} className="w-full py-3.5 rounded-2xl bg-[#1746b8] text-white text-base font-extrabold shadow-lg disabled:opacity-60 cursor-pointer">
             {saving ? 'Saving…' : mode === 'template' ? 'Save template' : 'Save practice plan'}
           </button>

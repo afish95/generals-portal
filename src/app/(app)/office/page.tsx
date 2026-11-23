@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useProfile } from '@/components/shell/AppShell'
+import { useProfile, useSubnav } from '@/components/shell/AppShell'
 import { EmptyState, PageTitle, Pill } from '@/components/ui'
 import WorkoutsTab from '@/components/office/WorkoutsTab'
 import GroupsTab from '@/components/office/GroupsTab'
@@ -35,6 +35,7 @@ export default function CoachOfficePage() {
   const [reload, setReload] = useState(0)
   const refresh = useCallback(() => setReload((n) => n + 1), [])
   const [openEventId, setOpenEventId] = useState<number | null>(null)
+  useSubnav(TABS as unknown as { key: string; label: string }[], tab, (k) => setTab(k as TabKey))
 
   // Deep links, e.g. /office?tab=practices&event=12 from the Day plan
   useEffect(() => {
@@ -68,8 +69,10 @@ export default function CoachOfficePage() {
 
   return (
     <div>
-      <PageTitle title="Coach Office" subtitle="Build the program. You’re in control." />
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-1">
+      <div className="lg:hidden">
+        <PageTitle title="Coach Office" subtitle="Build the program. You’re in control." />
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-3 mb-1 lg:hidden">
         {TABS.map((t) => (
           <Pill key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>{t.label}</Pill>
         ))}

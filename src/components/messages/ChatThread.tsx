@@ -117,7 +117,7 @@ export default function ChatThread({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#f3f5f9] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-[#f3f5f9] flex flex-col lg:left-[220px]">
       <div className="bg-gradient-to-b from-[#1746b8] to-[#1e54d4] text-white shrink-0" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
           <button type="button" onClick={onClose} aria-label="Back" className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center cursor-pointer">

@@ -109,8 +109,8 @@ export default function CoachDashboard() {
   const alerts = shown.filter((r) => needsAttention(r.checkin))
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2 overflow-x-auto pb-1">
+    <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
+      <div className="flex gap-2 overflow-x-auto pb-1 lg:col-span-2">
         <Pill active={filter === 'all'} onClick={() => setFilter('all')}>Everyone</Pill>
         {groups.map((g) => (
           <Pill key={g.id} active={filter === g.id} onClick={() => setFilter(g.id)}>{g.name}</Pill>
@@ -118,7 +118,7 @@ export default function CoachDashboard() {
         <Pill active={filter === 'flagged'} onClick={() => setFilter('flagged')}>🚩 Flagged</Pill>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:col-span-2">
         <Tile label="Checked in" value={checkedIn} of={total} tone="from-[#1746b8] to-indigo-600" />
         <Tile label="Trained" value={trained} of={total} tone="from-emerald-500 to-teal-600" />
         <Tile label="Present" value={present} of={total} tone="from-amber-400 to-orange-500" />
@@ -161,7 +161,7 @@ export default function CoachDashboard() {
         )}
       </section>
 
-      <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+      <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden lg:col-span-2">
         <div className="px-5 pt-4 pb-2 flex items-center justify-between">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Athletes today · pts · readiness · attendance</span>
           <Link href="/office" className="text-[11px] font-extrabold text-[#1746b8]">Take attendance</Link>

@@ -25,17 +25,23 @@ export default function HomePage() {
   if (isCoach) {
     return (
       <div className="space-y-4">
-        <div>
+        <div className="lg:hidden">
           <div className="text-xs font-bold text-slate-500">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome back, {profile.full_name.split(' ').slice(-1)[0]}</h1>
         </div>
-        <ViewAsPicker />
-        <NotificationSetup />
-        <StreakAlerts />
-        <CoachDashboard />
-        <ClassStandings />
-        <TeamPrFeed limit={6} />
-        <AnnouncementsFeed limit={2} />
+        <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
+          <div className="space-y-4 lg:col-span-2">
+            <NotificationSetup />
+            <StreakAlerts />
+            <CoachDashboard />
+          </div>
+          <div className="space-y-4">
+            <ViewAsPicker />
+            <ClassStandings />
+            <TeamPrFeed limit={6} />
+            <AnnouncementsFeed limit={2} />
+          </div>
+        </div>
       </div>
     )
   }
