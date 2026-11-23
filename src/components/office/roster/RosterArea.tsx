@@ -7,8 +7,9 @@ import { SubTabs, type Member } from './shared'
 import PeoplePanel from './PeoplePanel'
 import GroupsPanel from './GroupsPanel'
 import SandboxPanel from './SandboxPanel'
+import ImportExportPanel from './ImportExportPanel'
 
-type Sub = 'players' | 'coaches' | 'groups' | 'sandbox'
+type Sub = 'players' | 'coaches' | 'groups' | 'sandbox' | 'transfer'
 
 /** Coach Office → Roster: players, coaches, groups & tags, and the sandbox roster builder. */
 export default function RosterArea({ initial = 'players', onChanged }: { initial?: Sub; onChanged: () => void }) {
@@ -56,6 +57,7 @@ export default function RosterArea({ initial = 'players', onChanged }: { initial
           { key: 'coaches', label: 'Coaches', count: coaches.length },
           { key: 'groups', label: 'Groups & tags', count: groups.length },
           { key: 'sandbox', label: 'Sandbox' },
+          { key: 'transfer', label: 'Import / export' },
         ]}
         active={sub}
         onChange={setSub}
@@ -68,6 +70,8 @@ export default function RosterArea({ initial = 'players', onChanged }: { initial
         <PeoplePanel role="coach" people={coaches} groups={groups} members={members} onChanged={reload} />
       ) : sub === 'groups' ? (
         <GroupsPanel people={people} groups={groups} members={members} onChanged={reload} />
+      ) : sub === 'transfer' ? (
+        <ImportExportPanel people={people} groups={groups} members={members} onChanged={reload} />
       ) : (
         <SandboxPanel people={players} groups={groups} members={members} onChanged={reload} />
       )}
