@@ -15,6 +15,7 @@ import ClassStandings from '@/components/points/ClassStandings'
 import BodyWeightCard from '@/components/wellness/BodyWeightCard'
 import ViewAsPicker from '@/components/shell/ViewAsPicker'
 import StreakCard from '@/components/points/StreakCard'
+import FocusLine from '@/components/plan/FocusLine'
 import StreakAlerts from '@/components/coach/StreakAlerts'
 
 export default function HomePage() {
@@ -64,6 +65,7 @@ export default function HomePage() {
       />
       {!viewAs.active && <NotificationSetup hideWhenOn />}
       <AnnouncementsFeed limit={3} />
+      <FocusLine athleteId={profile.id} />
       <StreakCard athleteId={profile.id} refreshKey={pointsKey} />
       <DayPlan athleteId={profile.id} date={day} refreshKey={pointsKey} onChange={refresh} />
       <DailyPointsCard

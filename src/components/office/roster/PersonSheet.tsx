@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertTriangle, BarChart3, KeyRound, Trash2, UserCheck, UserX } from 'lucide-react'
+import { AlertTriangle, BarChart3, KeyRound, Target, Trash2, UserCheck, UserX } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { callApi } from '@/lib/api'
 import { inputClass, SectionLabel } from '@/components/ui'
@@ -239,7 +239,12 @@ export default function PersonSheet({
 
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {!isCoach && (
+          <a href={`/office?tab=plans&player=${person.id}`} className="py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-extrabold text-[#1746b8] flex items-center justify-center gap-1.5">
+            <Target className="w-4 h-4" /> Player plan
+          </a>
+        )}
         {!isCoach && (
           <button type="button" onClick={() => setStats(true)} className="py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-extrabold text-[#1746b8] flex items-center justify-center gap-1.5 cursor-pointer">
             <BarChart3 className="w-4 h-4" /> Training & flags

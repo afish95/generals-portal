@@ -6,6 +6,7 @@ import { useProfile, useSubnav } from '@/components/shell/AppShell'
 import { EmptyState, PageTitle, Pill } from '@/components/ui'
 import WorkoutsTab from '@/components/office/WorkoutsTab'
 import RosterArea from '@/components/office/roster/RosterArea'
+import PlayerPlansTab from '@/components/office/plans/PlayerPlansTab'
 import DrillsTab from '@/components/office/DrillsTab'
 import AttendanceTab from '@/components/office/AttendanceTab'
 import ThoughtTab from '@/components/office/ThoughtTab'
@@ -15,6 +16,7 @@ import { PROFILE_FIELDS, type Exercise, type Group, type Profile } from '@/lib/t
 
 const TABS = [
   { key: 'workouts', label: 'Workouts' },
+  { key: 'plans', label: 'Player plans' },
   { key: 'practices', label: 'Practice plans' },
   { key: 'attendance', label: 'Attendance' },
   { key: 'roster', label: 'Roster' },
@@ -33,6 +35,7 @@ export default function CoachOfficePage() {
   const [reload, setReload] = useState(0)
   const refresh = useCallback(() => setReload((n) => n + 1), [])
   const [openEventId, setOpenEventId] = useState<number | null>(null)
+  const [planPlayer, setPlanPlayer] = useState<string | null>(null)
   const [rosterSub, setRosterSub] = useState<'players' | 'coaches' | 'groups' | 'sandbox' | 'transfer'>('players')
   useSubnav(TABS as unknown as { key: string; label: string }[], tab, (k) => setTab(k as TabKey))
 
@@ -44,6 +47,8 @@ export default function CoachOfficePage() {
       setTab('roster')
       setRosterSub(t)
     } else if (t && TABS.some((x) => x.key === t)) setTab(t as TabKey)
+    const pl = q.get('player')
+    if (pl) setPlanPlayer(pl)
     const ev = Number(q.get('event'))
     if (ev) setOpenEventId(ev)
   }, [])
@@ -80,6 +85,7 @@ export default function CoachOfficePage() {
         ))}
       </div>
       {tab === 'workouts' && <WorkoutsTab groups={groups} exercises={exercises} />}
+      {tab === 'plans' && <PlayerPlansTab initialPlayer={planPlayer} />}
       {tab === 'practices' && <PracticePlansTab openEventId={openEventId} />}
       {tab === 'attendance' && <AttendanceTab players={players} groups={groups} />}
       {tab === 'roster' && <RosterArea initial={rosterSub} onChanged={refresh} />}

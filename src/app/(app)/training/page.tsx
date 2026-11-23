@@ -11,6 +11,7 @@ import ProgressTrends from '@/components/training/ProgressTrends'
 import PositionLeaderboard from '@/components/stats/PositionLeaderboard'
 import TrainingTools from '@/components/training/TrainingTools'
 import ToolRunnerSheet from '@/components/training/ToolRunnerSheet'
+import MyPlan from '@/components/plan/MyPlan'
 import PrCelebration from '@/components/training/PrCelebration'
 import { PointBubble, buzz } from '@/components/points/PointBurst'
 import type { PrHit } from '@/components/training/WorkoutLogger'
@@ -73,6 +74,9 @@ export default function TrainingPage() {
       )}
 
       <PageTitle title="Training" />
+
+      {/* 0. My plan: focus areas, goals and drills from the coach */}
+      <MyPlan athleteId={profile.id} onStartTool={(scriptId, title) => setRunning({ scriptId, title })} />
 
       {/* 1. Arm readiness survey (same check-in as Home) */}
       <ReadinessCheckIn athleteId={profile.id} onSaved={refresh} />
