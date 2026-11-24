@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { ChevronRight } from 'lucide-react'
+import BenchmarkDetail from './BenchmarkDetail'
 import { createClient } from '@/lib/supabase'
 import { latestLine } from '@/lib/focus'
 import { num, type GcLine } from '@/lib/gcStats'
@@ -94,10 +96,16 @@ function Ring({ pctl, label, size = 56 }: { pctl: number | null; label: string; 
   )
 }
 
-function Tile({ m, value, mine, vs, print }: { m: BenchMetric; value: number | null; mine: Level; vs: Level; print?: boolean }) {
+function Tile({ m, value, mine, vs, print, onOpen }: { m: BenchMetric; value: number | null; mine: Level; vs: Level; print?: boolean; onOpen?: () => void }) {
   const notes = [...new Set([sourceNote(m, mine), sourceNote(m, vs)].filter(Boolean))]
   return (
-    <div className={`rounded-2xl border border-slate-200 bg-white ${print ? 'p-2.5' : 'p-3.5'} flex flex-col`}>
+    <div
+      role={onOpen ? 'button' : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      onClick={onOpen}
+      onKeyDown={(e) => onOpen && (e.key === 'Enter' || e.key === ' ') && onOpen()}
+      className={`rounded-2xl border border-slate-200 bg-white ${print ? 'p-2.5' : 'p-3.5 cursor-pointer hover:border-[#1746b8]/50'} flex flex-col`}
+    >
       <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">{m.label}</div>
       <div className={`${print ? 'text-lg' : 'text-xl'} font-black text-[#1746b8] leading-tight`}>{fmtBench(m, value)}</div>
       {value == null ? (
@@ -105,10 +113,15 @@ function Tile({ m, value, mine, vs, print }: { m: BenchMetric; value: number | n
       ) : (
         <div className="flex justify-around gap-2 mt-2">
           <Ring pctl={percentile(m, mine, value)} label={`vs ${LEVEL_SHORT[mine]}`} size={print ? 50 : 56} />
-          {vs !== mine && <Ring pctl={percentile(m, vs, value)} label={`vs ${LEVEL_SHORT[vs]}`} size={print ? 50 : 56} />}
+          {vs !== mine && m.levels[vs] !== m.levels[mine] && <Ring pctl={percentile(m, vs, value)} label={`vs ${LEVEL_SHORT[vs]}`} size={print ? 50 : 56} />}
         </div>
       )}
       {notes.length > 0 && <div className="text-[9px] font-semibold text-slate-400 mt-1.5">{notes.join(' · ')}</div>}
+      {onOpen && (
+        <div className="mt-auto pt-2 text-[10px] font-extrabold text-[#1746b8] flex items-center gap-0.5">
+          Full breakdown <ChevronRight className="w-3 h-3" />
+        </div>
+      )}
     </div>
   )
 }
@@ -117,6 +130,7 @@ function Tile({ m, value, mine, vs, print }: { m: BenchMetric; value: number | n
 export default function BenchmarkReport({ kind, data, mine, vs, print = false }: { kind: Kind; data: BenchValues; mine: Level; vs: Level; print?: boolean }) {
   const sections = kind === 'hitter' ? HITTER : PITCHER
   const season = kind === 'hitter' ? data.seasons.batting : data.seasons.pitching
+  const [open, setOpen] = useState<{ m: BenchMetric; section: string } | null>(null)
   if (!data.loaded) return <div className="h-60 rounded-3xl bg-white/60 animate-pulse" />
   return (
     <div className={print ? 'space-y-3' : 'space-y-4'}>
@@ -128,7 +142,7 @@ export default function BenchmarkReport({ kind, data, mine, vs, print = false }:
           </div>
           <div className={`grid gap-2.5 ${print ? 'grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
             {s.metrics.map((m) => (
-              <Tile key={m.key} m={m} value={data.values[m.key] ?? null} mine={mine} vs={vs} print={print} />
+              <Tile key={m.key} m={m} value={data.values[m.key] ?? null} mine={mine} vs={vs} print={print} onOpen={print ? undefined : () => setOpen({ m, section: s.title })} />
             ))}
           </div>
         </section>
@@ -138,6 +152,9 @@ export default function BenchmarkReport({ kind, data, mine, vs, print = false }:
         {season ? <b className="text-slate-500">{season}</b> : 'your latest season'}. Benchmarks: Driveline Baseball Player Benchmark ({LEVEL_LABEL.hs_under} 15–16, {LEVEL_LABEL.hs_upper} 17–18, College) and Generals Spring
         Varsity history where marked.
       </p>
+      {open && (
+        <BenchmarkDetail m={open.m} value={data.values[open.m.key] ?? null} mine={mine} vs={vs} section={`${kind === 'hitter' ? 'Hitting' : 'Pitching'} · ${open.section}`} onClose={() => setOpen(null)} />
+      )}
     </div>
   )
 }
