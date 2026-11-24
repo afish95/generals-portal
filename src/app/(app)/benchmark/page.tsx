@@ -10,6 +10,7 @@ import BenchmarkReport, { useBenchmarkValues, type Kind } from '@/components/ben
 import BenchmarkControls from '@/components/benchmark/BenchmarkControls'
 import { LEVEL_LABEL, NEXT, levelFor, type Level } from '@/lib/benchmarks'
 import type { Profile } from '@/lib/training'
+import PlayerPhoto from '@/components/PlayerPhoto'
 
 /** Benchmark Report: how a player's numbers rank at HS and college levels. Players see their own; coaches pick anyone. */
 export default function BenchmarkPage() {
@@ -50,6 +51,7 @@ export default function BenchmarkPage() {
         <Link href="/other" aria-label="Back to Other" className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center lg:hidden">
           <ChevronLeft className="w-5 h-5 text-slate-600" />
         </Link>
+        {athlete && <PlayerPhoto id={athlete.id} name={athlete.full_name} size={48} />}
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Benchmark Report</h1>
           <p className="text-xs font-semibold text-slate-500">

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { callApi } from '@/lib/api'
 import { inputClass, SectionLabel } from '@/components/ui'
 import AthleteSheet from '@/components/coach/AthleteSheet'
+import PlayerPhoto from '@/components/PlayerPhoto'
 import { GROUP_CATEGORIES, type Group, type Profile } from '@/lib/training'
 import { NoLoginBadge, SheetFrame, TagChip, catOf, type Member } from './shared'
 
@@ -140,6 +141,15 @@ export default function PersonSheet({
 
   return (
     <SheetFrame title={person.full_name} subtitle={isCoach ? 'Coach' : person.grad_year ? `Class of ${person.grad_year}` : 'Player'} onClose={close}>
+      {!isCoach && (
+        <div className="flex items-center gap-3">
+          <PlayerPhoto id={person.id} name={person.full_name} size={64} />
+          <div className="min-w-0">
+            <div className="text-lg font-extrabold text-slate-900 truncate">{person.full_name}</div>
+            <div className="text-xs font-semibold text-slate-500">{person.grad_year ? `Class of ${person.grad_year}` : 'Player'}</div>
+          </div>
+        </div>
+      )}
       {person.roster_note && (
         <div className="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs font-bold text-amber-800 flex gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0" /> {person.roster_note}

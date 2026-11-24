@@ -1,5 +1,6 @@
 'use client'
 
+import PlayerPhoto from '@/components/PlayerPhoto'
 import { useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { ordinal } from '@/lib/rank'
@@ -81,9 +82,12 @@ function MySeason({ lines, mine, name }: { lines: GcLine[]; mine: GcLine[]; name
   const positions = fld ? (['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF'] as const).map((p) => ({ p, inn: num(fld[p]) ?? 0 })).filter((x) => x.inn > 0).sort((a, b) => b.inn - a.inn) : []
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
-      <div>
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">My season</div>
-        <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Badges show your percentile on the team (99th is the top).</p>
+      <div className="flex items-center gap-3">
+        <PlayerPhoto id={mine[0]?.player_id} name={name} size={48} />
+        <div>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">My season</div>
+          <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Badges show your percentile on the team (99th is the top).</p>
+        </div>
       </div>
       {bat && (
         <div className="space-y-2">
