@@ -121,11 +121,11 @@ async function ensureFolder(sb: SupabaseClient, kind: FolderKind, path: string[]
     }
     let q = sb.from('library_folders').select('id').eq('kind', kind).eq('name', path[i])
     q = parent == null ? q.is('parent_id', null) : q.eq('parent_id', parent)
-    const found = await q.maybeSingle()
+    const found: { data: unknown } = await q.maybeSingle()
     let id: number | undefined = (found.data as { id: number } | null)?.id
     if (!id) {
       const parentId: number | null = parent
-      const res = await sb.from('library_folders').insert({ kind, parent_id: parentId, name: path[i], sort_order: cache.size }).select('id').single()
+      const res: { data: unknown; error: { message: string } | null } = await sb.from('library_folders').insert({ kind, parent_id: parentId, name: path[i], sort_order: cache.size }).select('id').single()
       if (res.error) throw new Error(`Folder "${path[i]}": ${res.error.message}`)
       id = (res.data as { id: number }).id
     }
