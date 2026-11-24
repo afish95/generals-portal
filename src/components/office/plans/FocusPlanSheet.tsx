@@ -22,6 +22,7 @@ import {
   type TrainingRow,
 } from '@/lib/focus'
 import type { GcLine } from '@/lib/gcStats'
+import PlayerPhoto from '@/components/PlayerPhoto'
 
 type Draft = Omit<PlayerFocus, 'id' | 'updated_at' | 'published_at'> & { id: number | null; key: string; published_at?: string | null }
 
@@ -150,6 +151,13 @@ export default function FocusPlanSheet({
   return (
     <SheetFrame title={`${player.full_name}’s plan`} subtitle={[player.grad_year ? `Class of ${player.grad_year}` : null, POS[player.position_group || '']].filter(Boolean).join(' · ')} onClose={close}>
       <section className="bg-white rounded-3xl border border-slate-200 p-5">
+        <div className="flex items-center gap-3 mb-3">
+          <PlayerPhoto id={player.id} name={player.full_name} size={56} />
+          <div className="min-w-0">
+            <div className="text-base font-extrabold text-slate-900 truncate">{player.full_name}</div>
+            <div className="text-xs font-semibold text-slate-500">{[player.grad_year ? `Class of ${player.grad_year}` : null, POS[player.position_group || '']].filter(Boolean).join(' · ')}</div>
+          </div>
+        </div>
         <SectionLabel>Where they stand (team percentile)</SectionLabel>
         {snap.length === 0 ? (
           <p className="text-xs font-semibold text-slate-500">No game stats or training numbers yet. Start with a baseline focus so they log some.</p>

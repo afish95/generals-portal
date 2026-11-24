@@ -1,5 +1,6 @@
 'use client'
 
+import PlayerPhoto from '@/components/PlayerPhoto'
 import { useEffect, useState } from 'react'
 import { Flag, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -94,6 +95,7 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
           <button type="button" onClick={onClose} aria-label="Close" className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center cursor-pointer">
             <X className="w-5 h-5" />
           </button>
+          <PlayerPhoto id={athlete.id} name={athlete.full_name} size={44} className="border-2 border-white/40" />
           <div className="min-w-0">
             <div className="text-lg font-extrabold leading-tight truncate">
               {athlete.full_name} {flag && <span aria-label="Flagged">🚩</span>}

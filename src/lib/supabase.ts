@@ -27,6 +27,7 @@ const READ_RPCS = new Set([
   'conversations_for',
   'conversation_reads',
   'my_conversations',
+  'benchmark_inputs',
 ])
 const WRITES = new Set(['insert', 'update', 'upsert', 'delete'])
 
