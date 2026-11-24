@@ -1,7 +1,8 @@
 'use client'
 
+import { DrillHowTo } from '@/components/library/VideoEmbed'
 import { useState } from 'react'
-import { Check, ExternalLink } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { withPointsDelta } from '@/lib/pointsDelta'
 import { PointBubble, buzz } from '@/components/points/PointBurst'
@@ -203,11 +204,7 @@ export default function WorkoutLogger({
                     {item.load ? ` · ${item.load}` : ''}
                   </div>
                   {item.notes && <div className="text-xs text-slate-500 mt-0.5">{item.notes}</div>}
-                  {ex.video_url && (
-                    <a href={ex.video_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#1746b8] mt-1">
-                      Watch demo <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
+                  {(ex.video_url || ex.notes) && <DrillHowTo url={ex.video_url} notes={ex.notes} name={ex.name} />}
                 </div>
               </div>
 
