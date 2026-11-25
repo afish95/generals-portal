@@ -104,6 +104,42 @@ export default function WorkoutEditor({
   const [scripts, setScripts] = useState<{ id: number; title: string; pitch_count: number }[]>([])
   const [origTools, setOrigTools] = useState<DraftTool[]>([])
   const [tools, setTools] = useState<DraftTool[]>([])
+  const [progs, setProgs] = useState<{ id: number; name: string }[]>([])
+  const [progNote, setProgNote] = useState<string | null>(null)
+  useEffect(() => {
+    createClient()
+      .from('progressions')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name')
+      .then(({ data }) => setProgs((data as { id: number; name: string }[]) || []))
+  }, [])
+
+  /** Drop a whole progression in: slots that share a block letter (A1, A2…) become one superset. */
+  const addProgression = async (id: number) => {
+    const { data } = await createClient().from('progression_items').select('position, block, exercise_id, label, sets, reps, seconds').eq('progression_id', id).order('position')
+    const rows = (data as { block: string | null; exercise_id: number | null; label: string | null; sets: string | null; reps: string | null; seconds: string | null }[]) || []
+    const skipped = rows.filter((r) => !r.exercise_id).map((r) => r.label)
+    const out: DraftItem[][] = []
+    let lastLetter: string | null = null
+    for (const r of rows) {
+      if (!r.exercise_id) continue
+      const letter = r.block?.trim().match(/^([A-Z])\d/i)?.[1]?.toUpperCase() || null
+      if (!letter || letter !== lastLetter || !out.length) out.push([])
+      lastLetter = letter
+      out[out.length - 1].push({
+        key: newKey(),
+        exercise_id: r.exercise_id,
+        sets: Math.max(1, parseInt(r.sets || '1', 10) || 1),
+        reps: r.reps || (r.seconds ? `${r.seconds} sec` : ''),
+        load: '',
+        notes: r.block && r.block.includes(' ') ? r.block.split(/\s(.+)/)[1] : '',
+      })
+    }
+    setBlocks((bl) => [...bl.filter((b) => b.length), ...out])
+    setProgNote(`Added ${rows.length - skipped.length} drills in ${out.length} blocks.${skipped.length ? ` Skipped ${skipped.join(', ')} (not in the drill library).` : ''}`)
+  }
+
   useEffect(() => {
     const supabase = createClient()
     let cancelled = false
@@ -377,6 +413,18 @@ export default function WorkoutEditor({
             </select>
           </section>
         ))}
+
+        {progs.length > 0 && (
+          <div className="space-y-1">
+            <select value="" onChange={(e) => e.target.value && addProgression(Number(e.target.value))} className={`${inputClass} text-[#1746b8] font-bold`} aria-label="Add a progression">
+              <option value="">+ Add a whole progression</option>
+              {progs.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            {progNote && <p className="text-[11px] font-semibold text-slate-500 px-1">{progNote}</p>}
+          </div>
+        )}
 
         <section className="bg-white rounded-3xl border border-amber-200 p-5 shadow-xs space-y-3">
           <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700">Training tools · bullpens</div>

@@ -7,7 +7,7 @@ import { EmptyState, PageTitle, Pill } from '@/components/ui'
 import WorkoutsTab from '@/components/office/WorkoutsTab'
 import RosterArea from '@/components/office/roster/RosterArea'
 import PlayerPlansTab from '@/components/office/plans/PlayerPlansTab'
-import DrillsTab from '@/components/office/DrillsTab'
+import DrillLibrary from '@/components/library/DrillLibrary'
 import AttendanceTab from '@/components/office/AttendanceTab'
 import ThoughtTab from '@/components/office/ThoughtTab'
 import GameStatsImport from '@/components/office/GameStatsImport'
@@ -89,7 +89,7 @@ export default function CoachOfficePage() {
       {tab === 'practices' && <PracticePlansTab openEventId={openEventId} />}
       {tab === 'attendance' && <AttendanceTab players={players} groups={groups} />}
       {tab === 'roster' && <RosterArea initial={rosterSub} onChanged={refresh} />}
-      {tab === 'drills' && <DrillsTab exercises={exercises} onChanged={refresh} />}
+      {tab === 'drills' && <DrillLibrary onChanged={refresh} />}
       {tab === 'thought' && <ThoughtTab />}
       {tab === 'gamestats' && <GameStatsImport players={players} />}
     </div>

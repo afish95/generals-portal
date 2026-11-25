@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CheckCircle2, ChevronDown, ExternalLink, Play, Target } from 'lucide-react'
+import { CheckCircle2, ChevronDown, Play, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { currentValue, fmtValue, optionFor, type DrillOption, type PlayerFocus } from '@/lib/focus'
 import { useFocusData } from './useFocusData'
+import VideoEmbed from '@/components/library/VideoEmbed'
 
 /** Progress from where the player started toward the goal, 0–100. */
 export function progressPct(f: Pick<PlayerFocus, 'baseline' | 'goal' | 'lower_is_better'>, now: number | null) {
@@ -117,12 +118,8 @@ export default function MyPlan({ athleteId, onStartTool }: { athleteId: string; 
                       </div>
                       {isOpen && (
                         <div className="ml-6 mb-2 text-xs font-medium text-slate-600 space-y-1.5">
-                          <p>{info?.notes || (d.kind === 'script' ? 'A guided bullpen. Tap Start and follow each pitch.' : 'Log it in your workouts so your coach can see your progress.')}</p>
-                          {info?.video_url && (
-                            <a href={info.video_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-extrabold text-[#1746b8]">
-                              Watch how-to <ExternalLink className="w-3 h-3" />
-                            </a>
-                          )}
+                          <VideoEmbed url={info?.video_url} title={d.name} />
+                          <p className="whitespace-pre-line">{(info?.notes || (d.kind === 'script' ? 'A guided bullpen. Tap Start and follow each pitch.' : 'Log it in your workouts so your coach can see your progress.')).replace(/; (?=\d\)|Heat Zone|\*\*)/g, '\n')}</p>
                         </div>
                       )}
                     </div>
