@@ -36,56 +36,76 @@ export function useDismissals(kind: DismissKind, profileId: string | null | unde
   return { dismissed: ids, dismiss }
 }
 
-/** A row you can swipe left or right to clear, with a "Mark read" button for mouse users. */
+/**
+ * iOS-style swipe: drag left to reveal a ✓ button on the trailing side (tap it to clear),
+ * or swipe all the way to clear at once. Works with touch and mouse.
+ */
 export function SwipeRow({ onDismiss, children, dark = false }: { onDismiss: () => void; children: React.ReactNode; dark?: boolean }) {
+  const ACTION = 76
   const [dx, setDx] = useState(0)
+  const [dragging, setDragging] = useState(false)
   const [gone, setGone] = useState(false)
-  const start = useRef<{ x: number; y: number } | null>(null)
+  const start = useRef<{ x: number; y: number; base: number } | null>(null)
   const horizontal = useRef(false)
 
-  const finish = () => {
-    if (Math.abs(dx) > 90) {
-      setGone(true)
-      setDx(dx > 0 ? 500 : -500)
-      setTimeout(onDismiss, 180)
-    } else setDx(0)
-    start.current = null
-    horizontal.current = false
+  const clear = () => {
+    setDx(-600)
+    setGone(true)
+    setTimeout(onDismiss, 200)
   }
 
   return (
-    <div className={`relative overflow-hidden transition-[max-height,opacity] duration-200 ${gone ? 'max-h-0 opacity-0' : 'max-h-[600px]'}`}>
-      <div className={`absolute inset-0 flex items-center ${dx > 0 ? 'justify-start pl-4' : 'justify-end pr-4'} ${dark ? 'text-emerald-300' : 'text-emerald-600'} text-xs font-extrabold`}>
-        <Check className="w-4 h-4" />
-      </div>
-      <div
-        className="relative flex items-start gap-2 touch-pan-y"
-        style={{ transform: `translateX(${dx}px)`, transition: start.current ? 'none' : 'transform 180ms ease-out' }}
-        onTouchStart={(e) => {
-          start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-        }}
-        onTouchMove={(e) => {
-          if (!start.current) return
-          const mx = e.touches[0].clientX - start.current.x
-          const my = e.touches[0].clientY - start.current.y
-          if (!horizontal.current && Math.abs(mx) > 10 && Math.abs(mx) > Math.abs(my)) horizontal.current = true
-          if (horizontal.current) setDx(mx)
-        }}
-        onTouchEnd={finish}
+    <div className={`relative overflow-hidden rounded-2xl transition-[max-height,opacity] duration-200 ${gone ? 'max-h-0 opacity-0' : 'max-h-[600px]'}`}>
+      <button
+        type="button"
+        onClick={clear}
+        aria-label="Mark read"
+        tabIndex={dx < 0 ? 0 : -1}
+        className="absolute inset-y-0 right-0 flex items-center justify-center bg-emerald-500 text-white cursor-pointer"
+        style={{ width: Math.max(ACTION, -dx), opacity: dx < -8 ? 1 : 0 }}
       >
-        <div className="flex-1 min-w-0">{children}</div>
-        <button
-          type="button"
-          onClick={() => {
-            setGone(true)
-            setTimeout(onDismiss, 180)
-          }}
-          aria-label="Mark read"
-          title="Mark read"
-          className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer ${dark ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'}`}
-        >
-          <Check className="w-3.5 h-3.5" />
-        </button>
+        <Check className="w-5 h-5" strokeWidth={3} />
+      </button>
+      <div
+        className={`relative touch-pan-y select-none ${dark ? 'bg-[#16409f] py-1' : 'bg-white'}`}
+        style={{ transform: `translateX(${dx}px)`, transition: dragging ? 'none' : 'transform 220ms cubic-bezier(.2,.8,.2,1)' }}
+        onPointerDown={(e) => {
+          start.current = { x: e.clientX, y: e.clientY, base: dx }
+          horizontal.current = false
+        }}
+        onPointerMove={(e) => {
+          if (!start.current) return
+          const mx = e.clientX - start.current.x
+          const my = e.clientY - start.current.y
+          if (!horizontal.current) {
+            if (Math.abs(mx) > 8 && Math.abs(mx) > Math.abs(my)) {
+              horizontal.current = true
+              setDragging(true)
+              ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+            } else return
+          }
+          setDx(Math.min(0, start.current.base + mx))
+        }}
+        onPointerUp={() => {
+          const was = horizontal.current
+          start.current = null
+          horizontal.current = false
+          setDragging(false)
+          if (!was) {
+            if (dx < 0) setDx(0)
+            return
+          }
+          if (dx < -180) clear()
+          else if (dx < -36) setDx(-ACTION)
+          else setDx(0)
+        }}
+        onPointerCancel={() => {
+          start.current = null
+          setDragging(false)
+          setDx(0)
+        }}
+      >
+        {children}
       </div>
     </div>
   )
