@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle2, ChevronDown, Play, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
-import { currentValue, fmtValue, optionFor, type DrillOption, type PlayerFocus } from '@/lib/focus'
+import { currentValue, fmtValue, focusKind, optionFor, type DrillOption, type PlayerFocus } from '@/lib/focus'
 import { useFocusData } from './useFocusData'
 import VideoEmbed from '@/components/library/VideoEmbed'
+import KindBadge from './KindBadge'
 
 /** Progress from where the player started toward the goal, 0–100. */
 export function progressPct(f: Pick<PlayerFocus, 'baseline' | 'goal' | 'lower_is_better'>, now: number | null) {
@@ -88,7 +89,8 @@ export default function MyPlan({ athleteId, onStartTool }: { athleteId: string; 
             <div className="flex items-start gap-3">
               <span className="w-7 h-7 rounded-full bg-[#1746b8] text-white text-xs font-black flex items-center justify-center shrink-0">{i + 1}</span>
               <div className="min-w-0 flex-1">
-                <div className="text-base font-extrabold text-slate-900 leading-tight">{f.title}</div>
+                <KindBadge kind={focusKind(f)} />
+                <div className="text-base font-extrabold text-slate-900 leading-tight mt-0.5">{f.title}</div>
                 {f.why && <p className="text-xs font-medium text-slate-600 mt-1">{f.why}</p>}
                 {f.target_date && (
                   <div className="text-[11px] font-bold text-[#1746b8] mt-1">Goal date: {new Date(f.target_date + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
