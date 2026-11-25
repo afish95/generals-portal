@@ -112,7 +112,7 @@ export function currentValue(f: { metric_source: string; metric_key: string | nu
   return m.value(line.stats, eaFinder(ea, line)(line.player_name))
 }
 
-export type Snapshot = { key: string; source: 'game' | 'training'; label: string; value: number; pctl: number; season?: string }
+export type Snapshot = { key: string; source: 'game' | 'training'; label: string; value: number; pctl: number; season?: string; kind: 'pitcher' | 'hitter' }
 
 /** Every stat we can rank this player on, with team percentiles (game: their latest season; training: all logged). */
 export function snapshot(playerId: string, position: string | null | undefined, lines: GcLine[], ea: EaRow[], training: TrainingRow[]): Snapshot[] {
@@ -132,7 +132,7 @@ export function snapshot(playerId: string, position: string | null | undefined, 
       const better = vals.filter((x) => (m.lowerIsBetter ? x < v : x > v)).length
       const ties = vals.filter((x) => x === v).length
       const pctl = Math.max(1, Math.min(99, Math.round((100 * (vals.length - better - ties + ties / 2)) / vals.length)))
-      out.push({ key: `${kind}:${key}`, source: 'game', label: m.label, value: v, pctl, season: `${mine.season_year}` })
+      out.push({ key: `${kind}:${key}`, source: 'game', label: m.label, value: v, pctl, season: `${mine.season_year}`, kind })
     }
   }
   for (const o of TRAINING_OPTIONS) {
@@ -144,7 +144,7 @@ export function snapshot(playerId: string, position: string | null | undefined, 
     const better = vals.filter((x) => (o.lowerIsBetter ? x < mine.value : x > mine.value)).length
     const ties = vals.filter((x) => x === mine.value).length
     const pctl = Math.max(1, Math.min(99, Math.round((100 * (vals.length - better - ties + ties / 2)) / vals.length)))
-    out.push({ key: o.key, source: 'training', label: o.label.replace('Training · ', ''), value: mine.value, pctl })
+    out.push({ key: o.key, source: 'training', label: o.label.replace('Training · ', ''), value: mine.value, pctl, kind: o.kind })
   }
   return out.sort((a, b) => a.pctl - b.pctl)
 }
@@ -198,3 +198,20 @@ export function suggest(position: string | null | undefined, snap: Snapshot[], d
 }
 
 export const STATUS_LABEL: Record<PlayerFocus['status'], string> = { draft: 'Draft', published: 'Live', done: 'Done' }
+
+/** Is a focus about pitching or hitting? From its stat, else its title or drills. */
+export function focusKind(f: { metric_source?: string | null; metric_key: string | null; title?: string | null; drills?: FocusDrill[] }): 'pitcher' | 'hitter' | null {
+  if (f.metric_key) {
+    if (f.metric_key.startsWith('pitcher:')) return 'pitcher'
+    if (f.metric_key.startsWith('hitter:')) return 'hitter'
+    const t = TRAINING_OPTIONS.find((o) => o.key === f.metric_key)
+    if (t) return t.kind
+  }
+  const title = (f.title || '').toLowerCase()
+  if (/pitch|velo|strike|walk|count|command|arm|throw|bullpen/.test(title)) return 'pitcher'
+  if (/hit|bat|swing|exit|contact|on base|power|drive|speed|pop time/.test(title)) return 'hitter'
+  if (f.drills?.some((d) => d.kind === 'script')) return 'pitcher'
+  return null
+}
+export const KIND_LABEL = { pitcher: 'Pitching', hitter: 'Hitting' } as const
+export const KIND_STYLE = { pitcher: 'bg-sky-100 text-sky-800', hitter: 'bg-orange-100 text-orange-800' } as const

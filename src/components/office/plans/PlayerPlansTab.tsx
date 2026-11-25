@@ -5,7 +5,8 @@ import { Search, Send, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { inputClass } from '@/components/ui'
 import { PROFILE_FIELDS, type Group, type Profile } from '@/lib/training'
-import { snapshot, suggest, type PlayerFocus } from '@/lib/focus'
+import { focusKind, snapshot, suggest, type PlayerFocus } from '@/lib/focus'
+import KindBadge from '@/components/plan/KindBadge'
 import { useFocusData } from '@/components/plan/useFocusData'
 import { Avatar, NoLoginBadge, TagChip } from '@/components/office/roster/shared'
 import FocusPlanSheet from './FocusPlanSheet'
@@ -168,8 +169,15 @@ export default function PlayerPlansTab({ initialPlayer = null }: { initialPlayer
                   {[p.grad_year ? `’${String(p.grad_year).slice(2)}` : null, POS[p.position_group || ''], ...teamOf(p.id).map((t) => t.name)].filter(Boolean).join(' · ')}
                 </div>
                 {mine.length > 0 && (
-                  <div className="text-xs font-semibold text-slate-700 mt-1 truncate">
-                    {mine.filter((f) => f.status !== 'done').map((f) => f.title).join(' · ')}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                    {mine
+                      .filter((f) => f.status !== 'done')
+                      .map((f) => (
+                        <span key={f.id} className="flex items-center gap-1 text-xs font-semibold text-slate-700">
+                          <KindBadge kind={focusKind(f)} />
+                          {f.title}
+                        </span>
+                      ))}
                   </div>
                 )}
               </div>

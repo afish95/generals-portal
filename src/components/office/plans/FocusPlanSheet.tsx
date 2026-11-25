@@ -12,6 +12,8 @@ import {
   currentValue,
   fmtValue,
   optionFor,
+  focusKind,
+  KIND_LABEL,
   snapshot,
   suggest,
   type DrillOption,
@@ -23,6 +25,7 @@ import {
 } from '@/lib/focus'
 import type { GcLine } from '@/lib/gcStats'
 import PlayerPhoto from '@/components/PlayerPhoto'
+import KindBadge from '@/components/plan/KindBadge'
 import { notifyPlayers } from '@/lib/notify'
 
 type Draft = Omit<PlayerFocus, 'id' | 'updated_at' | 'published_at'> & { id: number | null; key: string; published_at?: string | null }
@@ -173,16 +176,27 @@ export default function FocusPlanSheet({
         {snap.length === 0 ? (
           <p className="text-xs font-semibold text-slate-500">No game stats or training numbers yet. Start with a baseline focus so they log some.</p>
         ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {snap.map((s) => (
-              <span
-                key={s.key}
-                className={`text-[11px] font-extrabold px-2 py-1 rounded-lg ${s.pctl < 34 ? 'bg-rose-50 text-rose-700' : s.pctl < 67 ? 'bg-slate-100 text-slate-700' : 'bg-emerald-50 text-emerald-700'}`}
-                title={s.season ? `${s.season} season` : 'Training'}
-              >
-                {s.label} {s.pctl}
-              </span>
-            ))}
+          <div className="space-y-2">
+            {(['pitcher', 'hitter'] as const).map((k) => {
+              const list = snap.filter((s) => s.kind === k)
+              if (!list.length) return null
+              return (
+                <div key={k} className="flex items-start gap-2">
+                  <span className="w-16 shrink-0 pt-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-500">{KIND_LABEL[k]}</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {list.map((s) => (
+                      <span
+                        key={s.key}
+                        className={`text-[11px] font-extrabold px-2 py-1 rounded-lg ${s.pctl < 34 ? 'bg-rose-50 text-rose-700' : s.pctl < 67 ? 'bg-slate-100 text-slate-700' : 'bg-emerald-50 text-emerald-700'}`}
+                        title={s.season ? `${s.season} season` : 'Training'}
+                      >
+                        {s.label} {s.pctl}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </section>
@@ -195,7 +209,10 @@ export default function FocusPlanSheet({
           {suggestions.map((s) => (
             <div key={s.title} className="flex items-center gap-2 bg-white rounded-2xl px-3 py-2">
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-extrabold text-slate-900">{s.title}</div>
+                <div className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                  <KindBadge kind={focusKind(s)} />
+                  {s.title}
+                </div>
                 <div className="text-[11px] font-semibold text-slate-500 truncate">{s.pctl != null ? `${s.metric_label?.split(' · ')[1]} · ${s.pctl}th %ile` : 'No data yet'}</div>
               </div>
               <button type="button" onClick={() => add(s)} className="px-3 py-1.5 rounded-xl bg-[#1746b8] text-white text-xs font-extrabold cursor-pointer">Add</button>
@@ -211,6 +228,7 @@ export default function FocusPlanSheet({
           <section key={d.key} className="bg-white rounded-3xl border border-slate-200 p-4 space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-7 h-7 rounded-full bg-[#1746b8] text-white text-xs font-black flex items-center justify-center shrink-0">{idx + 1}</span>
+              <KindBadge kind={focusKind(d)} className="shrink-0" />
               <input value={d.title} onChange={(e) => change(d.key, { title: e.target.value })} className={`${inputClass} font-extrabold`} aria-label="Focus title" />
               <select value={d.status} onChange={(e) => change(d.key, { status: e.target.value as Draft['status'] })} className="px-2 py-2.5 rounded-xl border border-slate-200 text-xs font-extrabold bg-white">
                 {(['draft', 'published', 'done'] as const).map((s) => (
@@ -234,8 +252,14 @@ export default function FocusPlanSheet({
                   className={inputClass}
                 >
                   <option value="">No stat (habit or skill)</option>
-                  {METRIC_OPTIONS.map((m) => (
-                    <option key={`${m.source}|${m.key}`} value={`${m.source}|${m.key}`}>{m.label}</option>
+                  {(['pitcher', 'hitter'] as const).map((k) => (
+                    <optgroup key={k} label={KIND_LABEL[k]}>
+                      {METRIC_OPTIONS.filter((m) => m.kind === k).map((m) => (
+                        <option key={`${m.source}|${m.key}`} value={`${m.source}|${m.key}`}>
+                          {m.source === 'game' ? 'Game' : 'Training'} · {m.label.split(' · ')[1]}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </label>
