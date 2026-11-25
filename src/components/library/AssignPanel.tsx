@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { inputClass, SectionLabel } from '@/components/ui'
 import type { Group, Profile } from '@/lib/training'
 import { catOf, TagChip } from '@/components/office/roster/shared'
+import { notifyPlayers } from '@/lib/notify'
 
 type Pattern = 'daily' | 'every_other' | 'weekdays'
 type Assignment = { id: number; target_label: string; pattern: Pattern; weekdays: number[]; start_date: string; end_date: string; dates: string[]; status: 'active' | 'stopped' }
@@ -86,9 +87,21 @@ export default function AssignPanel({ progressionId, progressionName }: { progre
       p_end: end,
       p_dates: dates,
     })
+    if (e) {
+      setBusy(null)
+      return setError(e.message)
+    }
+    setBusy('Notifying players…')
+    const n = await notifyPlayers({
+      title: `New assignment: ${progressionName}`,
+      body: `${patternText(pattern, weekdays)} · starts ${nice(start)} · ${dates.length} sessions. It's on your day plan.`,
+      url: '/',
+      groupId: mode === 'group' ? groupId : undefined,
+      recipientIds: mode === 'players' ? [...picked] : undefined,
+      kind: 'assignment',
+    })
     setBusy(null)
-    if (e) return setError(e.message)
-    setMsg(`Assigned to ${label}: ${dates.length} sessions, ${patternText(pattern, weekdays).toLowerCase()}, ${short(start)} – ${short(end)}. It's on their day plan and calendar.`)
+    setMsg(`${n.ok ? `Players notified (${n.data.pushed} phone${n.data.pushed === 1 ? '' : 's'}). ` : ''}Assigned to ${label}: ${dates.length} sessions, ${patternText(pattern, weekdays).toLowerCase()}, ${short(start)} – ${short(end)}. It's on their day plan and calendar.`)
     setPicked(new Set())
     setVersion((v) => v + 1)
   }

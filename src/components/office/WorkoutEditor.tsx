@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { notifyPlayers } from '@/lib/notify'
 import { inputClass } from '@/components/ui'
 import {
   DISCIPLINES,
@@ -104,6 +105,7 @@ export default function WorkoutEditor({
   const [scripts, setScripts] = useState<{ id: number; title: string; pitch_count: number }[]>([])
   const [origTools, setOrigTools] = useState<DraftTool[]>([])
   const [tools, setTools] = useState<DraftTool[]>([])
+  const [notify, setNotify] = useState(!workout)
   const [progs, setProgs] = useState<{ id: number; name: string }[]>([])
   const [progNote, setProgNote] = useState<string | null>(null)
   useEffect(() => {
@@ -295,6 +297,10 @@ export default function WorkoutEditor({
           }
         }
       }
+      if (notify && !draft.id) {
+        const when = new Date(`${draft.workout_date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
+        await notifyPlayers({ title: `New workout: ${fields.title}`, body: `On your day plan for ${when}.`, url: '/', groupId: draft.group_id, everyone: draft.group_id == null, kind: 'workout' })
+      }
       onSaved()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save')
@@ -463,6 +469,12 @@ export default function WorkoutEditor({
           <Plus className="w-4 h-4" /> Add block
         </button>
 
+        {!draft.id && (
+          <label className="flex items-center gap-2 px-1 text-xs font-bold text-slate-600 cursor-pointer">
+            <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="w-4 h-4 accent-[#1746b8]" />
+            Notify players (announcement + push)
+          </label>
+        )}
         {error && <p className="text-sm font-bold text-red-600">{error}</p>}
       </div>
 

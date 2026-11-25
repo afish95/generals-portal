@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Only active coaches can post announcements' }, { status: 403 })
   }
 
-  let input: { title?: unknown; body?: unknown; audience?: unknown; link_url?: unknown; send_push?: unknown }
+  let input: { title?: unknown; body?: unknown; audience?: unknown; link_url?: unknown; send_push?: unknown; recipient_ids?: unknown; group_id?: unknown; kind?: unknown }
   try {
     input = await req.json()
   } catch {
@@ -47,20 +47,39 @@ export async function POST(req: Request) {
   const link_url = rawLink && (rawLink.startsWith('/') || rawLink.startsWith('https://')) ? rawLink : null
   const send_push = input.send_push !== false
 
+  // Targeted announcements (an assignment for specific players or one group's players)
+  const KINDS = ['general', 'assignment', 'plan', 'workout']
+  const kind = KINDS.includes(String(input.kind)) ? String(input.kind) : 'general'
+  let targeted: string[] | null = null
+  if (Array.isArray(input.recipient_ids)) targeted = input.recipient_ids.filter((x): x is string => typeof x === 'string').slice(0, 500)
+  if (input.group_id != null && Number.isInteger(Number(input.group_id))) {
+    const { data: gm } = await admin.from('group_members').select('athlete_id').eq('group_id', Number(input.group_id))
+    targeted = [...new Set([...(targeted || []), ...(gm || []).map((r) => r.athlete_id as string)])]
+  }
+  if (targeted) {
+    const { data: ok } = targeted.length ? await admin.from('profiles').select('id').in('id', targeted).eq('role', 'player').eq('is_active', true) : { data: [] }
+    targeted = (ok || []).map((r) => r.id as string)
+    if (!targeted.length) return Response.json({ ok: true, id: null, recipients: 0, pushed: 0, failed: 0 })
+  }
+
   if (!title || title.length > 120) return Response.json({ error: 'Title is required (max 120 characters)' }, { status: 400 })
   if (body.length > 2000) return Response.json({ error: 'Message is too long (max 2000 characters)' }, { status: 400 })
 
   const { data: ann, error: annErr } = await admin
     .from('announcements')
-    .insert({ author_id: user.id, title, body: body || null, audience, link_url, send_push })
+    .insert({ author_id: user.id, title, body: body || null, audience: targeted ? 'players' : audience, link_url, send_push, recipient_ids: targeted, kind })
     .select('id')
     .single()
   if (annErr || !ann) return Response.json({ error: annErr?.message || 'Could not save announcement' }, { status: 500 })
 
-  let recipientsQuery = admin.from('profiles').select('id').eq('is_active', true)
-  if (audience !== 'everyone') recipientsQuery = recipientsQuery.eq('role', ROLE_FOR[audience])
-  const { data: recipients } = await recipientsQuery
-  const recipientIds = (recipients || []).map((r) => r.id as string)
+  let recipientIds: string[]
+  if (targeted) recipientIds = targeted
+  else {
+    let recipientsQuery = admin.from('profiles').select('id').eq('is_active', true)
+    if (audience !== 'everyone') recipientsQuery = recipientsQuery.eq('role', ROLE_FOR[audience])
+    const { data: recipients } = await recipientsQuery
+    recipientIds = (recipients || []).map((r) => r.id as string)
+  }
 
   if (recipientIds.length > 0) {
     await admin.from('notifications').insert(

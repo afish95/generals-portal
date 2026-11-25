@@ -40,7 +40,7 @@ export default function HomePage() {
             <ViewAsPicker />
             <ClassStandings />
             <TeamPrFeed limit={6} />
-            <AnnouncementsFeed limit={2} />
+            <AnnouncementsFeed limit={2} dismissible />
           </div>
         </div>
       </div>
@@ -64,7 +64,7 @@ export default function HomePage() {
         onToday={() => setDay(today)}
       />
       {!viewAs.active && <NotificationSetup hideWhenOn />}
-      <AnnouncementsFeed limit={3} />
+      <AnnouncementsFeed limit={3} dismissible />
       <FocusLine athleteId={profile.id} />
       <StreakCard athleteId={profile.id} refreshKey={pointsKey} />
       <DayPlan athleteId={profile.id} date={day} refreshKey={pointsKey} onChange={refresh} />

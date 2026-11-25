@@ -23,6 +23,7 @@ import {
 } from '@/lib/focus'
 import type { GcLine } from '@/lib/gcStats'
 import PlayerPhoto from '@/components/PlayerPhoto'
+import { notifyPlayers } from '@/lib/notify'
 
 type Draft = Omit<PlayerFocus, 'id' | 'updated_at' | 'published_at'> & { id: number | null; key: string; published_at?: string | null }
 
@@ -134,6 +135,16 @@ export default function FocusPlanSheet({
         setBusy(false)
         return setError(e.message)
       }
+    }
+    const newlyLive = items.filter((d) => (publish && d.status === 'draft') || (d.status === 'published' && !existing.find((x) => x.id === d.id && x.status === 'published')))
+    if (newlyLive.length) {
+      await notifyPlayers({
+        title: existing.some((x) => x.status === 'published') ? 'Your player plan was updated' : 'Your player plan is ready',
+        body: `Focus: ${newlyLive.map((d) => d.title).join(' · ')}. See it at the top of Training.`,
+        url: '/training',
+        recipientIds: [player.id],
+        kind: 'plan',
+      })
     }
     setBusy(false)
     onSaved()
