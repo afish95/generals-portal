@@ -10,8 +10,9 @@ import FolderTree, { type Place } from './FolderTree'
 import DrillSheet from './DrillSheet'
 import ProgressionSheet from './ProgressionSheet'
 import ImportPanel from './ImportPanel'
+import ProgramsPanel from './ProgramsPanel'
 
-type Sub = 'drills' | 'progressions' | 'import'
+type Sub = 'drills' | 'progressions' | 'programs' | 'import'
 
 /** Coach Office → Drills: folder-based drill and progression library with in-app videos. */
 export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
@@ -86,6 +87,7 @@ export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
         tabs={[
           { key: 'drills', label: 'Drills', count: drills.filter((d) => d.is_active).length },
           { key: 'progressions', label: 'Progressions', count: progs.filter((p) => p.is_active).length },
+          { key: 'programs', label: 'Programs' },
           { key: 'import', label: 'Import & videos' },
         ]}
         active={sub}
@@ -93,6 +95,8 @@ export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
       />
       {!loaded ? (
         <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />
+      ) : sub === 'programs' ? (
+        <ProgramsPanel progressions={progs.filter((p) => p.is_active).map((p) => ({ id: p.id, name: p.name }))} onChanged={refresh} />
       ) : sub === 'import' ? (
         <ImportPanel drills={drills} onChanged={refresh} />
       ) : (
