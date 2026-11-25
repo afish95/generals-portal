@@ -56,7 +56,7 @@ export function SwipeRow({ onDismiss, children, dark = false }: { onDismiss: () 
   return (
     <div className={`relative overflow-hidden transition-[max-height,opacity] duration-200 ${gone ? 'max-h-0 opacity-0' : 'max-h-[600px]'}`}>
       <div className={`absolute inset-0 flex items-center ${dx > 0 ? 'justify-start pl-4' : 'justify-end pr-4'} ${dark ? 'text-emerald-300' : 'text-emerald-600'} text-xs font-extrabold`}>
-        <Check className="w-4 h-4 mr-1" /> Read
+        <Check className="w-4 h-4" />
       </div>
       <div
         className="relative flex items-start gap-2 touch-pan-y"

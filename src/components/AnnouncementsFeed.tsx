@@ -65,8 +65,13 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot, 
         <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex-1">Announcements</span>
         {dismissible && shown.length > 1 && (
           <button type="button" onClick={() => dismiss(shown.map((a) => a.id))} className="text-[11px] font-extrabold text-[#1746b8] cursor-pointer">
-            Mark all read
+            Clear all
           </button>
+        )}
+        {dismissible && (
+          <Link href="/messages?tab=announcements" className="text-[11px] font-extrabold text-slate-400">
+            All{hiddenNew > 0 ? ` (${hiddenNew + shown.length})` : ''}
+          </Link>
         )}
       </div>
       {topSlot}
@@ -84,7 +89,7 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot, 
                   </h3>
                   <span className="text-[10px] font-bold text-slate-400 shrink-0">{timeAgo(a.created_at)}</span>
                 </div>
-                {a.body && <p className="text-xs text-slate-600 font-medium whitespace-pre-line">{a.body}</p>}
+                {a.body && <p className={`text-xs text-slate-500 font-medium whitespace-pre-line ${dismissible ? 'line-clamp-2' : ''}`}>{a.body}</p>}
                 {a.link_url && a.link_url !== '/' && (
                   <a href={a.link_url} className="inline-flex items-center gap-1 text-xs font-bold text-[#1746b8]">
                     Open <ExternalLink className="w-3 h-3" />
@@ -99,11 +104,6 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot, 
             )
           })}
         </ul>
-      )}
-      {dismissible && (
-        <Link href="/messages?tab=announcements" className="block text-[11px] font-extrabold text-slate-400">
-          {hiddenNew > 0 ? `${hiddenNew} more · ` : ''}Swipe or tap ✓ to clear. All announcements are in Messages →
-        </Link>
       )}
     </section>
   )

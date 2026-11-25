@@ -139,8 +139,8 @@ export default function FocusPlanSheet({
     const newlyLive = items.filter((d) => (publish && d.status === 'draft') || (d.status === 'published' && !existing.find((x) => x.id === d.id && x.status === 'published')))
     if (newlyLive.length) {
       await notifyPlayers({
-        title: existing.some((x) => x.status === 'published') ? 'Your player plan was updated' : 'Your player plan is ready',
-        body: `Focus: ${newlyLive.map((d) => d.title).join(' · ')}. See it at the top of Training.`,
+        title: existing.some((x) => x.status === 'published') ? 'Plan updated' : 'Your plan is ready',
+        body: newlyLive.map((d) => d.title).join(' · '),
         url: '/training',
         recipientIds: [player.id],
         kind: 'plan',
