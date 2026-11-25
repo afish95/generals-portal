@@ -35,13 +35,14 @@ export type Exercise = {
   is_active: boolean
 }
 
-export type GroupCategory = 'Team' | 'Trip' | 'Position' | 'Status' | 'Workout' | 'Custom'
+export type GroupCategory = 'Team' | 'Trip' | 'Position' | 'Status' | 'Workout' | 'Focus' | 'Custom'
 export const GROUP_CATEGORIES: { key: GroupCategory; label: string; hint: string }[] = [
   { key: 'Team', label: 'Teams', hint: 'Varsity, JV, JV2' },
   { key: 'Trip', label: 'Trips & travel', hint: 'Travel rosters and bubbles' },
   { key: 'Position', label: 'Positions', hint: 'Pitchers, catchers, hitters' },
   { key: 'Status', label: 'Status', hint: 'Swing players and other labels' },
   { key: 'Workout', label: 'Workout groups', hint: 'Used to assign training' },
+  { key: 'Focus', label: 'Focus groups', hint: 'Automatic, from player plans' },
   { key: 'Custom', label: 'Custom', hint: 'Anything else' },
 ]
 export type Group = {
@@ -71,6 +72,9 @@ export type Workout = {
   phase: Phase
   notes: string | null
   sort_order: number
+  intent?: 'low' | 'med' | 'high' | null
+  focus_block?: boolean
+  program_assignment_id?: number | null
 }
 
 export type WorkoutItem = {

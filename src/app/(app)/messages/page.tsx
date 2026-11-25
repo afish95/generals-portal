@@ -411,7 +411,7 @@ function ChannelSheet({
         <div className="flex flex-wrap gap-1.5">
           {groups
             .filter((g) => g.id !== group?.id)
-            .filter((g) => !g.name.startsWith('Demo') && g.category !== 'Workout')
+            .filter((g) => !g.name.startsWith('Demo') && g.category !== 'Workout' && g.category !== 'Focus')
             .map((g) => (
               <button key={g.id} type="button" onClick={() => addGroup(g.id)} className="px-2.5 py-1 rounded-full bg-blue-50 text-[#1746b8] text-xs font-extrabold cursor-pointer">
                 + {g.name}

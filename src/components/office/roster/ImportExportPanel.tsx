@@ -44,7 +44,7 @@ export default function ImportExportPanel({ people, groups, members, onChanged }
     const m = new Map<string, Group[]>()
     members.forEach((x) => {
       const g = groupById.get(x.group_id)
-      if (!g || g.name.startsWith('Demo') || catOf(g) === 'Workout') return
+      if (!g || g.name.startsWith('Demo') || catOf(g) === 'Workout' || catOf(g) === 'Focus') return
       if (!m.has(x.athlete_id)) m.set(x.athlete_id, [])
       m.get(x.athlete_id)!.push(g)
     })

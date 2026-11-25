@@ -1,6 +1,7 @@
 'use client'
 
 import { DrillHowTo } from '@/components/library/VideoEmbed'
+import { INTENT_LABEL, INTENT_STYLE, sectionOf } from '@/lib/programs'
 import { useState } from 'react'
 import { Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -169,9 +170,13 @@ export default function WorkoutLogger({
       <div className={compact ? 'hidden' : 'px-4 pt-4 pb-3 border-b border-slate-100'}>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-extrabold text-slate-900">{workout.title}</h2>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full bg-blue-50 text-[#1746b8]">
-            {phaseLabel(workout.phase)}
-          </span>
+          {workout.intent ? (
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full border ${INTENT_STYLE[workout.intent].chip}`}>{INTENT_LABEL[workout.intent]} intent</span>
+          ) : (
+            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-full bg-blue-50 text-[#1746b8]">
+              {phaseLabel(workout.phase)}
+            </span>
+          )}
         </div>
         {workout.notes && <p className="text-xs text-slate-500 font-medium mt-1">{workout.notes}</p>}
         <div className="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
@@ -186,12 +191,15 @@ export default function WorkoutLogger({
       </div>
 
       <div className="divide-y divide-slate-100">
-        {sorted.map((item) => {
+        {sorted.map((item, n) => {
           const ex = exercises.get(item.exercise_id)
           if (!ex) return null
           const label = itemLabel(item.block_index, item.item_index, blockCounts.get(item.block_index) || 1)
+          const section = sectionOf(item.notes)
+          const newSection = section && section !== sectionOf(sorted[n - 1]?.notes)
           return (
             <div key={item.id} className="px-4 py-3 space-y-2">
+              {newSection && <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 -mt-1">{section}</div>}
               <div className="flex items-start gap-3">
                 <span className="shrink-0 w-9 h-9 rounded-xl bg-[#1746b8] text-white text-xs font-extrabold flex items-center justify-center">
                   {label}

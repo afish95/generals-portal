@@ -11,6 +11,7 @@ export const CAT_STYLE: Record<GroupCategory, string> = {
   Position: 'bg-sky-50 text-sky-700 border-sky-200',
   Status: 'bg-rose-50 text-rose-700 border-rose-200',
   Workout: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  Focus: 'bg-violet-50 text-violet-700 border-violet-200',
   Custom: 'bg-slate-100 text-slate-700 border-slate-200',
 }
 

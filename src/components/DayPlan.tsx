@@ -9,6 +9,8 @@ import { withPointsDelta } from '@/lib/pointsDelta'
 import { PopCircle, buzz } from '@/components/points/PointBurst'
 import PracticePlanView from '@/components/practice/PracticePlanView'
 import { normalizePlan } from '@/lib/practicePlan'
+import { INTENT_LABEL, INTENT_STYLE, sectionOf } from '@/lib/programs'
+import type { FocusDrill } from '@/lib/focus'
 
 const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id6445937141'
 
@@ -68,6 +70,7 @@ export default function DayPlan({
   const [tools, setTools] = useState<Tool[]>([])
   const [scripts, setScripts] = useState<Map<number, Script>>(new Map())
   const [toolDone, setToolDone] = useState<Set<string>>(new Set())
+  const [focus, setFocus] = useState<{ title: string; drills: FocusDrill[] }[]>([])
 
   useEffect(() => {
     const supabase = createClient()
@@ -85,13 +88,16 @@ export default function DayPlan({
         wList = wList.filter((x) => x.group_id == null || mine.has(x.group_id))
       }
       const ids = wList.map((x) => x.id)
-      const [{ data: it }, { data: ex }, { data: tl }, { data: sc }, { data: bs }] = await Promise.all([
+      const [{ data: it }, { data: ex }, { data: tl }, { data: sc }, { data: bs }, { data: pf }] = await Promise.all([
         ids.length ? supabase.from('workout_items').select('*').in('workout_id', ids) : Promise.resolve({ data: [] }),
         supabase.from('exercises').select('*'),
         ids.length ? supabase.from('workout_tools').select('id, workout_id, script_id, notes').in('workout_id', ids).order('sort_order') : Promise.resolve({ data: [] }),
         supabase.from('bullpen_scripts').select('id, title, pitch_count'),
         !isCoach && ids.length
           ? supabase.from('bullpen_sessions').select('workout_id, script_id').eq('player_id', athleteId).in('workout_id', ids)
+          : Promise.resolve({ data: [] }),
+        !isCoach && wList.some((x) => x.focus_block)
+          ? supabase.from('player_focus').select('title, drills').eq('athlete_id', athleteId).eq('status', 'published').order('sort_order')
           : Promise.resolve({ data: [] }),
       ])
       const itemList = (it as WorkoutItem[]) || []
@@ -120,6 +126,7 @@ export default function DayPlan({
       setLogged(counts)
       setTools((tl as Tool[]) || [])
       setScripts(new Map(((sc as Script[]) || []).map((x) => [x.id, x])))
+      setFocus(((pf as { title: string; drills: FocusDrill[] | null }[]) || []).map((f) => ({ title: f.title, drills: f.drills || [] })).filter((f) => f.drills.length))
       setToolDone(new Set(((bs as { workout_id: number; script_id: number }[]) || []).map((b) => `${b.workout_id}:${b.script_id}`)))
       setLoadedFor(day)
     }
@@ -301,15 +308,15 @@ export default function DayPlan({
           const wTools = tools.filter((t) => t.workout_id === w.id)
           const toolsDone = wTools.filter((t) => toolDone.has(`${w.id}:${t.script_id}`)).length
           return (
-            <li key={k} className={`border-l-4 ${TRAINING.stripe}`}>
+            <li key={k} className={`border-l-4 ${w.intent ? INTENT_STYLE[w.intent].stripe : TRAINING.stripe}`}>
               <Row
                 icon={<Target className="w-4 h-4" />}
-                tone={TRAINING.tone}
+                tone={w.intent ? INTENT_STYLE[w.intent].chip : TRAINING.tone}
                 title={w.title}
                 subtitle={
                   isCoach
-                    ? `${group} · ${phaseLabel(w.phase)}${wTools.length ? ` · ${wTools.length} tool${wTools.length === 1 ? '' : 's'}` : ''}`
-                    : [phaseLabel(w.phase), total ? `${done}/${total} sets` : null, wTools.length ? `${toolsDone}/${wTools.length} bullpen` : null].filter(Boolean).join(' · ')
+                    ? `${group} · ${w.intent ? `${INTENT_LABEL[w.intent]} intent` : phaseLabel(w.phase)}${wTools.length ? ` · ${wTools.length} tool${wTools.length === 1 ? '' : 's'}` : ''}`
+                    : [w.intent ? `${INTENT_LABEL[w.intent]} intent` : phaseLabel(w.phase), total ? `${done}/${total} sets` : null, wTools.length ? `${toolsDone}/${wTools.length} bullpen` : null].filter(Boolean).join(' · ')
                 }
                 open={open === k}
                 onClick={() => toggle(k)}
@@ -349,18 +356,34 @@ export default function DayPlan({
                       })}
                     </ul>
                   )}
+                  {!renderWorkout && w.notes && w.intent && <p className="text-xs font-semibold text-slate-600 pl-1">{w.notes}</p>}
+                  {w.focus_block && focus.length > 0 && (
+                    <div className="rounded-xl bg-violet-50 border border-violet-200 px-3 py-2">
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-violet-700 mb-1">Your focus</div>
+                      {focus.map((f) => (
+                        <div key={f.title} className="text-xs font-semibold text-slate-700">
+                          <span className="font-extrabold text-slate-900">{f.title}:</span> {f.drills.map((d) => d.name + (d.freq ? ` (${d.freq})` : '')).join(', ')}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {renderWorkout ? (
                     its.length > 0 && renderWorkout(w, its)
                   ) : (
                     <div className="pl-[3.25rem] space-y-2">
                       <ul className="space-y-1.5">
-                        {its.map((i) => (
-                          <li key={i.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                        {its.map((i, n) => (
+                          <li key={i.id} className="text-xs font-semibold text-slate-700">
+                            {sectionOf(i.notes) && sectionOf(i.notes) !== sectionOf(its[n - 1]?.notes) && (
+                              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mt-1 mb-1">{sectionOf(i.notes)}</div>
+                            )}
+                            <div className="flex items-center gap-2">
                             <span className="w-7 h-6 rounded-md bg-amber-50 text-amber-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">
                               {itemLabel(i.block_index, i.item_index, counts.get(i.block_index) || 1)}
                             </span>
                             <span className="flex-1">{exercises.get(i.exercise_id)?.name ?? 'Drill'}</span>
                             <span className="text-slate-400">{i.sets}× {i.reps || ''}</span>
+                            </div>
                           </li>
                         ))}
                       </ul>
