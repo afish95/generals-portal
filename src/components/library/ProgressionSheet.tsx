@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CalendarPlus, Eye, EyeOff, Plus, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { inputClass, SectionLabel } from '@/components/ui'
 import { SheetFrame } from '@/components/office/roster/shared'
 import { folderPath, prescription, type Drill, type Folder, type Progression, type ProgressionItem } from '@/lib/library'
 import { DrillReveal } from './VideoEmbed'
+import AssignPanel from './AssignPanel'
 
 type Slot = Omit<ProgressionItem, 'id' | 'progression_id'> & { key: string }
 let seq = 0
@@ -31,6 +32,7 @@ export default function ProgressionSheet({
   const [desc, setDesc] = useState(progression?.description || '')
   const [folderId, setFolderId] = useState<number | null>(progression?.folder_id ?? null)
   const [editing, setEditing] = useState(isNew)
+  const [assigning, setAssigning] = useState(false)
   const [find, setFind] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -123,6 +125,12 @@ export default function ProgressionSheet({
 
   return (
     <SheetFrame title={isNew ? 'New progression' : progression!.name} subtitle={`${folderPath(folders, folderId) || 'Unfiled'}${slots ? ` · ${slots.length} drills` : ''}`} onClose={onClose}>
+      {!editing && progression && (
+        <button type="button" onClick={() => setAssigning((a) => !a)} className="w-full py-3 rounded-2xl bg-emerald-600 text-white text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer">
+          <CalendarPlus className="w-4 h-4" /> {assigning ? 'Hide assigning' : 'Assign to players or a group'}
+        </button>
+      )}
+      {!editing && progression && assigning && <AssignPanel progressionId={progression.id} progressionName={progression.name} />}
       {!editing && progression?.description && <p className="text-sm text-slate-700 bg-white rounded-2xl border border-slate-200 p-4 whitespace-pre-line">{progression.description}</p>}
 
       {editing && (
