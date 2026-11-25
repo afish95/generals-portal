@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { addDays, localDate, round1 } from '@/lib/training'
-import { seasonStart } from '@/lib/points'
 import { ordinal, percentileRank, rankOf } from '@/lib/rank'
 
 type Group = 'pitchers' | 'hitters'
@@ -28,11 +27,19 @@ export const METRICS: Record<Group, Metric[]> = {
   ],
 }
 
+const PERIODS = [
+  { key: '30d', label: '30 days', days: 30 },
+  { key: '90d', label: '90 days', days: 90 },
+  { key: '12m', label: '12 months', days: 365 },
+  { key: 'all', label: 'All time', days: 0 },
+] as const
+type Period = (typeof PERIODS)[number]['key']
+
 const fmt = (m: Metric, v: number) => (m.lowerIsBetter && m.unit === 's' ? v.toFixed(2) : String(round1(v))) + m.unit
 
 export default function PositionLeaderboard({ myId, myPosition }: { myId: string; myPosition?: string | null }) {
   const [group, setGroup] = useState<Group>(myPosition && myPosition !== 'pitcher' ? 'hitters' : 'pitchers')
-  const [period, setPeriod] = useState<'30d' | 'season'>('season')
+  const [period, setPeriod] = useState<Period>('12m')
   const [metricKey, setMetricKey] = useState<string>(METRICS[group][0].key)
   const [rows, setRows] = useState<Row[] | null>(null)
 
@@ -40,7 +47,7 @@ export default function PositionLeaderboard({ myId, myPosition }: { myId: string
     let cancelled = false
     const today = localDate()
     createClient()
-      .rpc('position_leaderboard', { p_since: period === '30d' ? addDays(today, -29) : seasonStart(today) })
+      .rpc('position_leaderboard', { p_since: (() => { const d = PERIODS.find((x) => x.key === period)!.days; return d ? addDays(today, -(d - 1)) : '2000-01-01' })() })
       .then(({ data }) => {
         if (cancelled) return
         setRows(((data as Row[]) || []).map((r) => ({ ...r, value: Number(r.value), sample: Number(r.sample) })))
@@ -90,10 +97,10 @@ export default function PositionLeaderboard({ myId, myPosition }: { myId: string
           </button>
         ))}
       </div>
-      <div className="flex gap-1.5">
-        {(['season', '30d'] as const).map((p) => (
-          <button key={p} type="button" onClick={() => setPeriod(p)} className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold cursor-pointer ${period === p ? 'bg-[#1746b8] text-white' : 'bg-slate-100 text-slate-600'}`}>
-            {p === 'season' ? 'Season best' : 'Last 30 days'}
+      <div className="grid grid-cols-4 gap-1 p-1 rounded-full bg-slate-100">
+        {PERIODS.map((p) => (
+          <button key={p.key} type="button" onClick={() => setPeriod(p.key)} className={`py-1.5 rounded-full text-[11px] font-extrabold cursor-pointer whitespace-nowrap ${period === p.key ? 'bg-[#1746b8] text-white' : 'text-slate-600'}`}>
+            {p.label}
           </button>
         ))}
       </div>
