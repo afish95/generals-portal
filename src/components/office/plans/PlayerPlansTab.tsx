@@ -9,6 +9,7 @@ import { snapshot, suggest, type PlayerFocus } from '@/lib/focus'
 import { useFocusData } from '@/components/plan/useFocusData'
 import { Avatar, NoLoginBadge, TagChip } from '@/components/office/roster/shared'
 import FocusPlanSheet from './FocusPlanSheet'
+import { notifyPlayers } from '@/lib/notify'
 
 type Status = 'all' | 'none' | 'draft' | 'live'
 const POS: Record<string, string> = { pitcher: 'PO', two_way: '2-Way', hitter: 'Hitter', catcher: 'Catcher', infield: 'Infield', outfield: 'Outfield' }
@@ -100,6 +101,10 @@ export default function PlayerPlansTab({ initialPlayer = null }: { initialPlayer
     setBusy('Publishing…')
     const now = new Date().toISOString()
     const { error } = await createClient().from('player_focus').update({ status: 'published', published_at: now, updated_at: now }).in('id', ids)
+    if (!error) {
+      const who = [...new Set(focus.filter((f) => ids.includes(f.id)).map((f) => f.athlete_id))]
+      await notifyPlayers({ title: 'Your plan is ready', body: 'Focus areas and drills are in Training', url: '/training', recipientIds: who, kind: 'plan' })
+    }
     setBusy(null)
     setNotice(error ? error.message : `Published ${ids.length} focus areas.`)
     setVersion((v) => v + 1)

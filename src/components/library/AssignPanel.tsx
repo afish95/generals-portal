@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { inputClass, SectionLabel } from '@/components/ui'
 import type { Group, Profile } from '@/lib/training'
 import { catOf, TagChip } from '@/components/office/roster/shared'
+import { notifyPlayers } from '@/lib/notify'
 
 type Pattern = 'daily' | 'every_other' | 'weekdays'
 type Assignment = { id: number; target_label: string; pattern: Pattern; weekdays: number[]; start_date: string; end_date: string; dates: string[]; status: 'active' | 'stopped' }
@@ -86,9 +87,21 @@ export default function AssignPanel({ progressionId, progressionName }: { progre
       p_end: end,
       p_dates: dates,
     })
+    if (e) {
+      setBusy(null)
+      return setError(e.message)
+    }
+    setBusy('Notifying players…')
+    const n = await notifyPlayers({
+      title: progressionName,
+      body: `${patternText(pattern, weekdays)} · starts ${short(start)}`,
+      url: '/',
+      groupId: mode === 'group' ? groupId : undefined,
+      recipientIds: mode === 'players' ? [...picked] : undefined,
+      kind: 'assignment',
+    })
     setBusy(null)
-    if (e) return setError(e.message)
-    setMsg(`Assigned to ${label}: ${dates.length} sessions, ${patternText(pattern, weekdays).toLowerCase()}, ${short(start)} – ${short(end)}. It's on their day plan and calendar.`)
+    setMsg(`Assigned to ${label}${n.ok ? ' · notified' : ''}`)
     setPicked(new Set())
     setVersion((v) => v + 1)
   }
@@ -237,7 +250,7 @@ export default function AssignPanel({ progressionId, progressionName }: { progre
                 {active && (
                   <div className="flex gap-1.5 mt-2 ml-6">
                     <button type="button" onClick={() => refresh(a)} className="px-2.5 py-1.5 rounded-lg bg-slate-100 text-[11px] font-extrabold text-slate-700 flex items-center gap-1 cursor-pointer">
-                      <RefreshCw className="w-3 h-3" /> Use latest drills
+                      <RefreshCw className="w-3 h-3" /> Refresh
                     </button>
                     <button type="button" onClick={() => stop(a)} className="px-2.5 py-1.5 rounded-lg bg-red-50 text-[11px] font-extrabold text-red-700 flex items-center gap-1 cursor-pointer">
                       <Square className="w-3 h-3" /> Stop
@@ -247,7 +260,6 @@ export default function AssignPanel({ progressionId, progressionName }: { progre
               </div>
             )
           })}
-          <p className="text-[11px] font-semibold text-slate-400">After you edit the progression, press “Use latest drills” to update upcoming sessions.</p>
         </section>
       )}
     </div>

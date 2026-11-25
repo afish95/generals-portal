@@ -54,6 +54,9 @@ export default function MessagesPage() {
   const [reload, setReload] = useState(0)
   const refresh = useCallback(() => setReload((n) => n + 1), [])
   const coachTools = isCoach && !viewAs.active
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tab') === 'announcements') setTab('announcements')
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
