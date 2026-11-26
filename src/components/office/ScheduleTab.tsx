@@ -16,6 +16,7 @@ import { EVENT_KINDS, KIND_STYLE, kindOf, timeRange, to12h, to24h, type EventKin
 
 type Row = { key: string; first: ScheduleEvent; days: ScheduleEvent[] }
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const SCHOOL_YEAR_END = '2027-06-08'
 
 /** Coach Office → Schedule: games, practices and program events (fundraisers, meetings, deadlines) for the whole program or chosen groups. */
 export default function ScheduleTab({ groups, openEventId }: { groups: Group[]; openEventId?: number | null }) {
@@ -142,8 +143,21 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
   const [title, setTitle] = useState(first?.title || '')
   const [kind, setKind] = useState<EventKind>(first ? kindOf(first.event_type) : 'program')
   const [start, setStart] = useState(first?.event_date || today)
-  const [end, setEnd] = useState('')
-  const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5])
+  // Google Calendar–style repeat
+  const [repeat, setRepeat] = useState<'none' | 'daily' | 'weekdays' | 'weekly'>('none')
+  const [weekdays, setWeekdays] = useState<number[]>([new Date(`${first?.event_date || today}T12:00:00`).getDay()])
+  const [every, setEvery] = useState(1)
+  const [endMode, setEndMode] = useState<'date' | 'count'>('date')
+  const [end, setEnd] = useState(SCHOOL_YEAR_END)
+  const [count, setCount] = useState(10)
+  const [schoolOnly, setSchoolOnly] = useState(true)
+  const [daysOff, setDaysOff] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    createClient()
+      .from('school_days_off')
+      .select('day')
+      .then(({ data }) => setDaysOff(new Set(((data as { day: string }[]) || []).map((d) => d.day))))
+  }, [])
   const [startTime, setStartTime] = useState(to24h(first?.start_time))
   const [endTime, setEndTime] = useState(to24h(first?.end_time))
   const [location, setLocation] = useState(first?.location || '')
@@ -187,13 +201,22 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
   const pickable = groups.filter((g) => !g.name.startsWith('Demo') && !(g.category === 'Workout' && g.name.includes(' · ')))
   const dates = useMemo(() => {
     if (row) return []
-    if (!end || end <= start) return [start]
+    if (repeat === 'none') return [start]
     const out: string[] = []
-    for (let d = start; d <= end && out.length < 120; d = addDays(d, 1)) {
-      if (weekdays.includes(new Date(`${d}T12:00:00`).getDay())) out.push(d)
+    const startDow = new Date(`${start}T12:00:00`).getDay()
+    const weekStart = addDays(start, -startDow)
+    const limit = endMode === 'count' ? Math.min(count, 300) : 300
+    for (let d = start; out.length < limit && d <= (endMode === 'date' ? end || start : '2100-01-01') && d <= addDays(start, 730); d = addDays(d, 1)) {
+      const dow = new Date(`${d}T12:00:00`).getDay()
+      const weekIdx = Math.floor((Date.parse(`${d}T12:00:00`) - Date.parse(`${weekStart}T12:00:00`)) / (7 * 86400000))
+      const on =
+        repeat === 'daily' ? true : repeat === 'weekdays' ? dow >= 1 && dow <= 5 : weekdays.includes(dow) && weekIdx % every === 0
+      if (!on) continue
+      if (schoolOnly && (dow === 0 || dow === 6 || daysOff.has(d))) continue
+      out.push(d)
     }
     return out
-  }, [row, start, end, weekdays])
+  }, [row, start, repeat, weekdays, every, endMode, end, count, schoolOnly, daysOff])
 
   const fields = () => ({
     title: title.trim(),
@@ -246,9 +269,9 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
     <SheetFrame title={row ? 'Edit Event' : 'New Event'} subtitle={row && row.days.length > 1 ? `${row.days.length} days · changes apply to every day` : undefined} onClose={onClose}>
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title (e.g. Poinsettia sales)" className={inputClass} />
-        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-slate-100">
+        <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-slate-100">
           {EVENT_KINDS.map((k) => (
-            <button key={k.key} type="button" onClick={() => setKind(k.key)} className={`py-2 rounded-lg text-[11px] font-extrabold cursor-pointer ${kind === k.key ? 'bg-white shadow-sm ' + KIND_STYLE[k.key].text : 'text-slate-500'}`}>
+            <button key={k.key} type="button" onClick={() => setKind(k.key)} className={`py-2 px-0.5 rounded-lg text-[10px] leading-tight font-extrabold cursor-pointer ${kind === k.key ? 'bg-white shadow-sm ' + KIND_STYLE[k.key].text : 'text-slate-500'}`}>
               {k.label}
             </button>
           ))}
@@ -283,18 +306,56 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
           </label>
           {!row && (
             <label className="text-[11px] font-bold text-slate-500">
-              Ends (optional)
-              <input type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} className={inputClass} />
+              Repeat
+              <select value={repeat} onChange={(e) => setRepeat(e.target.value as typeof repeat)} className={inputClass}>
+                <option value="none">Does not repeat</option>
+                <option value="daily">Every day</option>
+                <option value="weekdays">Every weekday (Mon–Fri)</option>
+                <option value="weekly">Weekly on…</option>
+              </select>
             </label>
           )}
         </div>
-        {!row && end > start && (
-          <div className="flex gap-1">
-            {DOW.map((d, i) => (
-              <button key={d} type="button" onClick={() => setWeekdays((w) => (w.includes(i) ? w.filter((x) => x !== i) : [...w, i]))} className={`flex-1 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${weekdays.includes(i) ? 'bg-[#1746b8] text-white' : 'bg-slate-100 text-slate-500'}`}>
-                {d}
-              </button>
-            ))}
+        {!row && repeat === 'weekly' && (
+          <div className="space-y-2">
+            <div className="flex gap-1">
+              {DOW.map((d, i) => (
+                <button key={d} type="button" onClick={() => setWeekdays((w) => (w.includes(i) ? (w.length > 1 ? w.filter((x) => x !== i) : w) : [...w, i]))} className={`flex-1 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer ${weekdays.includes(i) ? 'bg-[#1746b8] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  {d}
+                </button>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+              Every
+              <select value={every} onChange={(e) => setEvery(Number(e.target.value))} className="px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold">
+                {[1, 2, 3, 4].map((n) => (
+                  <option key={n} value={n}>{n === 1 ? 'week' : `${n} weeks`}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+        {!row && repeat !== 'none' && (
+          <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3 space-y-2">
+            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
+              Ends
+              <select value={endMode} onChange={(e) => setEndMode(e.target.value as 'date' | 'count')} className="px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold">
+                <option value="date">On</option>
+                <option value="count">After</option>
+              </select>
+              {endMode === 'date' ? (
+                <input type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} className="px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold" />
+              ) : (
+                <>
+                  <input inputMode="numeric" value={count} onChange={(e) => setCount(Math.max(1, Number(e.target.value.replace(/\D/g, '')) || 1))} className="w-14 px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold text-center" />
+                  times
+                </>
+              )}
+            </div>
+            <label className="flex items-center gap-2 text-[11px] font-bold text-slate-600 cursor-pointer">
+              <input type="checkbox" checked={schoolOnly} onChange={(e) => setSchoolOnly(e.target.checked)} className="w-4 h-4 accent-[#1746b8]" />
+              Only on school days (skips weekends, breaks and holidays)
+            </label>
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">
@@ -308,7 +369,11 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
           </label>
         </div>
         <p className="text-[11px] font-semibold text-slate-400">
-          {!row && dates.length > 1 ? `${dates.length} days: ${dates.slice(0, 3).map((d) => prettyDate(d, { month: 'short', day: 'numeric' })).join(', ')}${dates.length > 3 ? '…' : ''}` : 'Leave times blank for an all-day item.'}
+          {!row && repeat !== 'none'
+            ? dates.length
+              ? `${dates.length} day${dates.length === 1 ? '' : 's'}: ${dates.slice(0, 3).map((d) => prettyDate(d, { weekday: 'short', month: 'short', day: 'numeric' })).join(', ')}${dates.length > 3 ? ` … ${prettyDate(dates[dates.length - 1], { month: 'short', day: 'numeric' })}` : ''}`
+              : 'No days match. Check the repeat days and end date.'
+            : 'Leave times blank for an all-day item.'}
         </p>
       </section>
 

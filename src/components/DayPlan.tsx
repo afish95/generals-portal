@@ -257,6 +257,7 @@ export default function DayPlan({
   const showCheck = !isCoach
   const idleLabel = interactive ? 'Mark Complete' : day > today ? 'Upcoming' : 'Not Done'
 
+  const teamLift = events.find((e) => kindOf(e.event_type) === 'lift') || null
   const earned = pts?.earned ?? 0
   const available = pts?.available ?? 0
   const perfect = available > 0 && earned >= available
@@ -286,7 +287,7 @@ export default function DayPlan({
       )}
       <ul className="divide-y divide-slate-100">
         {/* ---- Schedule: games & practices (info only) ---- */}
-        {events.map((e) => {
+        {events.filter((e) => kindOf(e.event_type) !== 'lift').map((e) => {
           const k = `e${e.id}`
           const isGame = /game/i.test(e.event_type)
           return (
@@ -416,7 +417,7 @@ export default function DayPlan({
             icon={<Dumbbell className="w-4 h-4" />}
             tone={TRAINING.tone}
             title="Lift / Workout"
-            subtitle={liftStatus === 'rest' ? 'Rest Day' : 'Driveline Baseball strength & conditioning'}
+            subtitle={liftStatus === 'rest' ? 'Rest Day' : teamLift ? `Team Lift · ${timeRange(teamLift)}${teamLift.location ? ` · ${teamLift.location}` : ''}` : 'Driveline Baseball strength & conditioning'}
             open={open === 'driveline'}
             onClick={() => toggle('driveline')}
             showCheck={showCheck && liftStatus !== 'rest'}
@@ -429,6 +430,12 @@ export default function DayPlan({
           />
           {open === 'driveline' && (
             <div className="px-5 pb-4 pl-[4.25rem] space-y-2">
+              {teamLift && (
+                <div className="rounded-xl bg-teal-50 border border-teal-200 px-3 py-2 text-xs">
+                  <div className="font-extrabold text-teal-800">Team Lift · {timeRange(teamLift)}</div>
+                  <div className="font-semibold text-teal-700">{teamLift.location || 'Weight Room'} · Driveline Baseball workout</div>
+                </div>
+              )}
               <p className="text-xs text-slate-600">
                 {isCoach ? 'Players’ lifts and mobility are programmed in the Driveline Baseball app.' : 'Today’s lift and mobility are in the Driveline Baseball app. When you finish, tap the circle to mark it complete.'}
               </p>

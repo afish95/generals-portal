@@ -235,7 +235,7 @@ export default function ScheduleCalendarView({
         </div>
 
         <div className="flex items-center justify-end gap-4 text-[11px] font-bold text-slate-500 mb-3 px-1">
-          {(['game', 'practice', 'program', 'training'] as const).map((k) => (
+          {(['game', 'practice', 'lift', 'program', 'training'] as const).map((k) => (
             <span key={k} className="flex items-center gap-1.5">
               <span className={`w-2.5 h-2.5 rounded-full inline-block ${KIND_STYLE[k].dot}`} />
               {KIND_STYLE[k].label}
