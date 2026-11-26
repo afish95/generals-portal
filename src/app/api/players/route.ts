@@ -154,7 +154,9 @@ export async function POST(req: Request) {
       const { data: taken } = await admin.from('profiles').select('id').eq('username', username).maybeSingle()
       if (taken) return Response.json({ error: 'That username is taken. Try another.' }, { status: 409 })
     }
-    const password = tempPassword()
+    const chosen = typeof body.password === 'string' ? body.password : ''
+    if (chosen && (chosen.length < 6 || chosen.length > 72)) return Response.json({ error: 'Password needs 6–72 characters' }, { status: 400 })
+    const password = chosen || tempPassword()
     const { error } = await admin.auth.admin.updateUserById(id, { email: `${username}@${EMAIL_DOMAIN}`, email_confirm: true, password })
     if (error) return Response.json({ error: error.message }, { status: 500 })
     await admin.from('profiles').update({ username, has_login: true }).eq('id', id)
