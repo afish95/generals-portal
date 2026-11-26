@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { notifyPlayers } from '@/lib/notify'
+import SendNotification from '@/components/SendNotification'
 import { inputClass } from '@/components/ui'
 import {
   DISCIPLINES,
@@ -297,9 +298,9 @@ export default function WorkoutEditor({
           }
         }
       }
-      if (notify && !draft.id) {
+      if (notify) {
         const when = new Date(`${draft.workout_date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
-        await notifyPlayers({ title: fields.title, body: when, url: '/', groupId: draft.group_id, everyone: draft.group_id == null, kind: 'workout' })
+        await notifyPlayers({ title: fields.title, body: draft.id ? `Updated · ${when}` : when, url: '/', groupId: draft.group_id, everyone: draft.group_id == null, kind: 'workout' })
       }
       onSaved()
     } catch (e) {
@@ -469,12 +470,7 @@ export default function WorkoutEditor({
           <Plus className="w-4 h-4" /> Add Block
         </button>
 
-        {!draft.id && (
-          <label className="flex items-center gap-2 px-1 text-xs font-bold text-slate-600 cursor-pointer">
-            <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="w-4 h-4 accent-[#1746b8]" />
-            Notify Players
-          </label>
-        )}
+        <SendNotification checked={notify} onChange={setNotify} />
         {error && <p className="text-sm font-bold text-red-600">{error}</p>}
       </div>
 
