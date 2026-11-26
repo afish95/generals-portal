@@ -7,6 +7,7 @@ import { ordinal } from '@/lib/rank'
 import { COLS, LABELS, LOWER_BETTER, applyEarlyAhead, fmt, ipOuts, leaders, linesFor, num, rankIn, type GcLine, type GcType, type SeasonType } from '@/lib/gcStats'
 import { useGcData } from './useGcData'
 import SeasonFilter, { type Period } from './SeasonFilter'
+import Trend from '@/components/Trend'
 
 /** Game stats from GameChanger: my season (players), team leaders, and the full team table. */
 export default function GameStatsHub({ myId, isCoach }: { myId: string; isCoach: boolean }) {
@@ -29,6 +30,9 @@ export default function GameStatsHub({ myId, isCoach }: { myId: string; isCoach:
 
   const mine = lines.filter((l) => l.player_id === myId)
   const myName = mine[0]?.player_name
+  const prevMine = typeof p === 'number' ? merged.filter((l) => l.player_id === myId && l.season_type === type && l.season_year < p).sort((a, b) => b.season_year - a.season_year) : []
+  const prevYear = prevMine[0]?.season_year
+  const prev = prevMine.filter((l) => l.season_year === prevYear)
 
   return (
     <div className="space-y-4">
@@ -44,7 +48,7 @@ export default function GameStatsHub({ myId, isCoach }: { myId: string; isCoach:
       />
       {p === 'all' && <p className="text-[11px] font-semibold text-slate-500 -mt-2">All-time = career totals across every {type} season in program history. Rates need 50+ PA or 15+ IP.</p>}
       <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-        {!isCoach && (myName ? <MySeason lines={lines} mine={mine} name={myName} /> : <NotLinked />)}
+        {!isCoach && (myName ? <MySeason lines={lines} mine={mine} name={myName} prev={prev} prevYear={prevYear} /> : <NotLinked />)}
         <TeamLeaders lines={lines} />
       </div>
       <TeamTable lines={lines} myName={myName} career={p === 'all'} />
@@ -60,7 +64,7 @@ function NotLinked() {
   )
 }
 
-function Tile({ k, v, type, lines, name, big = false }: { k: string; v: number | string | null | undefined; type: GcType; lines: GcLine[]; name: string; big?: boolean }) {
+function Tile({ k, v, type, lines, name, big = false, pv }: { k: string; v: number | string | null | undefined; type: GcType; lines: GcLine[]; name: string; big?: boolean; pv?: number | string | null }) {
   const r = rankIn(lines, type, k, name)
   const tone = !r ? '' : r.pctl >= 75 ? 'bg-emerald-100 text-emerald-700' : r.pctl >= 50 ? 'bg-blue-100 text-[#1746b8]' : 'bg-amber-100 text-amber-700'
   return (
@@ -69,13 +73,21 @@ function Tile({ k, v, type, lines, name, big = false }: { k: string; v: number |
         <span className="text-[11px] font-bold text-slate-500">{k}</span>
         {r && <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full ${tone}`}>{ordinal(r.pctl)}</span>}
       </div>
-      <div className={`${big ? 'text-2xl' : 'text-lg'} font-black text-slate-900`}>{fmt(k, v)}</div>
+      <div className="flex items-baseline gap-1.5">
+        <span className={`${big ? 'text-2xl' : 'text-lg'} font-black text-slate-900`}>{fmt(k, v)}</span>
+        {num(v) != null && num(pv) != null && (
+          <Trend delta={num(v)! - num(pv)!} lowerIsBetter={LOWER_BETTER[type].has(k)} digits={Math.abs(num(v)!) < 2 ? 3 : 1} className="text-[10px]" />
+        )}
+      </div>
       <div className="text-[10px] font-semibold text-slate-400 truncate">{LABELS[k]}</div>
     </div>
   )
 }
 
-function MySeason({ lines, mine, name }: { lines: GcLine[]; mine: GcLine[]; name: string }) {
+function MySeason({ lines, mine, name, prev = [], prevYear }: { lines: GcLine[]; mine: GcLine[]; name: string; prev?: GcLine[]; prevYear?: number }) {
+  const pBat = prev.find((l) => l.stat_type === 'batting')?.stats
+  const pPit = prev.find((l) => l.stat_type === 'pitching')?.stats
+  const pFld = prev.find((l) => l.stat_type === 'fielding')?.stats
   const bat = mine.find((l) => l.stat_type === 'batting')?.stats
   const pit = mine.find((l) => l.stat_type === 'pitching')?.stats
   const fld = mine.find((l) => l.stat_type === 'fielding')?.stats
@@ -86,21 +98,21 @@ function MySeason({ lines, mine, name }: { lines: GcLine[]; mine: GcLine[]; name
         <PlayerPhoto id={mine[0]?.player_id} name={name} size={48} />
         <div>
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">My Season</div>
-          <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Badges show your percentile on the team (99th is the top).</p>
+          <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Badges show your team percentile. {prevYear ? `▲▼ compare to ${prevYear}.` : ''}</p>
         </div>
       </div>
       {bat && (
         <div className="space-y-2">
           <div className="text-xs font-extrabold text-slate-900">Hitting</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {['AVG', 'OBP', 'SLG', 'OPS'].map((k) => <Tile key={k} k={k} v={bat[k]} type="batting" lines={lines} name={name} big />)}
+            {['AVG', 'OBP', 'SLG', 'OPS'].map((k) => <Tile key={k} k={k} v={bat[k]} type="batting" lines={lines} name={name} pv={pBat?.[k]} big />)}
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {['H', '2B', 'HR', 'RBI', 'R', 'SB'].map((k) => <Tile key={k} k={k} v={bat[k]} type="batting" lines={lines} name={name} />)}
+            {['H', '2B', 'HR', 'RBI', 'R', 'SB'].map((k) => <Tile key={k} k={k} v={bat[k]} type="batting" lines={lines} name={name} pv={pBat?.[k]} />)}
           </div>
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 pt-1">Approach</div>
           <div className="grid grid-cols-3 gap-2">
-            {['QAB%', 'C%', 'BB/K', 'PS/PA', 'HHB', 'BA/RISP'].map((k) => <Tile key={k} k={k} v={bat[k]} type="batting" lines={lines} name={name} />)}
+            {['QAB%', 'C%', 'BB/K', 'PS/PA', 'HHB', 'BA/RISP'].map((k) => <Tile key={k} k={k} v={bat[k]} type="batting" lines={lines} name={name} pv={pBat?.[k]} />)}
           </div>
         </div>
       )}
@@ -108,10 +120,10 @@ function MySeason({ lines, mine, name }: { lines: GcLine[]; mine: GcLine[]; name
         <div className="space-y-2">
           <div className="text-xs font-extrabold text-slate-900">Pitching</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {['ERA', 'WHIP', 'IP', 'SO'].map((k) => <Tile key={k} k={k} v={pit[k]} type="pitching" lines={lines} name={name} big />)}
+            {['ERA', 'WHIP', 'IP', 'SO'].map((k) => <Tile key={k} k={k} v={pit[k]} type="pitching" lines={lines} name={name} pv={pPit?.[k]} big />)}
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {['S%', 'FPS%', 'K/BB', 'BAA', 'BB/INN', 'FIP'].map((k) => <Tile key={k} k={k} v={pit[k]} type="pitching" lines={lines} name={name} />)}
+            {['S%', 'FPS%', 'K/BB', 'BAA', 'BB/INN', 'FIP'].map((k) => <Tile key={k} k={k} v={pit[k]} type="pitching" lines={lines} name={name} pv={pPit?.[k]} />)}
           </div>
         </div>
       )}
@@ -119,7 +131,7 @@ function MySeason({ lines, mine, name }: { lines: GcLine[]; mine: GcLine[]; name
         <div className="space-y-2">
           <div className="text-xs font-extrabold text-slate-900">Fielding</div>
           <div className="grid grid-cols-3 gap-2">
-            {['FPCT', 'TC', 'E'].map((k) => <Tile key={k} k={k} v={fld[k]} type="fielding" lines={lines} name={name} />)}
+            {['FPCT', 'TC', 'E'].map((k) => <Tile key={k} k={k} v={fld[k]} type="fielding" lines={lines} name={name} pv={pFld?.[k]} />)}
           </div>
           {positions.length > 0 && (
             <p className="text-[11px] font-semibold text-slate-500">Innings by position: {positions.map((x) => `${x.p} ${x.inn}`).join(' · ')}</p>

@@ -9,6 +9,8 @@ import { METRICS } from '@/components/stats/PositionLeaderboard'
 import { METRIC_INFO, sidesFor } from '@/lib/trainingMetrics'
 import { useDrillsOfWeek } from './useDrillsOfWeek'
 import DrillOfWeekCard from './DrillOfWeekCard'
+import Trend from '@/components/Trend'
+import { useStatTrends } from './useStatTrends'
 
 type Row = { athlete_id: string; metric: string; value: number }
 type M = (typeof METRICS)['pitchers'][number]
@@ -37,6 +39,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
   const [rows, setRows] = useState<Row[] | null>(null)
   const [open, setOpen] = useState<string | null>(null)
   const dow = useDrillsOfWeek()
+  const trends = useStatTrends(athleteId)
 
   useEffect(() => {
     let cancelled = false
@@ -97,6 +100,13 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
                     <span className="text-[8.5px] font-extrabold uppercase tracking-tight text-white/80 text-center leading-tight h-[1.35rem] flex items-center">{m.short}</span>
                     <span className={`text-lg font-black leading-none mt-0.5 ${mine ? tone.text : 'text-white/30'}`}>{mine ? valueOf(m, mine.value) : '—'}</span>
                     <span className="text-[8px] font-bold uppercase text-white/60">{unitOf(m)}</span>
+                    <span className="h-3 flex items-center text-[9px]">
+                      {trends.get(m.key)?.isPR ? (
+                        <span className="px-1 rounded bg-amber-400 text-[8px] font-black text-slate-900">PR</span>
+                      ) : (
+                        <Trend delta={trends.get(m.key)?.delta} lowerIsBetter={m.lowerIsBetter} digits={m.unit === 's' ? 2 : 1} dark />
+                      )}
+                    </span>
                     <span className={`mt-1 px-1.5 py-px rounded-full text-[9px] font-black ${mine ? tone.pill : 'bg-white/10 text-white/50'}`}>{pctl != null ? ordinal(pctl) : '—'}</span>
                   </button>
                 )

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { House, MessageCircle, Calendar, Target, TrendingUp, LayoutGrid, Shield, Eye, X } from 'lucide-react'
 import { createClient, READ_ONLY_EVENT, setReadOnlyMode } from '@/lib/supabase'
 import type { Profile } from '@/lib/training'
+import { PrCelebrationHost } from '@/components/training/PrCelebration'
 
 export type ViewAs = {
   /** True while a coach is previewing the app as a player (read-only) */
@@ -209,6 +210,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       }}
     >
       <div className="min-h-screen bg-[#f3f5f9] text-slate-900">
+        <PrCelebrationHost />
         {isCoach && (
           <DesktopSidebar
             pathname={pathname}

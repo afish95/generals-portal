@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { addDays, localDate, round1 } from '@/lib/training'
 import { ordinal, percentileRank, rankOf } from '@/lib/rank'
+import Trend from '@/components/Trend'
+import { useStatTrends } from '@/components/training/useStatTrends'
 
 type Group = 'pitchers' | 'hitters'
 type Metric = { key: string; label: string; short: string; unit: string; lowerIsBetter?: boolean; howTo: string; catchersOnly?: boolean }
@@ -42,6 +44,7 @@ export default function PositionLeaderboard({ myId, myPosition }: { myId: string
   const [period, setPeriod] = useState<Period>('12m')
   const [metricKey, setMetricKey] = useState<string>(METRICS[group][0].key)
   const [rows, setRows] = useState<Row[] | null>(null)
+  const trends = useStatTrends(myId)
 
   useEffect(() => {
     let cancelled = false
@@ -127,7 +130,14 @@ export default function PositionLeaderboard({ myId, myPosition }: { myId: string
                   </div>
                   {mine ? (
                     <>
-                      <div className="text-lg font-black text-slate-900 mt-1">{fmt(m, mine.value)}</div>
+                      <div className="flex items-baseline gap-1.5 mt-1">
+                        <span className="text-lg font-black text-slate-900">{fmt(m, mine.value)}</span>
+                        {trends.get(m.key)?.isPR ? (
+                          <span className="px-1.5 rounded bg-amber-400 text-[9px] font-black text-slate-900">PR</span>
+                        ) : (
+                          <Trend delta={trends.get(m.key)?.delta} lowerIsBetter={m.lowerIsBetter} digits={m.unit === 's' ? 2 : 1} className="text-[11px]" />
+                        )}
+                      </div>
                       <div className="text-[10px] font-semibold text-slate-500">#{rank} of {n}</div>
                     </>
                   ) : (

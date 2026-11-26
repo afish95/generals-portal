@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Gauge, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { STAT_EXERCISES, sidesFor } from '@/lib/trainingMetrics'
+import { celebratePr } from '@/lib/celebrate'
 
 type Logged = { id: number; exercise_id: number; value: number }
 
@@ -46,9 +47,18 @@ export default function LogStat({ athleteId, date, interactive, onLogged }: { at
     if (!ex || !Number.isFinite(v) || v <= 0) return setError('Enter a number.')
     setBusy(true)
     setError(null)
-    const { error: e } = await createClient().rpc('log_stat', { p_exercise: ex, p_value: v, p_date: date })
+    const sb = createClient()
+    const { data: lid, error: e } = await sb.rpc('log_stat', { p_exercise: ex, p_value: v, p_date: date })
     setBusy(false)
     if (e) return setError(e.message)
+    // New personal record? The database flags it as the set is saved.
+    const { data: pr } = await sb.from('pr_events').select('value, previous_value, pr_type').eq('set_log_id', lid as number).neq('pr_type', 'e1rm').limit(1).maybeSingle()
+    if (pr) {
+      const s = label(ex)
+      const prev = (pr as { previous_value: number | null }).previous_value
+      const d = prev != null ? Math.abs(v - Number(prev)) : null
+      celebratePr({ exercise: s?.label || 'Personal record', text: `${v} ${s?.unit ?? ''}`.trim(), delta: d != null && d > 0 ? `${s?.unit === 'sec' ? d.toFixed(2) : Math.round(d * 10) / 10} ${s?.unit ?? ''}`.trim() : null })
+    }
     setValue('')
     setVersion((n) => n + 1)
     onLogged?.()
