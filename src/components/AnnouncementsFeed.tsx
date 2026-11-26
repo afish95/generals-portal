@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useProfile } from '@/components/shell/AppShell'
-import { Megaphone, Pin, ExternalLink } from 'lucide-react'
+import { Megaphone, Pin, ExternalLink, Play } from 'lucide-react'
+import VideoEmbed from '@/components/library/VideoEmbed'
 import { SwipeRow, useDismissals } from '@/components/Dismissible'
 
 type Announcement = {
@@ -12,6 +13,7 @@ type Announcement = {
   title: string
   body: string | null
   link_url: string | null
+  video_url?: string | null
   is_pinned: boolean
   created_at: string
   kind?: string
@@ -35,12 +37,22 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot, 
   const { isCoach, profile, viewAs } = useProfile()
   const { dismissed, dismiss } = useDismissals('announcement', dismissible ? profile.id : null)
   const asCoach = isCoach && !viewAs.active
+  const [playing, setPlaying] = useState<number | null>(null)
+
+  // Opened from a notification (/messages?tab=announcements&open=ID): expand that video and scroll to it
+  useEffect(() => {
+    const id = Number(new URLSearchParams(window.location.search).get('open'))
+    if (id) setPlaying(id)
+  }, [])
+  useEffect(() => {
+    if (playing && items) document.getElementById(`ann-${playing}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [playing, items])
 
   useEffect(() => {
     const supabase = createClient()
     let cancelled = false
-    let q = supabase.from('announcements').select('id, title, body, link_url, is_pinned, created_at, kind')
-    if (!asCoach) q = q.in('audience', ['everyone', 'players']).or(`recipient_ids.is.null,recipient_ids.cs.{${profile.id}}`)
+    let q = supabase.from('announcements').select('id, title, body, link_url, video_url, is_pinned, created_at, kind')
+    if (!asCoach) q = q.in('audience', profile.role === 'parent' ? ['everyone', 'parents'] : ['everyone', 'players']).or(`recipient_ids.is.null,recipient_ids.cs.{${profile.id}}`)
     else if (dismissible) q = q.is('recipient_ids', null)
     q.order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
@@ -51,7 +63,7 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot, 
     return () => {
       cancelled = true
     }
-  }, [limit, refreshKey, asCoach, profile.id, dismissible])
+  }, [limit, refreshKey, asCoach, profile.id, profile.role, dismissible])
 
   if (items === null || (dismissible && dismissed === null)) return null
   const shown = dismissible ? items.filter((a) => !dismissed!.has(a.id)).slice(0, limit) : items
@@ -90,7 +102,19 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot, 
                   <span className="text-[10px] font-bold text-slate-400 shrink-0">{timeAgo(a.created_at)}</span>
                 </div>
                 {a.body && <p className={`text-xs text-slate-500 font-medium whitespace-pre-line ${dismissible ? 'line-clamp-2' : ''}`}>{a.body}</p>}
-                {a.link_url && a.link_url !== '/' && (
+                {a.video_url && (
+                  playing === a.id ? (
+                    <div className="pt-1 space-y-1">
+                      <VideoEmbed url={a.video_url} title={a.title} />
+                      <button type="button" onClick={() => setPlaying(null)} className="text-[11px] font-extrabold text-slate-400 cursor-pointer">Hide Video</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setPlaying(a.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1746b8] text-white text-xs font-extrabold cursor-pointer">
+                      <Play className="w-3 h-3 fill-white" /> Watch Video
+                    </button>
+                  )
+                )}
+                {a.link_url && a.link_url !== '/' && !a.link_url.startsWith('/messages?tab=announcements') && (
                   <a href={a.link_url} className="inline-flex items-center gap-1 text-xs font-bold text-[#1746b8]">
                     Open <ExternalLink className="w-3 h-3" />
                   </a>
@@ -98,7 +122,7 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot, 
               </div>
             )
             return (
-              <li key={a.id} className="py-3 first:pt-0 last:pb-0">
+              <li key={a.id} id={`ann-${a.id}`} className="py-3 first:pt-0 last:pb-0">
                 {dismissible ? <SwipeRow onDismiss={() => dismiss([a.id])}>{body}</SwipeRow> : body}
               </li>
             )
