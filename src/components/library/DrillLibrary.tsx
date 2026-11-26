@@ -11,8 +11,9 @@ import DrillSheet from './DrillSheet'
 import ProgressionSheet from './ProgressionSheet'
 import ImportPanel from './ImportPanel'
 import ProgramsPanel from './ProgramsPanel'
+import DrillOfWeekPanel from './DrillOfWeekPanel'
 
-type Sub = 'drills' | 'progressions' | 'programs' | 'import'
+type Sub = 'drills' | 'progressions' | 'programs' | 'dow' | 'import'
 
 /** Coach Office → Drills: folder-based drill and progression library with in-app videos. */
 export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
@@ -88,6 +89,7 @@ export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
           { key: 'drills', label: 'Drills', count: drills.filter((d) => d.is_active).length },
           { key: 'progressions', label: 'Progressions', count: progs.filter((p) => p.is_active).length },
           { key: 'programs', label: 'Programs' },
+          { key: 'dow', label: 'Drill of the Week' },
           { key: 'import', label: 'Import & Videos' },
         ]}
         active={sub}
@@ -95,6 +97,8 @@ export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
       />
       {!loaded ? (
         <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />
+      ) : sub === 'dow' ? (
+        <DrillOfWeekPanel drills={drills.filter((d) => d.is_active !== false).map((d) => ({ id: d.id, name: d.name }))} />
       ) : sub === 'programs' ? (
         <ProgramsPanel progressions={progs.filter((p) => p.is_active).map((p) => ({ id: p.id, name: p.name }))} onChanged={refresh} />
       ) : sub === 'import' ? (

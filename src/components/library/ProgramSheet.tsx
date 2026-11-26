@@ -27,6 +27,8 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
   const [name, setName] = useState(program?.name || '')
   const [desc, setDesc] = useState(program?.description || '')
   const [weeks, setWeeks] = useState(program?.weeks || 1)
+  const [phase, setPhase] = useState(program?.phase || '')
+  const [goals, setGoals] = useState((program?.weekly_goals || []).join('\n'))
   const [focusIntents, setFocusIntents] = useState<Intent[]>(program?.focus_intents || ['low', 'med'])
   const [days, setDays] = useState<ProgramDay[] | null>(isNew ? [] : null)
   const [addons, setAddons] = useState<ProgramAddon[]>([])
@@ -86,7 +88,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
     setBusy(true)
     setError(null)
     const sb = createClient()
-    const row = { name: name.trim(), description: desc.trim() || null, weeks, focus_intents: focusIntents, updated_at: new Date().toISOString() }
+    const row = { name: name.trim(), description: desc.trim() || null, weeks, focus_intents: focusIntents, phase: phase.trim() || null, weekly_goals: goals.split('\n').map((g) => g.trim()).filter(Boolean), updated_at: new Date().toISOString() }
     let id = savedId
     if (!id) {
       const { data, error: e } = await sb.from('programs').insert(row).select('id').single()
@@ -141,6 +143,9 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Program name (e.g. Winter Throwing – Phase 1)" className={inputClass} />
         <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Short note (optional)" className={inputClass} />
+        <input value={phase} onChange={(e) => setPhase(e.target.value)} placeholder="Phase (e.g. Velocity, Build-Up, In-Season)" className={inputClass} />
+        <textarea value={goals} onChange={(e) => setGoals(e.target.value)} rows={3} placeholder={'Weekly goals, one per line (e.g. Complete 1 velo session / Hit 5x / Throw 5x)'} className={inputClass} />
+        <p className="text-[11px] font-semibold text-slate-400">Players see the phase and goals on My Training. Throwing-day counts are added automatically.</p>
         <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
           Length
           <select value={weeks} onChange={(e) => { const w = Number(e.target.value); setWeeks(w); if (week > w) setWeek(1) }} className={`${inputClass} w-auto`}>
