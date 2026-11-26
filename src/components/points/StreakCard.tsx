@@ -1,5 +1,7 @@
 'use client'
 
+import { useAppText } from '@/lib/appText'
+import Txt from '@/components/Txt'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Flame, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -15,6 +17,7 @@ type Streak = ReturnType<typeof computeStreak>
 export default function StreakCard({ athleteId, refreshKey = 0 }: { athleteId: string; refreshKey?: number }) {
   const { viewAs } = useProfile()
   const [s, setS] = useState<Streak | null>(null)
+  const t = useAppText()
   const [shown, setShown] = useState(0) // pips filled on screen (animates toward s.progress)
   const [plusOne, setPlusOne] = useState(0)
   const [resetNote, setResetNote] = useState(false)
@@ -85,7 +88,7 @@ export default function StreakCard({ athleteId, refreshKey = 0 }: { athleteId: s
       ? `Streak complete! Keep it going for the next ${STREAK_GOAL}.`
       : `Today locked in ✓ Come back tomorrow for day ${Math.min(nextDay, s.completions * STREAK_GOAL + STREAK_GOAL)}.`
     : s.streak === 0
-      ? `Earn all ${s.todayAvailable} points today to start your streak.`
+      ? <Txt k="streak.start" vars={{ n: s.todayAvailable }} />
       : `Today ${s.todayEarned}/${s.todayAvailable}: ${left} more point${left === 1 ? '' : 's'} to make it day ${nextDay}.`
 
   return (

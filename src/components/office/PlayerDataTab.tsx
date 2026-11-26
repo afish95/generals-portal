@@ -33,11 +33,11 @@ const dayOf = (iso: string) => {
 const numOrNull = (v: string) => (v.trim() === '' ? null : Number(v))
 
 /** Coach Office → Player Data: view, edit, add and delete any player's training logs, check-ins, body weights and daily checklist. */
-export default function PlayerDataTab({ players }: { players: Profile[] }) {
+export default function PlayerDataTab({ players, initialPlayer, initialSub }: { players: Profile[]; initialPlayer?: string | null; initialSub?: string }) {
   const roster = useMemo(() => players.filter((p) => p.is_active && !p.is_demo).sort((a, b) => a.full_name.localeCompare(b.full_name)), [players])
-  const [who, setWho] = useState<string>('')
+  const [who, setWho] = useState<string>(initialPlayer || '')
   const [find, setFind] = useState('')
-  const [sub, setSub] = useState<Sub>('logs')
+  const [sub, setSub] = useState<Sub>((['logs', 'readiness', 'weight', 'daily'] as string[]).includes(initialSub || '') ? (initialSub as Sub) : 'logs')
   const player = roster.find((p) => p.id === who)
   const shown = roster.filter((p) => !find || p.full_name.toLowerCase().includes(find.toLowerCase()))
 

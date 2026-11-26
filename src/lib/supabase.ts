@@ -93,6 +93,8 @@ export function createClient() {
       if (prop === 'from') {
         return (table: string) => {
           const qb = target.from(table)
+          // Coaches can still fix app wording while previewing as a player (it changes text only, not player data)
+          if (table === 'app_text') return qb
           return new Proxy(qb, {
             get(q, p) {
               if (typeof p === 'string' && WRITES.has(p)) return () => blockedQuery()

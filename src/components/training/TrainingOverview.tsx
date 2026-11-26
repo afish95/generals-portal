@@ -1,5 +1,8 @@
 'use client'
 
+import CoachEdit from '@/components/CoachEdit'
+import { useAppText } from '@/lib/appText'
+import Txt from '@/components/Txt'
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, Crosshair, Footprints, Gauge, MoveRight, Rocket, Target, Timer, TrendingUp, Zap, type LucideIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -39,6 +42,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
   const [rows, setRows] = useState<Row[] | null>(null)
   const [open, setOpen] = useState<string | null>(null)
   const dow = useDrillsOfWeek()
+  const t = useAppText()
   const trends = useStatTrends(athleteId)
 
   useEffect(() => {
@@ -75,7 +79,10 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
 
   return (
     <section className="rounded-3xl bg-gradient-to-br from-[#0f2a6e] via-[#1746b8] to-[#1e54d4] shadow-md overflow-hidden text-white">
-      <div className="px-4 pt-3.5 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-white/70">Training Ranks</div>
+      <div className="px-4 pt-3.5 pb-1 flex items-center justify-between">
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-white/70">Training Ranks</span>
+        <CoachEdit href={`/office?tab=data&player=${athleteId}&sub=logs`} label="Edit Data" className="!text-white/80" />
+      </div>
       {rows === null ? (
         <div className="h-24 m-4 rounded-2xl bg-white/10 animate-pulse" />
       ) : (
@@ -141,7 +148,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
           ) : null}
         </div>
       )}
-      <div className="px-4 pb-2.5 text-center text-[9px] font-bold text-white/55">Team percentile · all time · tap a stat for tips</div>
+      <div className="px-4 pb-2.5 text-center text-[9px] font-bold text-white/55"><Txt k="training.ranks.footer" /></div>
     </section>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import CoachEdit from '@/components/CoachEdit'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { localDate, prettyDate, round1 } from '@/lib/training'
@@ -70,7 +71,10 @@ export default function BodyWeightCard({ athleteId, date }: { athleteId: string;
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Body Weight by Week</span>
+        <span className="flex items-center gap-2">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Body Weight by Week</span>
+          <CoachEdit href={`/office?tab=data&player=${athleteId}&sub=weight`} label="Edit" />
+        </span>
         {change != null && (
           <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full ${change >= 0 ? 'bg-blue-50 text-[#1746b8]' : 'bg-slate-100 text-slate-600'}`}>
             {change >= 0 ? '+' : ''}{change} lb since {prettyDate(first!.measured_on, { month: 'short', day: 'numeric' })}
