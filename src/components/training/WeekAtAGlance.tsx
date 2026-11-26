@@ -12,7 +12,7 @@ type Prog = { name: string; phase: string | null; weekly_goals: string[] | null 
 const RANK: Record<Intent, number> = { low: 1, med: 2, high: 3 }
 
 /** Sun–Sat strip of training days colored by intent, plus the program's phase and weekly goals. */
-export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0 }: { athleteId: string; date: string; onPick: (d: string) => void; refreshKey?: number }) {
+export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0, position }: { athleteId: string; date: string; onPick: (d: string) => void; refreshKey?: number; position?: string | null }) {
   const start = sundayOf(date)
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i))
   const today = localDate()
@@ -57,10 +57,13 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0 
   const trainDays = days.filter((d) => byDay(d).length)
   const trainDone = trainDays.filter((d) => done.has(d)).length
 
+  // Built for throwing programs: pitchers and two-way players always see it; position players only when a throwing program is on their week.
+  if (workouts !== null && position !== 'pitcher' && position !== 'two_way' && throwDays.length === 0) return null
+
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-4 space-y-3">
       <div className="flex items-baseline justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Week at a Glance</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Throwing Week</span>
         <span className="text-[10px] font-bold text-slate-400">
           {new Date(`${start}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {new Date(`${addDays(start, 6)}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
         </span>
@@ -68,7 +71,7 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0 
       <div className="grid grid-cols-7 gap-1">
         {days.map((d) => {
           const it = topIntent(d)
-          const hasOther = !it && byDay(d).length > 0
+          const hasOther = false
           const sel = d === date
           const dt = new Date(`${d}T12:00:00`)
           return (
@@ -86,7 +89,7 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0 
                   </span>
                 )}
               </span>
-              <span className="text-[8px] font-extrabold uppercase text-slate-400 h-2">{it ? (it === 'low' ? 'Rec' : it) : hasOther ? 'Train' : ''}</span>
+              <span className="text-[8px] font-extrabold uppercase text-slate-400 h-2">{it ? (it === 'low' ? 'Rec' : it) : ''}</span>
             </button>
           )
         })}

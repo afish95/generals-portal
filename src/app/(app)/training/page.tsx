@@ -102,7 +102,7 @@ export default function TrainingPage() {
 
       {tab === 'mine' && (
         <>
-          <WeekAtAGlance athleteId={profile.id} date={date} onPick={setDate} refreshKey={refreshKey} />
+          <WeekAtAGlance athleteId={profile.id} date={date} onPick={setDate} refreshKey={refreshKey} position={profile.position_group} />
           <div>
             <DateStepper value={date} onChange={setDate} />
             <DayPlan

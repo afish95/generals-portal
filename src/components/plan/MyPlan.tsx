@@ -83,10 +83,34 @@ export default function MyPlan({ athleteId, onStartTool, title = 'My Plan' }: { 
         <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{title}</div>
         {updated && <div className="text-[10px] font-bold text-slate-400">Updated {new Date(updated).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>}
       </div>
+      <div className="grid grid-cols-2 gap-2">
+        {active.slice(0, 4).map((f, i) => {
+          const now = lines && training ? currentValue(f, athleteId, lines, ea, training) : null
+          const pct = f.metric_key ? progressPct(f, now) : null
+          const sel = openGoal === f.id
+          return (
+            <button key={f.id} type="button" onClick={() => setOpenGoal(sel ? null : f.id)} className={`text-left rounded-2xl border p-3 min-h-[6.5rem] flex flex-col cursor-pointer transition ${sel ? 'border-[#1746b8] bg-blue-50' : 'border-slate-200 bg-white'}`}>
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-[#1746b8] text-white text-[11px] font-black flex items-center justify-center shrink-0">{i + 1}</span>
+                <KindBadge kind={focusKind(f)} />
+              </div>
+              <div className="text-sm font-extrabold text-slate-900 leading-tight mt-1.5 line-clamp-2 flex-1">{f.title}</div>
+              {pct != null ? (
+                <div className="h-1.5 rounded-full bg-slate-200 mt-2 overflow-hidden">
+                  <div className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-[#1746b8]'}`} style={{ width: `${pct}%` }} />
+                </div>
+              ) : (
+                <div className="text-[10px] font-bold text-slate-400 mt-2">{f.drills.length} drill{f.drills.length === 1 ? '' : 's'}</div>
+              )}
+            </button>
+          )
+        })}
+      </div>
       {active.map((f, i) => {
+        if (openGoal !== f.id) return null
         const now = lines && training ? currentValue(f, athleteId, lines, ea, training) : null
         return (
-          <div key={f.id} className="rounded-2xl border border-slate-200 p-4">
+          <div key={f.id} className="rounded-2xl border-2 border-[#1746b8] p-4">
             <div className="flex items-start gap-3">
               <span className="w-7 h-7 rounded-full bg-[#1746b8] text-white text-xs font-black flex items-center justify-center shrink-0">{i + 1}</span>
               <div className="min-w-0 flex-1">
@@ -100,13 +124,8 @@ export default function MyPlan({ athleteId, onStartTool, title = 'My Plan' }: { 
             </div>
             {f.metric_key && <FocusProgress f={f} now={now} />}
             {f.drills.length > 0 && (
-              <button type="button" onClick={() => setOpenGoal(openGoal === f.id ? null : f.id)} className="mt-3 w-full flex items-center justify-between border-t border-slate-100 pt-2 text-left cursor-pointer">
-                <span className="text-xs font-extrabold text-[#1746b8]">{f.drills.length} drill{f.drills.length === 1 ? '' : 's'} &amp; videos</span>
-                <ChevronDown className={`w-4 h-4 text-[#1746b8] transition ${openGoal === f.id ? 'rotate-180' : ''}`} />
-              </button>
-            )}
-            {f.drills.length > 0 && openGoal === f.id && (
-              <div className="mt-1 space-y-1">
+              <div className="mt-3 border-t border-slate-100 pt-2 space-y-1">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Drills &amp; Videos</div>
                 {f.drills.map((d) => {
                   const info = drillInfo(d)
                   const key = `${f.id}-${d.kind}-${d.id}`

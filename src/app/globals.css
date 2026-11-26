@@ -73,3 +73,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .gen-shimmer, .animate-gen-pip, .animate-gen-flame, .animate-gen-confetti { animation: none; }
 }
+
+/* Horizontal swipe rows without a visible scrollbar */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
