@@ -16,8 +16,8 @@ import DrillOfWeekPanel from './DrillOfWeekPanel'
 type Sub = 'drills' | 'progressions' | 'programs' | 'dow' | 'import'
 
 /** Coach Office → Drills: folder-based drill and progression library with in-app videos. */
-export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
-  const [sub, setSub] = useState<Sub>('drills')
+export default function DrillLibrary({ onChanged, initialSub }: { onChanged: () => void; initialSub?: string }) {
+  const [sub, setSub] = useState<Sub>((['drills', 'progressions', 'programs', 'dow', 'import'] as string[]).includes(initialSub || '') ? (initialSub as Sub) : 'drills')
   const [folders, setFolders] = useState<Folder[]>([])
   const [drills, setDrills] = useState<Drill[]>([])
   const [progs, setProgs] = useState<(Progression & { n: number })[]>([])

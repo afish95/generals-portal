@@ -1,7 +1,7 @@
 'use client'
 
+import CoachEdit from '@/components/CoachEdit'
 import { useState } from 'react'
-import Link from 'next/link'
 import { FileDown, MapPin, Users } from 'lucide-react'
 import { KIND_STYLE, kindOf, minutesOf, timeRange, type ScheduleEvent } from '@/lib/schedule'
 import { INTENT_LABEL, INTENT_STYLE, type Intent } from '@/lib/programs'
@@ -125,11 +125,7 @@ function EventBlock({ e, open, onToggle, who, isCoach }: { e: ScheduleEvent; ope
                 <FileDown className="w-3 h-3" /> Practice Plan
               </a>
             )}
-            {isCoach && (
-              <Link href={`/office?tab=schedule&event=${e.id}`} className="font-extrabold text-[#1746b8]">
-                {e.series_id ? 'Edit Event · Repeat' : 'Edit Event'}
-              </Link>
-            )}
+            <CoachEdit href={`/office?tab=schedule&event=${e.id}`} label={e.series_id ? 'Edit Event · Repeat' : 'Edit Event'} />
           </div>
         </div>
       )}

@@ -1,6 +1,8 @@
 'use client'
 
+import CoachEdit from '@/components/CoachEdit'
 import { useAppText } from '@/lib/appText'
+import Txt from '@/components/Txt'
 import { useEffect, useState } from 'react'
 import { CheckCircle2, ChevronDown, Play, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -68,7 +70,7 @@ export default function MyPlan({ athleteId, onStartTool, title = 'My Plan' }: { 
           <Target className="w-5 h-5" />
         </div>
         <div>
-          <div className="text-sm font-extrabold text-slate-900">{t('training.dev.empty')}</div>
+          <div className="text-sm font-extrabold text-slate-900"><Txt k="training.dev.empty" /></div>
           <div className="text-xs font-medium text-slate-500">Your coach is setting your focus areas. Keep logging so your goals are based on real numbers.</div>
         </div>
       </section>
@@ -82,7 +84,10 @@ export default function MyPlan({ athleteId, onStartTool, title = 'My Plan' }: { 
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
       <div className="flex items-baseline justify-between">
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{title}</div>
+        <div className="flex items-center gap-2">
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{title}</div>
+          <CoachEdit href={`/office?tab=plans&player=${athleteId}`} label="Edit Plan" />
+        </div>
         {updated && <div className="text-[10px] font-bold text-slate-400">Updated {new Date(updated).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>}
       </div>
       <div className="grid grid-cols-2 gap-2">

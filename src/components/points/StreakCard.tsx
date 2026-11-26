@@ -1,6 +1,7 @@
 'use client'
 
 import { useAppText } from '@/lib/appText'
+import Txt from '@/components/Txt'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Flame, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -87,7 +88,7 @@ export default function StreakCard({ athleteId, refreshKey = 0 }: { athleteId: s
       ? `Streak complete! Keep it going for the next ${STREAK_GOAL}.`
       : `Today locked in ✓ Come back tomorrow for day ${Math.min(nextDay, s.completions * STREAK_GOAL + STREAK_GOAL)}.`
     : s.streak === 0
-      ? t('streak.start', { n: s.todayAvailable })
+      ? <Txt k="streak.start" vars={{ n: s.todayAvailable }} />
       : `Today ${s.todayEarned}/${s.todayAvailable}: ${left} more point${left === 1 ? '' : 's'} to make it day ${nextDay}.`
 
   return (

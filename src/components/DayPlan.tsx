@@ -1,5 +1,6 @@
 'use client'
 
+import CoachEdit from '@/components/CoachEdit'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Check, ChevronDown, Crosshair, FileDown, Pencil, Dumbbell, ExternalLink, GraduationCap, HeartPulse, MapPin, Moon, Play, Target, Trophy, Users } from 'lucide-react'
@@ -19,6 +20,7 @@ import DrillOfWeekCard from '@/components/training/DrillOfWeekCard'
 import LogStat from '@/components/training/LogStat'
 import { useOpponents } from '@/lib/opponents'
 import { useAppText } from '@/lib/appText'
+import Txt from '@/components/Txt'
 import OpponentBadge from '@/components/OpponentBadge'
 
 const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id6445937141'
@@ -270,7 +272,10 @@ export default function DayPlan({
       {showHeader && (
         <div className="px-5 pt-4 pb-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Day Plan</span>
+            <span className="flex items-center gap-2">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Day Plan</span>
+              {!isCoach && <CoachEdit href={`/office?tab=data&player=${athleteId}&sub=daily`} label="Edit" />}
+            </span>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold text-slate-400">{prettyDate(day, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
               {!isCoach && pts && (
@@ -341,11 +346,7 @@ export default function DayPlan({
                       <Pencil className="w-3.5 h-3.5" /> Build a Practice Plan
                     </Link>
                   )}
-                  {isCoach && (
-                    <Link href={`/office?tab=schedule&event=${e.id}`} className="ml-3 inline-flex items-center gap-1 text-[11px] font-extrabold text-[#1746b8]">
-                      <Pencil className="w-3.5 h-3.5" /> Edit Event{e.series_id ? ' · Repeat' : ''}
-                    </Link>
-                  )}
+                  <CoachEdit href={`/office?tab=schedule&event=${e.id}`} label={e.series_id ? 'Edit Event · Repeat' : 'Edit Event'} className="ml-3" />
                 </div>
               )}
             </li>
@@ -361,7 +362,7 @@ export default function DayPlan({
                 icon={<Moon className="w-4 h-4" />}
                 tone={SCHEDULE.tone}
                 title="8+ Hours Sleep"
-                subtitle={sleepHours != null ? `${sleepHours}h last night${sleepHours < 8 ? ' · under 8' : ''}` : t('dayplan.sleep.sub')}
+                subtitle={sleepHours != null ? `${sleepHours}h last night${sleepHours < 8 ? ' · under 8' : ''}` : <Txt k="dayplan.sleep.sub" />}
                 open={open === 'sleep'}
                 onClick={() => toggle('sleep')}
                 showCheck={showCheck}
@@ -398,7 +399,7 @@ export default function DayPlan({
                 icon={<GraduationCap className="w-4 h-4" />}
                 tone={school ? SCHEDULE.tone : 'bg-slate-100 text-slate-400'}
                 title="Class Attendance"
-                subtitle={!school ? schoolOff || 'No school today' : classOverride ? `Coach marked ${classOverride}` : t('dayplan.class.sub')}
+                subtitle={!school ? schoolOff || 'No school today' : classOverride ? `Coach marked ${classOverride}` : <Txt k="dayplan.class.sub" />}
                 open={open === 'class'}
                 onClick={() => toggle('class')}
                 showCheck={showCheck && school}
@@ -411,7 +412,7 @@ export default function DayPlan({
               />
               {open === 'class' && (
                 <p className="px-5 pb-4 pl-[4.25rem] text-xs text-slate-600">
-                  {school ? t('dayplan.class.help') : 'No school, so this doesn’t count today.'}
+                  {school ? <Txt k="dayplan.class.help" /> : 'No school, so this doesn’t count today.'}
                 </p>
               )}
             </li>
@@ -424,7 +425,7 @@ export default function DayPlan({
             icon={<Dumbbell className="w-4 h-4" />}
             tone={TRAINING.tone}
             title="Lift / Workout"
-            subtitle={liftStatus === 'rest' ? 'Rest Day' : teamLift ? `${teamLift.title} · ${timeRange(teamLift)}${teamLift.location ? ` · ${teamLift.location}` : ''}` : t('dayplan.lift.sub')}
+            subtitle={liftStatus === 'rest' ? 'Rest Day' : teamLift ? `${teamLift.title} · ${timeRange(teamLift)}${teamLift.location ? ` · ${teamLift.location}` : ''}` : <Txt k="dayplan.lift.sub" />}
             open={open === 'driveline'}
             onClick={() => toggle('driveline')}
             showCheck={showCheck && liftStatus !== 'rest'}
@@ -440,16 +441,12 @@ export default function DayPlan({
               {teamLift && (
                 <div className="rounded-xl bg-purple-50 border border-purple-200 px-3 py-2 text-xs">
                   <div className="font-extrabold text-purple-800">{teamLift.title} · {timeRange(teamLift)}</div>
-                  <div className="font-semibold text-purple-700">{teamLift.notes || `${teamLift.location || 'Weight Room'} · ${t('dayplan.teamlift.note')}`}</div>
-                  {isCoach && (
-                    <Link href={`/office?tab=schedule&event=${teamLift.id}`} className="inline-flex items-center gap-1 mt-1 text-[11px] font-extrabold text-[#1746b8]">
-                      <Pencil className="w-3 h-3" /> Edit Event · Repeat
-                    </Link>
-                  )}
+                  <div className="font-semibold text-purple-700">{teamLift.notes || <>{teamLift.location || 'Weight Room'} · <Txt k="dayplan.teamlift.note" /></>}</div>
+                  <CoachEdit href={`/office?tab=schedule&event=${teamLift.id}`} label="Edit Event · Repeat" className="mt-1" />
                 </div>
               )}
               <p className="text-xs text-slate-600">
-                {isCoach ? 'Players’ lifts and mobility are programmed in the Driveline Baseball app.' : t('dayplan.lift.help')}
+                {isCoach ? 'Players’ lifts and mobility are programmed in the Driveline Baseball app.' : <Txt k="dayplan.lift.help" />}
               </p>
               {interactive && (
                 <button type="button" onClick={() => setLift('rest')} disabled={busy === 'lift'} className={`w-full py-2 rounded-xl text-xs font-extrabold cursor-pointer ${liftStatus === 'rest' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
@@ -534,6 +531,9 @@ export default function DayPlan({
                       ))}
                     </div>
                   )}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 pl-1">
+                    <CoachEdit href={w.program_assignment_id ? '/office?tab=drills&sub=programs' : `/office?tab=workouts&date=${day}&workout=${w.id}`} label={w.program_assignment_id ? 'Edit Program' : 'Edit Workout'} />
+                  </div>
                   {!isCoach && dow.team && <DrillOfWeekCard drill={dow.team} />}
                   {!isCoach && <LogStat athleteId={athleteId} date={day} interactive={interactive} />}
                   {renderWorkout ? (
@@ -575,7 +575,7 @@ export default function DayPlan({
               icon={<Target className="w-4 h-4" />}
               tone={trainingRest ? 'bg-slate-100 text-slate-400' : TRAINING.tone}
               title="Baseball Training"
-              subtitle={trainingRest ? 'Rest Day' : t('dayplan.training.sub')}
+              subtitle={trainingRest ? 'Rest Day' : <Txt k="dayplan.training.sub" />}
               open={open === 'training'}
               onClick={() => toggle('training')}
               showCheck={showCheck && !trainingRest}
@@ -588,7 +588,7 @@ export default function DayPlan({
             />
             {open === 'training' && (
               <div className="px-4 pb-4 space-y-2">
-                <p className="pl-[3.25rem] text-xs text-slate-600">{t('dayplan.training.help')}</p>
+                <p className="pl-[3.25rem] text-xs text-slate-600"><Txt k="dayplan.training.help" /></p>
                 {dow.team && <DrillOfWeekCard drill={dow.team} />}
                 <LogStat athleteId={athleteId} date={day} interactive={interactive} />
               </div>
@@ -603,7 +603,7 @@ export default function DayPlan({
               icon={<HeartPulse className="w-4 h-4" />}
               tone="bg-emerald-100 text-emerald-700"
               title="Readiness Check-In"
-              subtitle={pts?.readiness_ok ? 'Done · tap to see your score' : t('dayplan.readiness.sub')}
+              subtitle={pts?.readiness_ok ? 'Done · tap to see your score' : <Txt k="dayplan.readiness.sub" />}
               open={open === 'readiness'}
               onClick={() => toggle('readiness')}
               showCheck={showCheck}
@@ -655,7 +655,7 @@ function Row({
   icon: React.ReactNode
   tone: string
   title: string
-  subtitle: string
+  subtitle: React.ReactNode
   open: boolean
   onClick: () => void
   showCheck: boolean

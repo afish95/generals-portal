@@ -1,5 +1,6 @@
 'use client'
 
+import CoachEdit from '@/components/CoachEdit'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { localDate, prettyDate } from '@/lib/training'
@@ -31,7 +32,10 @@ export default function StatLogCard({ athleteId, interactive = true, onLogged }:
 
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
-      <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Stat Log</div>
+      <div className="flex items-center justify-between">
+        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Stat Log</div>
+        <CoachEdit href={`/office?tab=data&player=${athleteId}&sub=logs`} label="Edit All" />
+      </div>
       <LogStat
         athleteId={athleteId}
         date={localDate()}

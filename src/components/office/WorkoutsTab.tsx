@@ -21,8 +21,9 @@ import {
 
 type Editing = { workout: Workout | null; items: WorkoutItem[] } | null
 
-export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; exercises: Exercise[] }) {
-  const [date, setDate] = useState(localDate())
+export default function WorkoutsTab({ groups, exercises, openWorkoutId, openDate }: { groups: Group[]; exercises: Exercise[]; openWorkoutId?: number; openDate?: string }) {
+  const [date, setDate] = useState(openDate || localDate())
+  const [opened, setOpened] = useState(false)
   const [filter, setFilter] = useState<'all' | 'team' | number>('all')
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [items, setItems] = useState<WorkoutItem[]>([])
@@ -56,6 +57,14 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
       }
       setWorkouts(list)
       setItems(itemList)
+      // Opened from an Edit link on a player's screen: jump straight into that workout
+      if (openWorkoutId && !opened) {
+        const hit = list.find((x) => x.id === openWorkoutId)
+        if (hit) {
+          setEditing({ workout: hit, items: itemList.filter((i) => i.workout_id === hit.id) })
+          setOpened(true)
+        }
+      }
       setLoggedCounts(Object.fromEntries(Object.entries(byWorkout).map(([k, v]) => [k, v.size])))
       if (list[0]) setLastPhase(list[0].phase)
     }

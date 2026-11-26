@@ -14,7 +14,6 @@ import GameStatsImport from '@/components/office/GameStatsImport'
 import PracticePlansTab from '@/components/office/PracticePlansTab'
 import ScheduleTab from '@/components/office/ScheduleTab'
 import PlayerDataTab from '@/components/office/PlayerDataTab'
-import AppTextTab from '@/components/office/AppTextTab'
 import { PROFILE_FIELDS, type Exercise, type Group, type Profile } from '@/lib/training'
 
 const TABS = [
@@ -28,7 +27,6 @@ const TABS = [
   { key: 'drills', label: 'Drills' },
   { key: 'thought', label: 'Thought of the Week' },
   { key: 'gamestats', label: 'Game Stats' },
-  { key: 'text', label: 'App Text' },
 ] as const
 type TabKey = (typeof TABS)[number]['key']
 
@@ -42,6 +40,7 @@ export default function CoachOfficePage() {
   const refresh = useCallback(() => setReload((n) => n + 1), [])
   const [openEventId, setOpenEventId] = useState<number | null>(null)
   const [planPlayer, setPlanPlayer] = useState<string | null>(null)
+  const [deep, setDeep] = useState<{ sub?: string; workout?: number; date?: string }>({})
   const [rosterSub, setRosterSub] = useState<'players' | 'coaches' | 'groups' | 'sandbox' | 'transfer'>('players')
   useSubnav(TABS as unknown as { key: string; label: string }[], tab, (k) => setTab(k as TabKey))
 
@@ -57,6 +56,7 @@ export default function CoachOfficePage() {
     if (pl) setPlanPlayer(pl)
     const ev = Number(q.get('event'))
     if (ev) setOpenEventId(ev)
+    setDeep({ sub: q.get('sub') || undefined, workout: Number(q.get('workout')) || undefined, date: q.get('date') || undefined })
   }, [])
 
   useEffect(() => {
@@ -91,14 +91,13 @@ export default function CoachOfficePage() {
         ))}
       </div>
       {tab === 'schedule' && <ScheduleTab groups={groups} openEventId={openEventId} />}
-      {tab === 'workouts' && <WorkoutsTab groups={groups} exercises={exercises} />}
+      {tab === 'workouts' && <WorkoutsTab groups={groups} exercises={exercises} openWorkoutId={deep.workout} openDate={deep.date} key={`w${deep.workout || ''}`} />}
       {tab === 'plans' && <PlayerPlansTab initialPlayer={planPlayer} />}
       {tab === 'practices' && <PracticePlansTab openEventId={openEventId} />}
       {tab === 'attendance' && <AttendanceTab players={players} groups={groups} />}
       {tab === 'roster' && <RosterArea initial={rosterSub} onChanged={refresh} />}
-      {tab === 'data' && <PlayerDataTab players={players} />}
-      {tab === 'text' && <AppTextTab />}
-      {tab === 'drills' && <DrillLibrary onChanged={refresh} />}
+      {tab === 'data' && <PlayerDataTab players={players} initialPlayer={planPlayer} initialSub={deep.sub} key={`p${planPlayer || ''}`} />}
+      {tab === 'drills' && <DrillLibrary onChanged={refresh} initialSub={deep.sub} key={`d${deep.sub || ''}`} />}
       {tab === 'thought' && <ThoughtTab />}
       {tab === 'gamestats' && <GameStatsImport players={players} />}
     </div>

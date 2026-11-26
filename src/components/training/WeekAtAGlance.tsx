@@ -1,5 +1,6 @@
 'use client'
 
+import CoachEdit from '@/components/CoachEdit'
 import { useEffect, useState } from 'react'
 import { Check, Dumbbell, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -72,7 +73,10 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-4 space-y-3">
       <div className="flex items-baseline justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Week at a Glance</span>
+        <span className="flex items-center gap-2">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Week at a Glance</span>
+          <CoachEdit href="/office?tab=drills&sub=programs" label="Edit Program" />
+        </span>
         <span className="text-[10px] font-bold text-slate-400">
           {new Date(`${start}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {new Date(`${addDays(start, 6)}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
         </span>

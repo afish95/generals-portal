@@ -54,3 +54,12 @@ export function useAppText() {
     return v
   }
 }
+
+/** Save a coach's wording (blank or same as default = back to default). */
+export async function saveAppText(key: TextKey, raw: string) {
+  const v = raw.trim()
+  const sb = createClient()
+  const res = !v || v === APP_TEXT[key].text ? await sb.from('app_text').delete().eq('key', key) : await sb.from('app_text').upsert({ key, value: v, updated_at: new Date().toISOString() })
+  await refreshAppText()
+  return res.error?.message || null
+}
