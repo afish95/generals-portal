@@ -174,6 +174,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [status, pathname, viewing, viewAsId])
 
+  // Header collapses on scroll down: the blue bar fades away and the Calendar / Messages buttons shrink and float.
+  const [compact, setCompact] = useState(false)
+  useEffect(() => {
+    const on = () => {
+      const y = window.scrollY
+      setCompact((c) => (c ? y > 16 : y > 72))
+    }
+    on()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => window.removeEventListener('scroll', on)
+  }, [])
+  const headerRef = useRef<HTMLElement>(null)
+  const [headH, setHeadH] = useState(92)
+  useEffect(() => {
+    const el = headerRef.current
+    if (compact || !el) return
+    const measure = () => setHeadH(el.offsetHeight)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [compact, status, viewing])
+
   const isCoach = realIsCoach && !viewing
   const tabs = isCoach ? COACH_TABS : PLAYER_TABS
 
@@ -196,8 +219,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const calendarActive = pathname.startsWith('/calendar')
   const messagesActive = pathname.startsWith('/messages')
   const iconBtn = (active: boolean) =>
-    `w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 transition ${
-      active ? 'bg-white text-[#1746b8] border-white shadow-sm' : 'bg-white/15 border-white/20 text-white'
+    `pointer-events-auto rounded-2xl border flex items-center justify-center shrink-0 transition-all duration-300 ${compact ? 'w-9 h-9 shadow-lg' : 'w-11 h-11'} ${
+      active ? 'bg-white text-[#1746b8] border-white shadow-sm' : compact ? 'bg-[#1746b8] border-white/30 text-white' : 'bg-white/15 border-white/20 text-white'
     }`
 
   return (
@@ -224,15 +247,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           />
         )}
         {/* Royal blue header: Calendar top left, Messages top right (phones; coaches on desktop use the sidebar) */}
+        <div aria-hidden className={isCoach ? 'lg:hidden' : ''} style={{ height: headH }} />
         <header
-          className={`sticky top-0 z-40 bg-gradient-to-b from-[#1746b8] to-[#1e54d4] text-white shadow-md ${isCoach ? 'lg:hidden' : ''}`}
+          ref={headerRef}
+          className={`fixed top-0 inset-x-0 z-40 text-white transition-all duration-300 ${
+            compact ? 'bg-transparent shadow-none pointer-events-none' : 'bg-gradient-to-b from-[#1746b8] to-[#1e54d4] shadow-md'
+          } ${isCoach ? 'lg:hidden' : ''}`}
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-          <div className="max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
+          <div className={`max-w-xl mx-auto px-4 flex items-center justify-between gap-3 transition-all duration-300 ${compact ? 'py-2' : 'py-3.5'}`}>
             <Link href="/calendar" aria-label="Calendar" className={iconBtn(calendarActive)}>
-              <Calendar className="w-5 h-5" />
+              <Calendar className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
             </Link>
-            <div className="min-w-0 flex-1 text-center">
+            <div className={`min-w-0 flex-1 text-center transition-all duration-300 overflow-hidden ${compact ? 'opacity-0 max-h-0' : 'opacity-100 max-h-24'}`}>
               <div className="flex items-center justify-center gap-2">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Generals Baseball</span>
                 <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-400/25 text-blue-100">
@@ -245,7 +272,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <Link href="/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'} className={`relative ${iconBtn(messagesActive)}`}>
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
               {unread > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-[#1746b8]">
                   {unread > 9 ? '9+' : unread}
@@ -254,7 +281,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
           {viewing && viewed && (
-            <div className="bg-amber-400 text-amber-950">
+            <div className="bg-amber-400 text-amber-950 pointer-events-auto">
               <div className="max-w-xl mx-auto px-4 py-2 flex items-center gap-2">
                 <Eye className="w-4 h-4 shrink-0" />
                 <div className="min-w-0 flex-1">

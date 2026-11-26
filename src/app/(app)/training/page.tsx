@@ -82,7 +82,7 @@ export default function TrainingPage() {
       )}
 
       <PageTitle title="Training" />
-      <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-white border border-slate-200 shadow-xs sticky top-2 z-20">
+      <div className="grid grid-cols-4 gap-1 p-1 rounded-2xl bg-white border border-slate-200 shadow-xs sticky top-[calc(env(safe-area-inset-top)+3.5rem)] lg:top-2 z-20">
         {TABS.map((t) => (
           <button key={t.key} type="button" onClick={() => setTab(t.key)} className={`py-2 rounded-xl text-[11px] font-extrabold cursor-pointer ${tab === t.key ? 'bg-[#1746b8] text-white' : 'text-slate-500'}`}>
             {t.label}
