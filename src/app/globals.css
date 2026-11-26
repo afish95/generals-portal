@@ -89,3 +89,11 @@ body {
 .animate-gen-fade { animation: gen-fade 0.25s ease-out both; }
 .animate-gen-pr-pop { animation: gen-pr-pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
 @media (prefers-reduced-motion: reduce) { .animate-gen-pr-pop, .animate-gen-fade { animation: none; } }
+
+/* Collapsing header: everything follows --p (0 = full header, 1 = collapsed), set from scroll position */
+.gen-head-bar { opacity: calc(1 - var(--p, 0)); }
+.gen-head-text { opacity: calc(1 - var(--p, 0) * 1.6); transform: translateY(calc(var(--p, 0) * -14px)) scale(calc(1 - var(--p, 0) * 0.08)); }
+.gen-head-icon { transform: translateY(calc(var(--p, 0) * -18px)) scale(calc(1 - var(--p, 0) * 0.18)); }
+.gen-head-fill { opacity: var(--p, 0); }
+.gen-head-amber { transform: translateY(calc(var(--p, 0) * -36px)); }
+.gen-head-bar, .gen-head-text, .gen-head-icon, .gen-head-fill, .gen-head-amber { transition: opacity 90ms linear, transform 90ms linear; will-change: opacity, transform; }

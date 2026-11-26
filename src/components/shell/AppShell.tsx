@@ -174,28 +174,40 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [status, pathname, viewing, viewAsId])
 
-  // Header collapses on scroll down: the blue bar fades away and the Calendar / Messages buttons shrink and float.
-  const [compact, setCompact] = useState(false)
-  useEffect(() => {
-    const on = () => {
-      const y = window.scrollY
-      setCompact((c) => (c ? y > 16 : y > 72))
-    }
-    on()
-    window.addEventListener('scroll', on, { passive: true })
-    return () => window.removeEventListener('scroll', on)
-  }, [])
+  // Header collapses as you scroll: progress (0 → 1 over the first 90px) follows the scroll directly,
+  // so a fast flick collapses it fast and a slow scroll collapses it slowly. Written to a CSS variable (no re-renders).
   const headerRef = useRef<HTMLElement>(null)
+  const [compact, setCompact] = useState(false)
   const [headH, setHeadH] = useState(92)
   useEffect(() => {
+    let frame = 0
+    const apply = () => {
+      frame = 0
+      const p = Math.min(1, Math.max(0, window.scrollY / 90))
+      headerRef.current?.style.setProperty('--p', p.toFixed(3))
+      setCompact((c) => (c ? p > 0.4 : p > 0.6))
+    }
+    const on = () => {
+      if (!frame) frame = requestAnimationFrame(apply)
+    }
+    apply()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', on)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [status])
+  useEffect(() => {
     const el = headerRef.current
-    if (compact || !el) return
-    const measure = () => setHeadH(el.offsetHeight)
+    if (!el || window.scrollY > 0) return
+    const measure = () => {
+      if (window.scrollY === 0) setHeadH(el.offsetHeight)
+    }
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [compact, status, viewing])
+  }, [status, viewing])
 
   const isCoach = realIsCoach && !viewing
   const tabs = isCoach ? COACH_TABS : PLAYER_TABS
@@ -219,8 +231,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const calendarActive = pathname.startsWith('/calendar')
   const messagesActive = pathname.startsWith('/messages')
   const iconBtn = (active: boolean) =>
-    `pointer-events-auto rounded-2xl border flex items-center justify-center shrink-0 transition-all duration-300 ${compact ? 'w-9 h-9 shadow-lg' : 'w-11 h-11'} ${
-      active ? 'bg-white text-[#1746b8] border-white shadow-sm' : compact ? 'bg-[#1746b8] border-white/30 text-white' : 'bg-white/15 border-white/20 text-white'
+    `pointer-events-auto relative w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 gen-head-icon ${
+      active ? 'bg-white text-[#1746b8] border-white shadow-sm' : 'bg-white/15 border-white/20 text-white'
     }`
 
   return (
@@ -250,16 +262,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div aria-hidden className={isCoach ? 'lg:hidden' : ''} style={{ height: headH }} />
         <header
           ref={headerRef}
-          className={`fixed top-0 inset-x-0 z-40 text-white transition-all duration-300 ${
-            compact ? 'bg-transparent shadow-none pointer-events-none' : 'bg-gradient-to-b from-[#1746b8] to-[#1e54d4] shadow-md'
-          } ${isCoach ? 'lg:hidden' : ''}`}
+          className={`fixed top-0 inset-x-0 z-40 text-white ${compact ? 'pointer-events-none' : ''} ${isCoach ? 'lg:hidden' : ''}`}
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-          <div className={`max-w-xl mx-auto px-4 flex items-center justify-between gap-3 transition-all duration-300 ${compact ? 'py-2' : 'py-3.5'}`}>
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-[#1746b8] to-[#1e54d4] shadow-md gen-head-bar" />
+          <div className="relative max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
             <Link href="/calendar" aria-label="Calendar" className={iconBtn(calendarActive)}>
-              <Calendar className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
+              {!calendarActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}
+              <Calendar className="relative w-5 h-5" />
             </Link>
-            <div className={`min-w-0 flex-1 text-center transition-all duration-300 overflow-hidden ${compact ? 'opacity-0 max-h-0' : 'opacity-100 max-h-24'}`}>
+            <div className="min-w-0 flex-1 text-center gen-head-text">
               <div className="flex items-center justify-center gap-2">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Generals Baseball</span>
                 <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-400/25 text-blue-100">
@@ -272,7 +284,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <Link href="/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'} className={`relative ${iconBtn(messagesActive)}`}>
-              <MessageCircle className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
+              {!messagesActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}
+              <MessageCircle className="relative w-5 h-5" />
               {unread > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-[#1746b8]">
                   {unread > 9 ? '9+' : unread}
@@ -281,7 +294,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
           {viewing && viewed && (
-            <div className="bg-amber-400 text-amber-950 pointer-events-auto">
+            <div className="relative bg-amber-400 text-amber-950 pointer-events-auto gen-head-amber">
               <div className="max-w-xl mx-auto px-4 py-2 flex items-center gap-2">
                 <Eye className="w-4 h-4 shrink-0" />
                 <div className="min-w-0 flex-1">
