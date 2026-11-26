@@ -14,6 +14,7 @@ import GameStatsImport from '@/components/office/GameStatsImport'
 import PracticePlansTab from '@/components/office/PracticePlansTab'
 import ScheduleTab from '@/components/office/ScheduleTab'
 import PlayerDataTab from '@/components/office/PlayerDataTab'
+import AppTextTab from '@/components/office/AppTextTab'
 import { PROFILE_FIELDS, type Exercise, type Group, type Profile } from '@/lib/training'
 
 const TABS = [
@@ -27,6 +28,7 @@ const TABS = [
   { key: 'drills', label: 'Drills' },
   { key: 'thought', label: 'Thought of the Week' },
   { key: 'gamestats', label: 'Game Stats' },
+  { key: 'text', label: 'App Text' },
 ] as const
 type TabKey = (typeof TABS)[number]['key']
 
@@ -95,6 +97,7 @@ export default function CoachOfficePage() {
       {tab === 'attendance' && <AttendanceTab players={players} groups={groups} />}
       {tab === 'roster' && <RosterArea initial={rosterSub} onChanged={refresh} />}
       {tab === 'data' && <PlayerDataTab players={players} />}
+      {tab === 'text' && <AppTextTab />}
       {tab === 'drills' && <DrillLibrary onChanged={refresh} />}
       {tab === 'thought' && <ThoughtTab />}
       {tab === 'gamestats' && <GameStatsImport players={players} />}

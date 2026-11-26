@@ -1,5 +1,6 @@
 'use client'
 
+import { useAppText } from '@/lib/appText'
 import { useEffect, useState } from 'react'
 import { CheckCircle2, ChevronDown, Play, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -41,6 +42,7 @@ export default function MyPlan({ athleteId, onStartTool, title = 'My Plan' }: { 
   const [focus, setFocus] = useState<PlayerFocus[] | null>(null)
   const [open, setOpen] = useState<string | null>(null)
   const [openGoal, setOpenGoal] = useState<number | null>(null)
+  const t = useAppText()
   const { lines, ea, training, drills } = useFocusData()
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export default function MyPlan({ athleteId, onStartTool, title = 'My Plan' }: { 
           <Target className="w-5 h-5" />
         </div>
         <div>
-          <div className="text-sm font-extrabold text-slate-900">Your plan is on the way</div>
+          <div className="text-sm font-extrabold text-slate-900">{t('training.dev.empty')}</div>
           <div className="text-xs font-medium text-slate-500">Your coach is setting your focus areas. Keep logging so your goals are based on real numbers.</div>
         </div>
       </section>

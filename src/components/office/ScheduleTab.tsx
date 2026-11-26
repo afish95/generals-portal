@@ -144,11 +144,14 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
   const [kind, setKind] = useState<EventKind>(first ? kindOf(first.event_type) : 'program')
   const [start, setStart] = useState(first?.event_date || today)
   // Google Calendar–style repeat
-  const [repeat, setRepeat] = useState<'none' | 'daily' | 'weekdays' | 'weekly'>('none')
-  const [weekdays, setWeekdays] = useState<number[]>([new Date(`${first?.event_date || today}T12:00:00`).getDay()])
+  const seriesDays = row ? row.days.map((d) => d.event_date).sort() : []
+  const seriesDows = [...new Set(seriesDays.map((d) => new Date(`${d}T12:00:00`).getDay()))].sort()
+  const [changeRepeat, setChangeRepeat] = useState(false)
+  const [repeat, setRepeat] = useState<'none' | 'daily' | 'weekdays' | 'weekly'>(row && row.days.length > 1 ? 'weekly' : 'none')
+  const [weekdays, setWeekdays] = useState<number[]>(row && row.days.length > 1 ? seriesDows : [new Date(`${first?.event_date || today}T12:00:00`).getDay()])
   const [every, setEvery] = useState(1)
   const [endMode, setEndMode] = useState<'date' | 'count'>('date')
-  const [end, setEnd] = useState(SCHOOL_YEAR_END)
+  const [end, setEnd] = useState(row && row.days.length > 1 ? seriesDays[seriesDays.length - 1] : SCHOOL_YEAR_END)
   const [count, setCount] = useState(10)
   const [schoolOnly, setSchoolOnly] = useState(true)
   const [daysOff, setDaysOff] = useState<Set<string>>(new Set())
@@ -200,7 +203,7 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
 
   const pickable = groups.filter((g) => !g.name.startsWith('Demo') && !(g.category === 'Workout' && g.name.includes(' · ')))
   const dates = useMemo(() => {
-    if (row) return []
+    if (row && !changeRepeat) return []
     if (repeat === 'none') return [start]
     const out: string[] = []
     const startDow = new Date(`${start}T12:00:00`).getDay()
@@ -216,7 +219,7 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
       out.push(d)
     }
     return out
-  }, [row, start, repeat, weekdays, every, endMode, end, count, schoolOnly, daysOff])
+  }, [row, changeRepeat, start, repeat, weekdays, every, endMode, end, count, schoolOnly, daysOff])
 
   const fields = () => ({
     title: title.trim(),
@@ -236,6 +239,23 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
     setBusy(true)
     setError(null)
     const sb = createClient()
+    if (row && changeRepeat) {
+      // Keep days before the new start date; replace everything from then on with the new pattern
+      if (!dates.length) {
+        setBusy(false)
+        return setError('No days match the new repeat.')
+      }
+      const sid = first!.series_id || crypto.randomUUID()
+      const ids = row.days.map((d) => d.id)
+      const { error: e1 } = await sb.from('team_schedule').update({ ...fields(), series_id: sid }).in('id', ids)
+      const drop = row.days.filter((d) => d.event_date >= start).map((d) => d.id)
+      const { error: e2 } = e1 ? { error: e1 } : drop.length ? await sb.from('team_schedule').delete().in('id', drop) : { error: null }
+      const { error: e3 } = e2 ? { error: e2 } : await sb.from('team_schedule').insert(dates.map((d) => ({ ...fields(), event_date: d, series_id: sid, source: 'manual' })))
+      if (!e3 && notify) await sendNotice(dates, true)
+      setBusy(false)
+      if (e3) return setError(e3.message)
+      return onSaved(`Repeat updated: ${dates.length} day${dates.length === 1 ? '' : 's'} from ${prettyDate(start, { month: 'short', day: 'numeric' })}.`)
+    }
     if (row) {
       const ids = row.days.map((d) => d.id)
       const patch: Record<string, unknown> = fields()
@@ -314,12 +334,37 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
         <SectionLabel>When</SectionLabel>
+        {row && (
+          <div className="flex items-center gap-2 rounded-2xl bg-slate-50 border border-slate-200 px-3 py-2">
+            <span className="flex-1 text-[11px] font-bold text-slate-600">
+              {row.days.length > 1
+                ? `Repeats ${seriesDows.map((d) => DOW[d]).join(', ')} · ${row.days.length} days · ${prettyDate(seriesDays[0], { month: 'short', day: 'numeric' })} – ${prettyDate(seriesDays[seriesDays.length - 1], { month: 'short', day: 'numeric' })}`
+                : 'Does not repeat'}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !changeRepeat
+                setChangeRepeat(next)
+                if (next) {
+                  const upcoming = seriesDays.find((d) => d >= today)
+                  setStart(row.days.length > 1 ? (upcoming && upcoming > today ? upcoming : today) : start)
+                  if (row.days.length === 1) setRepeat('weekly')
+                }
+              }}
+              className="shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-[11px] font-extrabold text-[#1746b8] cursor-pointer"
+            >
+              {changeRepeat ? 'Cancel' : row.days.length > 1 ? 'Change Repeat' : 'Make It Repeat'}
+            </button>
+          </div>
+        )}
+        {row && changeRepeat && <p className="text-[10px] font-semibold text-slate-400">Days before the start date stay as they are. From the start date on, the new pattern replaces the old one.</p>}
         <div className="grid grid-cols-2 gap-2">
           <label className="text-[11px] font-bold text-slate-500">
             {row ? 'Date' : 'Starts'}
-            <input type="date" value={start} disabled={!!row && row.days.length > 1} onChange={(e) => e.target.value && setStart(e.target.value)} className={inputClass} />
+            <input type="date" value={start} disabled={!!row && row.days.length > 1 && !changeRepeat} onChange={(e) => e.target.value && setStart(e.target.value)} className={inputClass} />
           </label>
-          {!row && (
+          {(!row || changeRepeat) && (
             <label className="text-[11px] font-bold text-slate-500">
               Repeat
               <select value={repeat} onChange={(e) => setRepeat(e.target.value as typeof repeat)} className={inputClass}>
@@ -331,7 +376,7 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
             </label>
           )}
         </div>
-        {!row && repeat === 'weekly' && (
+        {(!row || changeRepeat) && repeat === 'weekly' && (
           <div className="space-y-2">
             <div className="flex gap-1">
               {DOW.map((d, i) => (
@@ -350,7 +395,7 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
             </label>
           </div>
         )}
-        {!row && repeat !== 'none' && (
+        {(!row || changeRepeat) && repeat !== 'none' && (
           <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3 space-y-2">
             <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
               Ends
@@ -384,7 +429,7 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
           </label>
         </div>
         <p className="text-[11px] font-semibold text-slate-400">
-          {!row && repeat !== 'none'
+          {(!row || changeRepeat) && repeat !== 'none'
             ? dates.length
               ? `${dates.length} day${dates.length === 1 ? '' : 's'}: ${dates.slice(0, 3).map((d) => prettyDate(d, { weekday: 'short', month: 'short', day: 'numeric' })).join(', ')}${dates.length > 3 ? ` … ${prettyDate(dates[dates.length - 1], { month: 'short', day: 'numeric' })}` : ''}`
               : 'No days match. Check the repeat days and end date.'
@@ -413,7 +458,7 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
 
       <SendNotification checked={notify} onChange={setNotify} />
       <button type="button" onClick={save} disabled={busy} className="w-full py-3 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-40 cursor-pointer">
-        {busy ? 'Saving…' : row ? 'Save Event' : dates.length > 1 ? `Add ${dates.length} Days` : 'Add Event'}
+        {busy ? 'Saving…' : row && changeRepeat ? `Save · ${dates.length} Day${dates.length === 1 ? '' : 's'}` : row ? 'Save Event' : dates.length > 1 ? `Add ${dates.length} Days` : 'Add Event'}
       </button>
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}
       {row && (

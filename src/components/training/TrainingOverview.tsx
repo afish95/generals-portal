@@ -1,5 +1,6 @@
 'use client'
 
+import { useAppText } from '@/lib/appText'
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, Crosshair, Footprints, Gauge, MoveRight, Rocket, Target, Timer, TrendingUp, Zap, type LucideIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -39,6 +40,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
   const [rows, setRows] = useState<Row[] | null>(null)
   const [open, setOpen] = useState<string | null>(null)
   const dow = useDrillsOfWeek()
+  const t = useAppText()
   const trends = useStatTrends(athleteId)
 
   useEffect(() => {
@@ -141,7 +143,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
           ) : null}
         </div>
       )}
-      <div className="px-4 pb-2.5 text-center text-[9px] font-bold text-white/55">Team percentile · all time · tap a stat for tips</div>
+      <div className="px-4 pb-2.5 text-center text-[9px] font-bold text-white/55">{t('training.ranks.footer')}</div>
     </section>
   )
 }

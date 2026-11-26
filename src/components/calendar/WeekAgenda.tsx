@@ -111,6 +111,7 @@ function EventBlock({ e, open, onToggle, who, isCoach }: { e: ScheduleEvent; ope
             <span className={`text-[9px] font-extrabold uppercase tracking-wider ${st.text}`}>{st.label}</span>
             <span className="text-slate-300">·</span>
             <Users className="w-3 h-3" /> {who}
+            {e.series_id && <span className="text-slate-400">· Repeats</span>}
           </div>
           {e.location && (
             <a href={`https://maps.google.com/?q=${encodeURIComponent(e.location)}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 font-semibold text-[#1746b8]">
@@ -126,7 +127,7 @@ function EventBlock({ e, open, onToggle, who, isCoach }: { e: ScheduleEvent; ope
             )}
             {isCoach && (
               <Link href={`/office?tab=schedule&event=${e.id}`} className="font-extrabold text-[#1746b8]">
-                Edit
+                {e.series_id ? 'Edit Event · Repeat' : 'Edit Event'}
               </Link>
             )}
           </div>
