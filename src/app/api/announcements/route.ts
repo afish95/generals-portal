@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Only active coaches can post announcements' }, { status: 403 })
   }
 
-  let input: { title?: unknown; body?: unknown; audience?: unknown; link_url?: unknown; send_push?: unknown; recipient_ids?: unknown; group_id?: unknown; kind?: unknown }
+  let input: { title?: unknown; body?: unknown; audience?: unknown; link_url?: unknown; video_url?: unknown; send_push?: unknown; recipient_ids?: unknown; group_id?: unknown; kind?: unknown }
   try {
     input = await req.json()
   } catch {
@@ -46,6 +46,8 @@ export async function POST(req: Request) {
   const rawLink = typeof input.link_url === 'string' ? input.link_url.trim() : ''
   const link_url = rawLink && (rawLink.startsWith('/') || rawLink.startsWith('https://')) ? rawLink : null
   const send_push = input.send_push !== false
+  const rawVideo = typeof input.video_url === 'string' ? input.video_url.trim() : ''
+  const video_url = rawVideo.startsWith('https://') ? rawVideo.slice(0, 500) : null
 
   // Targeted announcements (an assignment for specific players or one group's players)
   const KINDS = ['general', 'assignment', 'plan', 'workout']
@@ -67,10 +69,13 @@ export async function POST(req: Request) {
 
   const { data: ann, error: annErr } = await admin
     .from('announcements')
-    .insert({ author_id: user.id, title, body: body || null, audience: targeted ? 'players' : audience, link_url, send_push, recipient_ids: targeted, kind })
+    .insert({ author_id: user.id, title, body: body || null, audience: targeted ? 'players' : audience, link_url, video_url, send_push, recipient_ids: targeted, kind })
     .select('id')
     .single()
   if (annErr || !ann) return Response.json({ error: annErr?.message || 'Could not save announcement' }, { status: 500 })
+
+  // A video opens straight to the announcement in Messages, expanded to play
+  const openUrl = video_url ? `/messages?tab=announcements&open=${ann.id}` : link_url || '/'
 
   let recipientIds: string[]
   if (targeted) recipientIds = targeted
@@ -88,7 +93,7 @@ export async function POST(req: Request) {
         kind: 'announcement',
         title,
         body: body || null,
-        url: link_url || '/',
+        url: openUrl,
         announcement_id: ann.id,
       }))
     )
@@ -107,7 +112,7 @@ export async function POST(req: Request) {
         const status = await sendWebPush(s, {
           title,
           body: body.length > 180 ? `${body.slice(0, 177)}...` : body,
-          url: link_url || '/',
+          url: openUrl,
           tag: `announcement-${ann.id}`,
         })
         if (status === 404 || status === 410) {

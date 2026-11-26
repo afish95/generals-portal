@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Megaphone, Send } from 'lucide-react'
+import { Megaphone, Send, Video } from 'lucide-react'
 
 const AUDIENCES = [
   { key: 'everyone', label: 'Everyone' },
@@ -16,6 +16,7 @@ export default function AnnouncementComposer({ onSent }: { onSent?: () => void }
   const [body, setBody] = useState('')
   const [audience, setAudience] = useState<(typeof AUDIENCES)[number]['key']>('everyone')
   const [linkUrl, setLinkUrl] = useState('')
+  const [videoUrl, setVideoUrl] = useState('')
   const [sendPush, setSendPush] = useState(true)
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null)
@@ -31,7 +32,7 @@ export default function AnnouncementComposer({ onSent }: { onSent?: () => void }
       const res = await fetch('/api/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
-        body: JSON.stringify({ title, body, audience, link_url: linkUrl, send_push: sendPush }),
+        body: JSON.stringify({ title, body, audience, link_url: linkUrl, video_url: videoUrl, send_push: sendPush }),
       })
       const json = await res.json()
       if (!res.ok) {
@@ -46,6 +47,7 @@ export default function AnnouncementComposer({ onSent }: { onSent?: () => void }
         setTitle('')
         setBody('')
         setLinkUrl('')
+        setVideoUrl('')
         onSent?.()
       }
     } catch {
@@ -93,6 +95,19 @@ export default function AnnouncementComposer({ onSent }: { onSent?: () => void }
           placeholder="Message (optional)"
           className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base text-slate-900 placeholder:text-slate-400"
         />
+        <div>
+          <div className="relative">
+            <Video className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <input
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              inputMode="url"
+              placeholder="Video link (optional, Google Drive or YouTube)"
+              className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 text-base text-slate-900 placeholder:text-slate-400"
+            />
+          </div>
+          {videoUrl.includes('drive.google.com') && <p className="text-[11px] font-semibold text-slate-500 mt-1 px-1">In Google Drive, set sharing to “Anyone with the link” so players can watch.</p>}
+        </div>
         <input
           value={linkUrl}
           onChange={(e) => setLinkUrl(e.target.value)}
