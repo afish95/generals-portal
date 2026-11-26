@@ -24,13 +24,13 @@ export default function StatsPage() {
       <div className={isCoach ? 'lg:hidden' : ''}>
         <PageTitle title="Stats" subtitle={mode === 'game' ? 'Program game stat history' : 'How you rank against teammates'} />
       </div>
-      <div className={`grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-[#1746b8] ${isCoach ? 'lg:hidden' : ''}`}>
+      <div className={`grid grid-cols-2 gap-1 p-1 rounded-2xl bg-white border border-slate-200 shadow-xs sticky top-2 z-20 ${isCoach ? 'lg:hidden' : ''}`}>
         {(['game', 'percentiles'] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
-            className={`py-2.5 rounded-xl text-xs font-extrabold cursor-pointer transition ${mode === m ? 'bg-white text-[#1746b8] shadow-sm' : 'text-blue-100'}`}
+            className={`py-2 rounded-xl text-[11px] font-extrabold cursor-pointer ${mode === m ? 'bg-[#1746b8] text-white' : 'text-slate-500'}`}
           >
             {m === 'game' ? 'Game Stats' : 'Percentiles'}
           </button>
