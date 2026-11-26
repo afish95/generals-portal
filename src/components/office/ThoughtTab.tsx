@@ -72,13 +72,13 @@ export default function ThoughtTab() {
               onClick={() => setWeek(w)}
               className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap cursor-pointer ${week === w ? 'bg-[#1746b8] text-white' : 'bg-slate-100 text-slate-600'}`}
             >
-              {w === thisWeek ? 'This week' : prettyDate(w, { month: 'short', day: 'numeric' })}
+              {w === thisWeek ? 'This Week' : prettyDate(w, { month: 'short', day: 'numeric' })}
             </button>
           ))}
         </div>
         <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} maxLength={1000} placeholder="This week’s thought for the team" className={inputClass} />
         <input value={attribution} onChange={(e) => setAttribution(e.target.value)} placeholder="Who said it (optional)" className={inputClass} />
-        <button type="button" onClick={save} className="w-full py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold cursor-pointer">Save thought</button>
+        <button type="button" onClick={save} className="w-full py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold cursor-pointer">Save Thought</button>
         {message && <p className="text-xs font-bold text-emerald-700">{message}</p>}
       </section>
 
@@ -92,7 +92,7 @@ export default function ThoughtTab() {
                 <div className="text-sm font-semibold text-slate-800">{t.body}</div>
                 {t.attribution && <div className="text-[11px] text-slate-500">— {t.attribution}</div>}
               </button>
-              <button type="button" aria-label="Delete thought" onClick={() => remove(t)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer">
+              <button type="button" aria-label="Delete Thought" onClick={() => remove(t)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer">
                 <Trash2 className="w-4 h-4" />
               </button>
             </li>

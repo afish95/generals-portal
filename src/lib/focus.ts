@@ -1,4 +1,4 @@
-// Player plans ("My plan"): focus areas, the stat behind each, goals and drills.
+// Player plans ("My Plan"): focus areas, the stat behind each, goals and drills.
 import { findMetric, qualifies, type EarlyAhead, type GcLine, type Metric, type SeasonType } from '@/lib/gcStats'
 
 export type FocusDrill = { kind: 'exercise' | 'script'; id: number; name: string; freq?: string }
@@ -42,17 +42,17 @@ const gameOpt = (kind: 'pitcher' | 'hitter', key: string): MetricOption => {
   }
 }
 export const TRAINING_OPTIONS: MetricOption[] = [
-  { source: 'training', key: 'mound_velo', label: 'Training · Mound velo', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'pitcher' },
-  { source: 'training', key: 'pulldown_velo', label: 'Training · Pulldown velo', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'pitcher' },
-  { source: 'training', key: 'long_toss', label: 'Training · Long toss', unit: ' ft', lowerIsBetter: false, decimals: 0, kind: 'pitcher' },
-  { source: 'training', key: 'strike_pct', label: 'Training · Bullpen strike %', unit: '%', lowerIsBetter: false, decimals: 1, kind: 'pitcher' },
+  { source: 'training', key: 'mound_velo', label: 'Training · Mound Velo', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'pitcher' },
+  { source: 'training', key: 'pulldown_velo', label: 'Training · Pulldown Velo', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'pitcher' },
+  { source: 'training', key: 'long_toss', label: 'Training · Long Toss', unit: ' ft', lowerIsBetter: false, decimals: 0, kind: 'pitcher' },
+  { source: 'training', key: 'strike_pct', label: 'Training · Bullpen Strike %', unit: '%', lowerIsBetter: false, decimals: 1, kind: 'pitcher' },
   { source: 'training', key: 'ahead_pct', label: 'Training · Ahead % (bullpen)', unit: '%', lowerIsBetter: false, decimals: 1, kind: 'pitcher' },
-  { source: 'training', key: 'miss_in', label: 'Training · Avg. miss distance', unit: '"', lowerIsBetter: true, decimals: 1, kind: 'pitcher' },
-  { source: 'training', key: 'bat_speed', label: 'Training · Bat speed', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'hitter' },
-  { source: 'training', key: 'exit_velo', label: 'Training · Exit velo', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'hitter' },
+  { source: 'training', key: 'miss_in', label: 'Training · Avg. Miss Distance', unit: '"', lowerIsBetter: true, decimals: 1, kind: 'pitcher' },
+  { source: 'training', key: 'bat_speed', label: 'Training · Bat Speed', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'hitter' },
+  { source: 'training', key: 'exit_velo', label: 'Training · Exit Velo', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'hitter' },
   { source: 'training', key: 'time_to_first', label: 'Training · Home to 1st', unit: 's', lowerIsBetter: true, decimals: 2, kind: 'hitter' },
-  { source: 'training', key: 'pos_velo', label: 'Training · Positional velo', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'hitter' },
-  { source: 'training', key: 'pop_time', label: 'Training · Pop time', unit: 's', lowerIsBetter: true, decimals: 2, kind: 'hitter' },
+  { source: 'training', key: 'pos_velo', label: 'Training · Positional Velo', unit: ' mph', lowerIsBetter: false, decimals: 1, kind: 'hitter' },
+  { source: 'training', key: 'pop_time', label: 'Training · Pop Time', unit: 's', lowerIsBetter: true, decimals: 2, kind: 'hitter' },
 ]
 export const METRIC_OPTIONS: MetricOption[] = [...GAME_P.map((k) => gameOpt('pitcher', k)), ...GAME_H.map((k) => gameOpt('hitter', k)), ...TRAINING_OPTIONS]
 export const optionFor = (source: string, key: string | null) => (key ? METRIC_OPTIONS.find((o) => o.source === source && o.key === key) : undefined)
@@ -66,27 +66,27 @@ export function fmtValue(o: MetricOption | undefined, v: number | null | undefin
 // ---- Suggestion templates: what to work on when a stat is low ----
 type Template = { title: string; why: string; delta: number; drills: string[]; theme: string }
 const T: Record<string, Template> = {
-  'pitcher:E+A%': { title: 'Get ahead in the count', why: 'Win the first three pitches. Hitters hit much worse once you’re ahead.', delta: 8, drills: ['Ahead in the Count (2 of 3)', 'Count-Leverage & 2-Strike Putaway Script'], theme: 'count' },
-  'pitcher:FPS%': { title: 'Win the first pitch', why: 'Strike one changes the whole at-bat. Attack the zone early.', delta: 8, drills: ['4-Quadrant Fastball Command Script', 'Ahead in the Count (2 of 3)'], theme: 'count' },
-  'pitcher:TS%': { title: 'Throw more strikes', why: 'More strikes means shorter innings and fewer free bases.', delta: 5, drills: ['Free-Form Intended Zones Tracker', 'Bullpen Strikes'], theme: 'strikes' },
-  'pitcher:BB%': { title: 'Cut the walks', why: 'Free bases turn into runs. Trust your stuff in the zone.', delta: -3, drills: ['4-Quadrant Fastball Command Script', 'Free-Form Intended Zones Tracker'], theme: 'strikes' },
-  'pitcher:K-BB%': { title: 'Miss more bats', why: 'Strikeouts without walks is the best sign of a dominant pitcher.', delta: 5, drills: ['East-West Tunneling & Pitch Mix Script', 'Count-Leverage & 2-Strike Putaway Script'], theme: 'stuff' },
-  'hitter:K%': { title: 'Cut the strikeouts', why: 'Put the ball in play with two strikes. Shorten up and battle.', delta: -5, drills: ['Tee Work Swings', 'Exit Velo (Front Toss)'], theme: 'contact' },
-  'hitter:BB%': { title: 'Earn more walks', why: 'Know the zone and make pitchers work. A walk is a win.', delta: 3, drills: [], theme: 'approach' },
-  'hitter:QAB%': { title: 'More quality at-bats', why: 'Hard contact, walks, long at-bats and moving runners all count.', delta: 8, drills: ['Tee Work Swings'], theme: 'approach' },
-  'hitter:OBP': { title: 'Get on base more', why: 'Every time you reach base, we have a chance to score.', delta: 0.04, drills: ['Tee Work Swings'], theme: 'approach' },
-  'hitter:OPS': { title: 'Drive the ball', why: 'Hit it harder and in the air to get extra-base hits.', delta: 0.08, drills: ['Exit Velo (Tee)', 'Bat Speed'], theme: 'power' },
-  mound_velo: { title: 'Add velo', why: 'More velocity gives you more margin for error in the zone.', delta: 3, drills: ['Pulldown Throws', 'Long Toss', 'Mound Velo'], theme: 'velo' },
-  pulldown_velo: { title: 'Add velo', why: 'Pulldowns build the arm speed that shows up on the mound.', delta: 3, drills: ['Pulldown Throws', 'Long Toss'], theme: 'velo' },
-  long_toss: { title: 'Build arm strength', why: 'A stronger arm stays healthier and throws harder.', delta: 20, drills: ['Long Toss'], theme: 'arm' },
-  strike_pct: { title: 'Throw more strikes', why: 'Own the zone in bullpens so it carries into games.', delta: 5, drills: ['Free-Form Intended Zones Tracker', 'Bullpen Strikes'], theme: 'strikes' },
-  ahead_pct: { title: 'Get ahead in the count', why: 'Win 2 of the first 3 pitches in your bullpens.', delta: 10, drills: ['Ahead in the Count (2 of 3)'], theme: 'count' },
-  miss_in: { title: 'Tighten your command', why: 'Hit your spots. Smaller misses mean fewer mistakes over the plate.', delta: -2, drills: ['4-Quadrant Fastball Command Script', 'Free-Form Intended Zones Tracker'], theme: 'command' },
-  bat_speed: { title: 'Add bat speed', why: 'Bat speed is the engine behind exit velo.', delta: 3, drills: ['Bat Speed', 'Tee Work Swings'], theme: 'power' },
-  exit_velo: { title: 'Hit it harder', why: 'Harder-hit balls turn into hits more often.', delta: 4, drills: ['Exit Velo (Tee)', 'Exit Velo (Front Toss)', 'Bat Speed'], theme: 'power' },
-  time_to_first: { title: 'Get faster down the line', why: 'Speed puts pressure on the defense and beats out infield hits.', delta: -0.15, drills: ['Home to 1st'], theme: 'speed' },
-  pos_velo: { title: 'Add arm strength in the field', why: 'A stronger throw gets more outs.', delta: 3, drills: ['Positional Throw Velo', 'Long Toss'], theme: 'arm' },
-  pop_time: { title: 'Quicker pop time', why: 'Faster exchanges and throws shut down the running game.', delta: -0.1, drills: ['Pop Time'], theme: 'speed' },
+  'pitcher:E+A%': { title: 'Get Ahead in the Count', why: 'Win the first three pitches. Hitters hit much worse once you’re ahead.', delta: 8, drills: ['Ahead in the Count (2 of 3)', 'Count-Leverage & 2-Strike Putaway Script'], theme: 'count' },
+  'pitcher:FPS%': { title: 'Win the First Pitch', why: 'Strike one changes the whole at-bat. Attack the zone early.', delta: 8, drills: ['4-Quadrant Fastball Command Script', 'Ahead in the Count (2 of 3)'], theme: 'count' },
+  'pitcher:TS%': { title: 'Throw More Strikes', why: 'More strikes means shorter innings and fewer free bases.', delta: 5, drills: ['Free-Form Intended Zones Tracker', 'Bullpen Strikes'], theme: 'strikes' },
+  'pitcher:BB%': { title: 'Cut the Walks', why: 'Free bases turn into runs. Trust your stuff in the zone.', delta: -3, drills: ['4-Quadrant Fastball Command Script', 'Free-Form Intended Zones Tracker'], theme: 'strikes' },
+  'pitcher:K-BB%': { title: 'Miss More Bats', why: 'Strikeouts without walks is the best sign of a dominant pitcher.', delta: 5, drills: ['East-West Tunneling & Pitch Mix Script', 'Count-Leverage & 2-Strike Putaway Script'], theme: 'stuff' },
+  'hitter:K%': { title: 'Cut the Strikeouts', why: 'Put the ball in play with two strikes. Shorten up and battle.', delta: -5, drills: ['Tee Work Swings', 'Exit Velo (Front Toss)'], theme: 'contact' },
+  'hitter:BB%': { title: 'Earn More Walks', why: 'Know the zone and make pitchers work. A walk is a win.', delta: 3, drills: [], theme: 'approach' },
+  'hitter:QAB%': { title: 'More Quality At-Bats', why: 'Hard contact, walks, long at-bats and moving runners all count.', delta: 8, drills: ['Tee Work Swings'], theme: 'approach' },
+  'hitter:OBP': { title: 'Get on Base More', why: 'Every time you reach base, we have a chance to score.', delta: 0.04, drills: ['Tee Work Swings'], theme: 'approach' },
+  'hitter:OPS': { title: 'Drive the Ball', why: 'Hit it harder and in the air to get extra-base hits.', delta: 0.08, drills: ['Exit Velo (Tee)', 'Bat Speed'], theme: 'power' },
+  mound_velo: { title: 'Add Velo', why: 'More velocity gives you more margin for error in the zone.', delta: 3, drills: ['Pulldown Throws', 'Long Toss', 'Mound Velo'], theme: 'velo' },
+  pulldown_velo: { title: 'Add Velo', why: 'Pulldowns build the arm speed that shows up on the mound.', delta: 3, drills: ['Pulldown Throws', 'Long Toss'], theme: 'velo' },
+  long_toss: { title: 'Build Arm Strength', why: 'A stronger arm stays healthier and throws harder.', delta: 20, drills: ['Long Toss'], theme: 'arm' },
+  strike_pct: { title: 'Throw More Strikes', why: 'Own the zone in bullpens so it carries into games.', delta: 5, drills: ['Free-Form Intended Zones Tracker', 'Bullpen Strikes'], theme: 'strikes' },
+  ahead_pct: { title: 'Get Ahead in the Count', why: 'Win 2 of the first 3 pitches in your bullpens.', delta: 10, drills: ['Ahead in the Count (2 of 3)'], theme: 'count' },
+  miss_in: { title: 'Tighten Your Command', why: 'Hit your spots. Smaller misses mean fewer mistakes over the plate.', delta: -2, drills: ['4-Quadrant Fastball Command Script', 'Free-Form Intended Zones Tracker'], theme: 'command' },
+  bat_speed: { title: 'Add Bat Speed', why: 'Bat speed is the engine behind exit velo.', delta: 3, drills: ['Bat Speed', 'Tee Work Swings'], theme: 'power' },
+  exit_velo: { title: 'Hit It Harder', why: 'Harder-hit balls turn into hits more often.', delta: 4, drills: ['Exit Velo (Tee)', 'Exit Velo (Front Toss)', 'Bat Speed'], theme: 'power' },
+  time_to_first: { title: 'Get Faster Down the Line', why: 'Speed puts pressure on the defense and beats out infield hits.', delta: -0.15, drills: ['Home to 1st'], theme: 'speed' },
+  pos_velo: { title: 'Add Arm Strength in the Field', why: 'A stronger throw gets more outs.', delta: 3, drills: ['Positional Throw Velo', 'Long Toss'], theme: 'arm' },
+  pop_time: { title: 'Quicker Pop Time', why: 'Faster exchanges and throws shut down the running game.', delta: -0.1, drills: ['Pop Time'], theme: 'speed' },
 }
 
 const TYPE_RANK: Record<SeasonType, number> = { Spring: 0, Summer: 1, JV: 2 }
@@ -190,9 +190,9 @@ export function suggest(position: string | null | undefined, snap: Snapshot[], d
   if (out.length < 2) {
     const baseline = (title: string, why: string, names: string[]): Suggestion => ({ title, why, metric_source: 'none', metric_key: null, metric_label: null, lower_is_better: false, baseline: null, goal: null, target_date: null, drills: pick(names), pctl: null })
     if (isPitcher)
-      out.push(baseline('Set your pitching baseline', 'Log your mound velo and throw a tracked bullpen so we can set real goals together.', ['Mound Velo', 'Free-Form Intended Zones Tracker', 'Long Toss']))
+      out.push(baseline('Set Your Pitching Baseline', 'Log your mound velo and throw a tracked bullpen so we can set real goals together.', ['Mound Velo', 'Free-Form Intended Zones Tracker', 'Long Toss']))
     if (isHitter && out.length < 2)
-      out.push(baseline('Set your hitting baseline', 'Log bat speed, exit velo and home to 1st so we can set real goals together.', ['Bat Speed', 'Exit Velo (Tee)', 'Home to 1st']))
+      out.push(baseline('Set Your Hitting Baseline', 'Log bat speed, exit velo and home to 1st so we can set real goals together.', ['Bat Speed', 'Exit Velo (Tee)', 'Home to 1st']))
   }
   return out.slice(0, max)
 }

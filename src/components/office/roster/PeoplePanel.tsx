@@ -113,7 +113,7 @@ export default function PeoplePanel({
               <input value={newGrad} inputMode="numeric" onChange={(e) => setNewGrad(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Class" className={inputClass} />
             )}
             <button type="button" onClick={add} disabled={busy} className="px-4 py-2.5 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-60 cursor-pointer">
-              {busy ? 'Adding…' : 'Add to roster'}
+              {busy ? 'Adding…' : 'Add to Roster'}
             </button>
           </div>
           <p className="text-[11px] font-semibold text-slate-500">
@@ -139,11 +139,11 @@ export default function PeoplePanel({
         </label>
         {role === 'player' && (
           <label className="flex items-center gap-1.5 cursor-pointer">
-            <input type="checkbox" checked={showDemo} onChange={(e) => setShowDemo(e.target.checked)} className="accent-[#1746b8]" /> Show demo players
+            <input type="checkbox" checked={showDemo} onChange={(e) => setShowDemo(e.target.checked)} className="accent-[#1746b8]" /> Show Demo Players
           </label>
         )}
         <label className="flex items-center gap-1.5 cursor-pointer">
-          <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} className="accent-[#1746b8]" /> Show inactive
+          <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} className="accent-[#1746b8]" /> Show Inactive
         </label>
         <span className="ml-auto">{sorted.length} shown</span>
       </div>

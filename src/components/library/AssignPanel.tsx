@@ -27,7 +27,7 @@ export function datesFor(start: string, end: string, pattern: Pattern, weekdays:
   return out
 }
 export const patternText = (p: Pattern, w: number[]) =>
-  p === 'daily' ? 'Every day' : p === 'every_other' ? 'Every other day' : w.length ? [...w].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DOW[d]).join(' / ') : 'No days picked'
+  p === 'daily' ? 'Every Day' : p === 'every_other' ? 'Every Other Day' : w.length ? [...w].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DOW[d]).join(' / ') : 'No days picked'
 
 /** Assign a progression to a group or to hand-picked players, on chosen days. Creates their sessions on the calendar. */
 export default function AssignPanel({ progressionId, progressionName }: { progressionId: number; progressionName: string }) {
@@ -127,14 +127,14 @@ export default function AssignPanel({ progressionId, progressionName }: { progre
   return (
     <div className="space-y-4">
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
-        <SectionLabel>Assign this progression</SectionLabel>
+        <SectionLabel>Assign This Progression</SectionLabel>
 
         <div>
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Who</div>
           <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-100 mb-2">
             {(['group', 'players'] as const).map((m) => (
               <button key={m} type="button" onClick={() => setMode(m)} className={`py-2 rounded-lg text-xs font-extrabold cursor-pointer ${mode === m ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
-                {m === 'group' ? 'A group' : 'Pick players'}
+                {m === 'group' ? 'A Group' : 'Pick Players'}
               </button>
             ))}
           </div>
@@ -164,13 +164,13 @@ export default function AssignPanel({ progressionId, progressionName }: { progre
         </div>
 
         <div>
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">How often</div>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">How Often</div>
           <div className="flex flex-wrap gap-1.5">
             {(
               [
-                ['daily', 'Every day'],
-                ['every_other', 'Every other day'],
-                ['weekdays', 'Pick days'],
+                ['daily', 'Every Day'],
+                ['every_other', 'Every Other Day'],
+                ['weekdays', 'Pick Days'],
               ] as [Pattern, string][]
             ).map(([k, l]) => (
               <button key={k} type="button" onClick={() => setPattern(k)} className={`px-3 py-1.5 rounded-full text-xs font-extrabold cursor-pointer ${pattern === k ? 'bg-slate-800 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>

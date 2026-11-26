@@ -244,7 +244,7 @@ export default function DayPlan({
   const toggle = (k: string) => setOpen((o) => (o === k ? null : k))
   const school = isSchoolDay(day) && !schoolOff
   const showCheck = !isCoach
-  const idleLabel = interactive ? 'Mark complete' : day > today ? 'Upcoming' : 'Not done'
+  const idleLabel = interactive ? 'Mark Complete' : day > today ? 'Upcoming' : 'Not Done'
 
   const earned = pts?.earned ?? 0
   const available = pts?.available ?? 0
@@ -256,7 +256,7 @@ export default function DayPlan({
       {showHeader && (
         <div className="px-5 pt-4 pb-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Day plan</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Day Plan</span>
             {!isCoach && pts ? (
               <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full ${perfect ? 'bg-emerald-500 text-white' : 'bg-amber-100 text-amber-700'}`}>
                 {perfect ? 'Perfect day · ' : ''}{earned}/{available} pts
@@ -313,7 +313,7 @@ export default function DayPlan({
                           </a>
                           {isCoach && (
                             <Link href={`/office?tab=practices&event=${e.id}`} className="flex-1 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-[11px] font-extrabold flex items-center justify-center gap-1">
-                              <Pencil className="w-3.5 h-3.5" /> Edit plan
+                              <Pencil className="w-3.5 h-3.5" /> Edit Plan
                             </Link>
                           )}
                         </div>
@@ -322,7 +322,7 @@ export default function DayPlan({
                   })()}
                   {isCoach && !normalizePlan(e.plan)?.blocks.length && (
                     <Link href={`/office?tab=practices&event=${e.id}`} className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#1746b8]">
-                      <Pencil className="w-3.5 h-3.5" /> Build a practice plan
+                      <Pencil className="w-3.5 h-3.5" /> Build a Practice Plan
                     </Link>
                   )}
                 </div>
@@ -339,13 +339,13 @@ export default function DayPlan({
               <Row
                 icon={<Moon className="w-4 h-4" />}
                 tone={SCHEDULE.tone}
-                title="8+ hours sleep"
+                title="8+ Hours Sleep"
                 subtitle={sleepHours != null ? `${sleepHours}h last night${sleepHours < 8 ? ' · under 8' : ''}` : 'How many hours did you sleep?'}
                 open={open === 'sleep'}
                 onClick={() => toggle('sleep')}
                 showCheck={showCheck}
                 interactive={interactive}
-                idleLabel={sleepHours != null ? 'Under 8' : interactive ? 'Enter hours' : idleLabel}
+                idleLabel={sleepHours != null ? 'Under 8' : interactive ? 'Enter Hours' : idleLabel}
                 checked={!!pts?.sleep_ok}
                 busy={busy === 'sleep'}
                 popping={popFor('sleep')}
@@ -376,7 +376,7 @@ export default function DayPlan({
               <Row
                 icon={<GraduationCap className="w-4 h-4" />}
                 tone={school ? SCHEDULE.tone : 'bg-slate-100 text-slate-400'}
-                title="Class attendance"
+                title="Class Attendance"
                 subtitle={!school ? schoolOff || 'No school today' : classOverride ? `Coach marked ${classOverride}` : 'Attended all my classes'}
                 open={open === 'class'}
                 onClick={() => toggle('class')}
@@ -402,8 +402,8 @@ export default function DayPlan({
           <Row
             icon={<Dumbbell className="w-4 h-4" />}
             tone={TRAINING.tone}
-            title="Lift / workout"
-            subtitle={liftStatus === 'rest' ? 'Rest day' : 'Driveline Baseball strength & conditioning'}
+            title="Lift / Workout"
+            subtitle={liftStatus === 'rest' ? 'Rest Day' : 'Driveline Baseball strength & conditioning'}
             open={open === 'driveline'}
             onClick={() => toggle('driveline')}
             showCheck={showCheck && liftStatus !== 'rest'}
@@ -421,7 +421,7 @@ export default function DayPlan({
               </p>
               {interactive && (
                 <button type="button" onClick={() => setLift('rest')} disabled={busy === 'lift'} className={`w-full py-2 rounded-xl text-xs font-extrabold cursor-pointer ${liftStatus === 'rest' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                  {liftStatus === 'rest' ? 'Rest day · tap to undo' : 'Mark rest day'}
+                  {liftStatus === 'rest' ? 'Rest day · tap to undo' : 'Mark Rest Day'}
                 </button>
               )}
               <a href={DRIVELINE_APP_URL} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-extrabold">
@@ -439,7 +439,7 @@ export default function DayPlan({
           its.forEach((i) => counts.set(i.block_index, (counts.get(i.block_index) || 0) + 1))
           const total = its.reduce((n, i) => n + i.sets, 0)
           const done = its.reduce((n, i) => n + Math.min(i.sets, logged.get(i.id) || 0), 0)
-          const group = w.group_id ? groups.get(w.group_id) : 'Whole team'
+          const group = w.group_id ? groups.get(w.group_id) : 'Whole Team'
           const wTools = tools.filter((t) => t.workout_id === w.id)
           const toolsDone = wTools.filter((t) => toolDone.has(`${w.id}:${t.script_id}`)).length
           return (
@@ -494,7 +494,7 @@ export default function DayPlan({
                   {!renderWorkout && w.notes && w.intent && <p className="text-xs font-semibold text-slate-600 pl-1">{w.notes}</p>}
                   {w.focus_block && focus.length > 0 && (
                     <div className="rounded-xl bg-violet-50 border border-violet-200 px-3 py-2">
-                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-violet-700 mb-1">Your focus</div>
+                      <div className="text-[10px] font-extrabold uppercase tracking-wider text-violet-700 mb-1">Your Focus</div>
                       {focus.map((f) => (
                         <div key={f.title} className="text-xs font-semibold text-slate-700">
                           <span className="font-extrabold text-slate-900">{f.title}:</span> {f.drills.map((d) => d.name + (d.freq ? ` (${d.freq})` : '')).join(', ')}
@@ -524,7 +524,7 @@ export default function DayPlan({
                       </ul>
                       {!isCoach && its.length > 0 && (
                         <Link href="/training" className="block text-center py-2.5 rounded-xl bg-[#1746b8] text-white text-xs font-extrabold">
-                          Log it in Training
+                          Log It in Training
                         </Link>
                       )}
                     </div>
@@ -540,8 +540,8 @@ export default function DayPlan({
             <Row
               icon={<Target className="w-4 h-4" />}
               tone={trainingRest ? 'bg-slate-100 text-slate-400' : TRAINING.tone}
-              title="Baseball training"
-              subtitle={trainingRest ? 'Rest day' : 'Throwing or hitting'}
+              title="Baseball Training"
+              subtitle={trainingRest ? 'Rest Day' : 'Throwing or hitting'}
               open={open === 'training'}
               onClick={() => toggle('training')}
               showCheck={showCheck && !trainingRest}
@@ -564,13 +564,13 @@ export default function DayPlan({
             <Row
               icon={<HeartPulse className="w-4 h-4" />}
               tone="bg-emerald-100 text-emerald-700"
-              title="Readiness check-in"
+              title="Readiness Check-In"
               subtitle={pts?.readiness_ok ? 'Done · tap to see your score' : 'Sleep, soreness, arm and stress'}
               open={open === 'readiness'}
               onClick={() => toggle('readiness')}
               showCheck={showCheck}
               interactive={interactive}
-              idleLabel={interactive ? 'Check in' : idleLabel}
+              idleLabel={interactive ? 'Check In' : idleLabel}
               checked={!!pts?.readiness_ok}
               busy={false}
               popping={0}

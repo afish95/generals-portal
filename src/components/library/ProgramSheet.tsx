@@ -137,7 +137,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
   )
 
   return (
-    <SheetFrame title={name || 'New program'} subtitle={`${weeks} week${weeks === 1 ? '' : 's'} · ${throwDays(1)} throwing days in week 1`} onClose={onClose}>
+    <SheetFrame title={name || 'New Program'} subtitle={`${weeks} week${weeks === 1 ? '' : 's'} · ${throwDays(1)} throwing days in week 1`} onClose={onClose}>
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Program name (e.g. Winter Throwing – Phase 1)" className={inputClass} />
         <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Short note (optional)" className={inputClass} />
@@ -154,7 +154,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <SectionLabel>Week layout</SectionLabel>
+          <SectionLabel>Week Layout</SectionLabel>
           {weeks > 1 && (
             <button type="button" onClick={copyWeekToAll} className="px-2.5 py-1.5 rounded-lg bg-slate-100 text-[11px] font-extrabold text-slate-700 flex items-center gap-1 cursor-pointer">
               <Copy className="w-3 h-3" /> Copy week {week} to all
@@ -217,7 +217,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
       </section>
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-        <SectionLabel>Player plan work</SectionLabel>
+        <SectionLabel>Player Plan Work</SectionLabel>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-slate-500">Add each player’s plan drills on</span>
           {INTENTS.map((it) => (
@@ -227,7 +227,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
           ))}
         </div>
         <div>
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Focus groups</div>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Focus Groups</div>
           {focusGroups.length === 0 ? (
             <p className="text-xs font-semibold text-slate-400">Focus groups appear once players have published plans.</p>
           ) : (
@@ -238,9 +238,9 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
                   <div key={g.id} className="rounded-2xl border border-violet-200 bg-violet-50/40 p-2.5 space-y-1.5">
                     <div className="text-xs font-extrabold text-violet-800">{g.name.replace('Focus · ', '')} <span className="font-semibold text-violet-500">· {g.n}</span></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {sel(a?.progression_id ?? null, (v) => setAddon(g.id, { progression_id: v }), 'No extra drills')}
+                      {sel(a?.progression_id ?? null, (v) => setAddon(g.id, { progression_id: v }), 'No Extra Drills')}
                       <select value={a?.script_id ?? ''} onChange={(e) => setAddon(g.id, { script_id: e.target.value ? Number(e.target.value) : null })} className={inputClass}>
-                        <option value="">No bullpen</option>
+                        <option value="">No Bullpen</option>
                         {scripts.map((s) => (
                           <option key={s.id} value={s.id}>{s.title}</option>
                         ))}
@@ -264,7 +264,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
           </button>
         )}
         {savedId && (
-          <button type="button" onClick={remove} aria-label="Delete program" className="px-3 rounded-xl bg-red-50 text-red-700 cursor-pointer">
+          <button type="button" onClick={remove} aria-label="Delete Program" className="px-3 rounded-xl bg-red-50 text-red-700 cursor-pointer">
             <Trash2 className="w-4 h-4" />
           </button>
         )}

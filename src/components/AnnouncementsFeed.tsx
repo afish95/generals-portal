@@ -65,7 +65,7 @@ export default function AnnouncementsFeed({ limit = 5, refreshKey = 0, topSlot, 
         <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex-1">Announcements</span>
         {dismissible && shown.length > 1 && (
           <button type="button" onClick={() => dismiss(shown.map((a) => a.id))} className="text-[11px] font-extrabold text-[#1746b8] cursor-pointer">
-            Clear all
+            Clear All
           </button>
         )}
         {dismissible && (

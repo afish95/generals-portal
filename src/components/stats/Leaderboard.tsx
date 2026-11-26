@@ -63,7 +63,7 @@ export default function Leaderboard({ myId }: { myId: string }) {
       <div className="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-slate-100">
         {(['today', 'week'] as const).map((p) => (
           <button key={p} type="button" onClick={() => setPeriod(p)} className={`py-2 rounded-xl text-xs font-extrabold cursor-pointer ${period === p ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
-            {p === 'today' ? 'Today' : 'This week'}
+            {p === 'today' ? 'Today' : 'This Week'}
           </button>
         ))}
       </div>

@@ -12,7 +12,7 @@ import { NoLoginBadge, SheetFrame, TagChip, catOf, type Member } from './shared'
 
 const SIZES = ['', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
 const POSITIONS = [
-  { key: 'pitcher', label: 'PO (pitcher only)' },
+  { key: 'pitcher', label: 'PO (Pitcher Only)' },
   { key: 'two_way', label: '2-Way' },
   { key: 'hitter', label: 'Hitter' },
   { key: 'catcher', label: 'Catcher' },
@@ -157,7 +157,7 @@ export default function PersonSheet({
       )}
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-        <SectionLabel>Tags & groups</SectionLabel>
+        <SectionLabel>Tags & Groups</SectionLabel>
         <p className="text-[11px] font-semibold text-slate-500 -mt-1">Tap to add or remove. Groups with a chat bubble are message channels, so this also changes which chats they’re in.</p>
         {GROUP_CATEGORIES.map((c) => {
           const list = usable.filter((g) => catOf(g) === c.key)
@@ -195,13 +195,13 @@ export default function PersonSheet({
           </div>
         )}
         <label className="block text-[11px] font-bold text-slate-500">
-          Contact email
+          Contact Email
           <input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} className={inputClass} />
         </label>
         <div className="grid grid-cols-2 gap-2">
           {(['top_size', 'bottom_size'] as const).map((k) => (
             <label key={k} className="text-[11px] font-bold text-slate-500">
-              {k === 'top_size' ? 'Top size' : 'Bottom size'}
+              {k === 'top_size' ? 'Top Size' : 'Bottom Size'}
               <select value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} className={inputClass}>
                 {SIZES.map((s) => (
                   <option key={s} value={s}>{s || '—'}</option>
@@ -220,7 +220,7 @@ export default function PersonSheet({
       </section>
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-2">
-        <SectionLabel>App login</SectionLabel>
+        <SectionLabel>App Login</SectionLabel>
         {credential ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-1">
             <div className="text-sm font-bold text-emerald-900">Username: {credential.username}</div>
@@ -234,14 +234,14 @@ export default function PersonSheet({
             </p>
             <div className="flex gap-2">
               <input value={username} onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))} autoCapitalize="none" className={inputClass} aria-label="Username" />
-              <button type="button" onClick={createLogin} className="px-4 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold whitespace-nowrap cursor-pointer">Create login</button>
+              <button type="button" onClick={createLogin} className="px-4 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold whitespace-nowrap cursor-pointer">Create Login</button>
             </div>
           </>
         ) : (
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-slate-600">Signs in as <b>{person.username}</b></span>
             <button type="button" onClick={resetPassword} className="px-3 py-2 rounded-xl bg-slate-100 text-xs font-extrabold text-slate-700 flex items-center gap-1.5 cursor-pointer">
-              <KeyRound className="w-3.5 h-3.5" /> Reset password
+              <KeyRound className="w-3.5 h-3.5" /> Reset Password
             </button>
           </div>
         )}
@@ -252,12 +252,12 @@ export default function PersonSheet({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {!isCoach && (
           <a href={`/office?tab=plans&player=${person.id}`} className="py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-extrabold text-[#1746b8] flex items-center justify-center gap-1.5">
-            <Target className="w-4 h-4" /> Player plan
+            <Target className="w-4 h-4" /> Player Plan
           </a>
         )}
         {!isCoach && (
           <button type="button" onClick={() => setStats(true)} className="py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-extrabold text-[#1746b8] flex items-center justify-center gap-1.5 cursor-pointer">
-            <BarChart3 className="w-4 h-4" /> Training & flags
+            <BarChart3 className="w-4 h-4" /> Training & Flags
           </button>
         )}
         {person.is_active ? (

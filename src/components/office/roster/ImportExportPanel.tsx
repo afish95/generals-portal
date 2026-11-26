@@ -263,14 +263,14 @@ export default function ImportExportPanel({ people, groups, members, onChanged }
         </label>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={doExport} className="px-4 py-2.5 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold flex items-center gap-1.5 cursor-pointer">
-            <Download className="w-4 h-4" /> Download roster
+            <Download className="w-4 h-4" /> Download Roster
           </button>
-          <button type="button" onClick={template} className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-extrabold cursor-pointer">Blank template</button>
+          <button type="button" onClick={template} className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-extrabold cursor-pointer">Blank Template</button>
         </div>
       </section>
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-        <SectionLabel>New season: graduate a class</SectionLabel>
+        <SectionLabel>New Season: Graduate a Class</SectionLabel>
         {classes.length === 0 ? (
           <p className="text-xs font-semibold text-slate-500">No active players with a class year.</p>
         ) : (
@@ -301,7 +301,7 @@ export default function ImportExportPanel({ people, groups, members, onChanged }
           Upload our exported file or the program roster spreadsheet (Last Name, First Name, Class, Position Tag, Team Tag 1…). Rows match by username, then by name. New names are added without a login. You’ll see every change before anything is saved.
         </p>
         <label className="flex items-center justify-center gap-2 py-6 rounded-2xl border-2 border-dashed border-slate-300 text-sm font-extrabold text-[#1746b8] cursor-pointer hover:bg-blue-50/50">
-          <FileUp className="w-5 h-5" /> {fileName ? `Choose a different file (${fileName})` : 'Choose a CSV file'}
+          <FileUp className="w-5 h-5" /> {fileName ? `Choose a different file (${fileName})` : 'Choose a CSV File'}
           <input
             type="file"
             accept=".csv,text/csv"
@@ -320,8 +320,8 @@ export default function ImportExportPanel({ people, groups, members, onChanged }
               {[
                 ['New', newRows.length, 'text-emerald-700 bg-emerald-50'],
                 ['Changed', changed.length, 'text-amber-800 bg-amber-50'],
-                ['No change', same.length, 'text-slate-600 bg-slate-100'],
-                ['Not in file', plan.missing.length, 'text-rose-700 bg-rose-50'],
+                ['No Change', same.length, 'text-slate-600 bg-slate-100'],
+                ['Not in File', plan.missing.length, 'text-rose-700 bg-rose-50'],
               ].map(([l, n, cls]) => (
                 <div key={String(l)} className={`rounded-2xl px-3 py-2 ${cls}`}>
                   <div className="text-xl font-black">{n}</div>
@@ -349,7 +349,7 @@ export default function ImportExportPanel({ people, groups, members, onChanged }
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {newRows.length > 0 && (
                 <div className="rounded-2xl border border-emerald-200 p-3">
-                  <div className="text-xs font-extrabold text-emerald-700 mb-1.5">New people</div>
+                  <div className="text-xs font-extrabold text-emerald-700 mb-1.5">New People</div>
                   <div className="space-y-1 max-h-72 overflow-y-auto">
                     {newRows.map((r) => (
                       <div key={r.row.line} className="text-sm">

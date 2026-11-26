@@ -27,7 +27,7 @@ export default function ToolRunnerSheet({
             <X className="w-5 h-5" />
           </button>
           <div className="min-w-0">
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">{workoutId ? 'Prescribed by Coach' : 'Training tool'}</div>
+            <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">{workoutId ? 'Prescribed by Coach' : 'Training Tool'}</div>
             <div className="text-base font-extrabold leading-tight truncate">{title}</div>
           </div>
         </div>

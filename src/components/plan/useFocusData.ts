@@ -33,7 +33,7 @@ export function useFocusData() {
           kind: 'exercise' as const,
           id: e.id,
           name: e.name,
-          group: e.discipline === 'hitting' ? 'Hitting drills' : e.discipline === 'arm_care' ? 'Arm care' : 'Throwing drills',
+          group: e.discipline === 'hitting' ? 'Hitting Drills' : e.discipline === 'arm_care' ? 'Arm Care' : 'Throwing Drills',
           notes: e.notes,
           video_url: e.video_url,
         })),

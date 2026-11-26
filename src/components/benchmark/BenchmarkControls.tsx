@@ -12,7 +12,7 @@ export default function BenchmarkControls({ kind, setKind, vs, setVs }: { kind: 
       <div className="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-[#1746b8]">
         {(['hitter', 'pitcher'] as const).map((k) => (
           <button key={k} type="button" onClick={() => setKind(k)} className={`py-2.5 rounded-xl text-xs font-extrabold cursor-pointer ${kind === k ? 'bg-white text-[#1746b8] shadow-sm' : 'text-blue-100'}`}>
-            {k === 'hitter' ? 'Hitter report' : 'Pitcher report'}
+            {k === 'hitter' ? 'Hitter Report' : 'Pitcher Report'}
           </button>
         ))}
       </div>

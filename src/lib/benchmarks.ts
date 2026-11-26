@@ -27,20 +27,20 @@ export const HITTER: BenchSection[] = [
   {
     title: 'Power',
     metrics: [
-      { key: 'bat_speed', why: 'Bat speed is the engine behind power. More of it means harder contact, more time to recognize pitches, and more extra-base hits.', label: 'Bat speed', unit: ' mph', decimals: 1, howTo: 'Log Bat Speed in your workouts.', levels: { hs_under: { mu: 61.73, sigma: 5.1793, n: 436 }, hs_upper: { mu: 65.5516, sigma: 4.3922, n: 386 }, college: { mu: 68.8342, sigma: 3.931, n: 648 } } },
-      { key: 'exit_velo', why: 'The harder you hit the ball, the more often it falls for a hit. Max exit velo shows the ceiling of your power.', label: 'Max exit velo', unit: ' mph', decimals: 1, howTo: 'Log Exit Velo (tee or front toss).', levels: { hs_under: { mu: 92.2997, sigma: 7.2541, n: 547 }, hs_upper: { mu: 97.3477, sigma: 6.5909, n: 429 }, college: { mu: 109.0759, sigma: 4.4188, n: 1949 } } },
+      { key: 'bat_speed', why: 'Bat speed is the engine behind power. More of it means harder contact, more time to recognize pitches, and more extra-base hits.', label: 'Bat Speed', unit: ' mph', decimals: 1, howTo: 'Log Bat Speed in your workouts.', levels: { hs_under: { mu: 61.73, sigma: 5.1793, n: 436 }, hs_upper: { mu: 65.5516, sigma: 4.3922, n: 386 }, college: { mu: 68.8342, sigma: 3.931, n: 648 } } },
+      { key: 'exit_velo', why: 'The harder you hit the ball, the more often it falls for a hit. Max exit velo shows the ceiling of your power.', label: 'Max Exit Velo', unit: ' mph', decimals: 1, howTo: 'Log Exit Velo (tee or front toss).', levels: { hs_under: { mu: 92.2997, sigma: 7.2541, n: 547 }, hs_upper: { mu: 97.3477, sigma: 6.5909, n: 429 }, college: { mu: 109.0759, sigma: 4.4188, n: 1949 } } },
       { key: 'iso', why: 'ISO (SLG − AVG) measures power by itself: extra bases per at-bat. It separates hitters who single from hitters who do damage.', label: 'ISO', unit: '', decimals: 3, howTo: 'Comes from your game stats (SLG − AVG).', levels: { ...hs({ mu: -2.3498, sigma: 0.8356, n: 22732, log: true }), college: { mu: -1.7766, sigma: 0.4917, n: 10651, log: true } } },
     ],
   },
   {
     title: 'Contact',
     metrics: [
-      { key: 'avg', why: 'Batting average shows how often an at-bat ends in a hit. It swings a lot over a short season, so read it next to OBP and K%.', label: 'Batting avg', unit: '', decimals: 3, howTo: 'Comes from your game stats.', levels: { ...hs({ mu: 0.3229, sigma: 0.1072, n: 28251 }), college: { mu: 0.312, sigma: 0.0441, n: 10651 } } },
+      { key: 'avg', why: 'Batting average shows how often an at-bat ends in a hit. It swings a lot over a short season, so read it next to OBP and K%.', label: 'Batting Avg', unit: '', decimals: 3, howTo: 'Comes from your game stats.', levels: { ...hs({ mu: 0.3229, sigma: 0.1072, n: 28251 }), college: { mu: 0.312, sigma: 0.0441, n: 10651 } } },
       { key: 'k_pct', why: 'A strikeout gives the defense a free out. Putting the ball in play forces them to make plays and creates chances to score.', label: 'Strikeout %', unit: '%', decimals: 1, lowerIsBetter: true, howTo: 'Comes from your game stats (SO ÷ PA).', levels: { ...hs({ mu: 17.28, sigma: 7.72, n: 207, source: 'generals' }), college: { mu: 16.475, sigma: 5.7361, n: 10651 } } },
     ],
   },
   {
-    title: 'Swing decisions',
+    title: 'Swing Decisions',
     metrics: [
       { key: 'obp', why: 'Getting on base is the biggest driver of scoring runs. OBP counts hits, walks and hit-by-pitches.', label: 'On-base %', unit: '', decimals: 3, howTo: 'Comes from your game stats.', levels: { ...hs({ mu: 0.4457, sigma: 0.1052, n: 28394 }), college: { mu: 0.4095, sigma: 0.0472, n: 10651 } } },
       { key: 'bb_pct', why: "Walks show you control the strike zone. Hitters who don't chase get better pitches to hit.", label: 'Walk %', unit: '%', decimals: 1, howTo: 'Comes from your game stats (BB ÷ PA).', levels: { ...hs({ mu: 15.2746, sigma: 7.1397, n: 28394 }), college: { mu: 11.3834, sigma: 3.5808, n: 10651 } } },
@@ -52,8 +52,8 @@ export const PITCHER: BenchSection[] = [
   {
     title: 'Stuff',
     metrics: [
-      { key: 'fb_max', why: "Top velo shows your arm's ceiling. More velo gives hitters less time and gives you more room for error in the zone.", label: 'Max FB velo', unit: ' mph', decimals: 1, howTo: 'Log Mound Velo or throw a bullpen with velo.', levels: { hs_under: { mu: 79.7424, sigma: 5.6492, n: 411 }, hs_upper: { mu: 83.2489, sigma: 5.3614, n: 489 }, college: { mu: 93.5215, sigma: 2.4637, n: 1664 } } },
-      { key: 'fb_avg', why: 'Average velo is what hitters actually see. Holding your velo through an outing matters as much as your peak.', label: 'Avg FB velo', unit: ' mph', decimals: 1, howTo: 'Throw bullpens with velo tracked.', levels: { hs_under: { mu: 78.41, sigma: 5.7121, n: 411 }, hs_upper: { mu: 81.835, sigma: 5.5106, n: 489 }, college: { mu: 90.3511, sigma: 2.2853, n: 1664 } } },
+      { key: 'fb_max', why: "Top velo shows your arm's ceiling. More velo gives hitters less time and gives you more room for error in the zone.", label: 'Max FB Velo', unit: ' mph', decimals: 1, howTo: 'Log Mound Velo or throw a bullpen with velo.', levels: { hs_under: { mu: 79.7424, sigma: 5.6492, n: 411 }, hs_upper: { mu: 83.2489, sigma: 5.3614, n: 489 }, college: { mu: 93.5215, sigma: 2.4637, n: 1664 } } },
+      { key: 'fb_avg', why: 'Average velo is what hitters actually see. Holding your velo through an outing matters as much as your peak.', label: 'Avg FB Velo', unit: ' mph', decimals: 1, howTo: 'Throw bullpens with velo tracked.', levels: { hs_under: { mu: 78.41, sigma: 5.7121, n: 411 }, hs_upper: { mu: 81.835, sigma: 5.5106, n: 489 }, college: { mu: 90.3511, sigma: 2.2853, n: 1664 } } },
     ],
   },
   {
@@ -105,7 +105,7 @@ export function levelFor(gradYear: number | null | undefined, today = new Date()
 
 export const sourceNote = (m: BenchMetric, level: Level) => {
   const s = m.levels[level]?.source
-  return s === 'generals' ? 'Generals Spring Varsity since 2009' : s === 'coach' ? 'Coach benchmark' : null
+  return s === 'generals' ? 'Generals Spring Varsity since 2009' : s === 'coach' ? 'Coach Benchmark' : null
 }
 
 

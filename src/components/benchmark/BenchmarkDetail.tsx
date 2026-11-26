@@ -143,7 +143,7 @@ export default function BenchmarkDetail({ m, value, mine, vs, section, onClose }
 
           {m.why && (
             <div className="border-l-4 border-[#1746b8] pl-4 py-1">
-              <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#1746b8]">Why it matters</div>
+              <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#1746b8]">Why It Matters</div>
               <p className="text-sm font-medium text-slate-700 mt-1">{m.why}</p>
             </div>
           )}

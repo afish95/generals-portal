@@ -51,17 +51,17 @@ export default function WeeklyRecap({ athleteId }: { athleteId: string }) {
   if (!thisWeek) return <div className="h-36 rounded-3xl bg-white/60 animate-pulse" />
 
   const items: { label: string; now: number | null; prev: number | null; suffix?: string }[] = [
-    { label: 'Days trained', now: thisWeek.days, prev: lastWeek?.days ?? null },
-    { label: 'Throws & swings', now: thisWeek.volume, prev: lastWeek?.volume ?? null },
+    { label: 'Days Trained', now: thisWeek.days, prev: lastWeek?.days ?? null },
+    { label: 'Throws & Swings', now: thisWeek.volume, prev: lastWeek?.volume ?? null },
     { label: 'PRs', now: thisWeek.prs, prev: lastWeek?.prs ?? null },
-    { label: 'Avg readiness', now: thisWeek.avg_readiness, prev: lastWeek?.avg_readiness ?? null },
+    { label: 'Avg Readiness', now: thisWeek.avg_readiness, prev: lastWeek?.avg_readiness ?? null },
   ]
   const attendance = thisWeek.marked ? Math.round((100 * thisWeek.present) / thisWeek.marked) : null
 
   return (
     <section className="rounded-3xl bg-gradient-to-br from-[#1746b8] to-[#1e54d4] text-white p-5 shadow-md space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-200">Weekly recap</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-200">Weekly Recap</span>
         {attendance != null && <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-white/15">{attendance}% attendance</span>}
       </div>
       <div className="grid grid-cols-2 gap-2">

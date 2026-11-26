@@ -71,7 +71,7 @@ export default function FocusPlanSheet({
       key: `n${++tmp}`,
       athlete_id: player.id,
       sort_order: items.length,
-      title: s?.title || 'New focus',
+      title: s?.title || 'New Focus',
       why: s?.why || '',
       metric_source: s?.metric_source || 'none',
       metric_key: s?.metric_key || null,
@@ -172,7 +172,7 @@ export default function FocusPlanSheet({
             <div className="text-xs font-semibold text-slate-500">{[player.grad_year ? `Class of ${player.grad_year}` : null, POS[player.position_group || '']].filter(Boolean).join(' · ')}</div>
           </div>
         </div>
-        <SectionLabel>Where they stand (team percentile)</SectionLabel>
+        <SectionLabel>Where They Stand (Team Percentile)</SectionLabel>
         {snap.length === 0 ? (
           <p className="text-xs font-semibold text-slate-500">No game stats or training numbers yet. Start with a baseline focus so they log some.</p>
         ) : (
@@ -204,7 +204,7 @@ export default function FocusPlanSheet({
       {suggestions.length > 0 && (
         <section className="bg-blue-50 rounded-3xl border border-blue-100 p-4 space-y-2">
           <div className="text-xs font-extrabold text-[#113694] flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4" /> Suggested focus areas
+            <Sparkles className="w-4 h-4" /> Suggested Focus Areas
           </div>
           {suggestions.map((s) => (
             <div key={s.title} className="flex items-center gap-2 bg-white rounded-2xl px-3 py-2">
@@ -229,7 +229,7 @@ export default function FocusPlanSheet({
             <div className="flex items-center gap-2">
               <span className="w-7 h-7 rounded-full bg-[#1746b8] text-white text-xs font-black flex items-center justify-center shrink-0">{idx + 1}</span>
               <KindBadge kind={focusKind(d)} className="shrink-0" />
-              <input value={d.title} onChange={(e) => change(d.key, { title: e.target.value })} className={`${inputClass} font-extrabold`} aria-label="Focus title" />
+              <input value={d.title} onChange={(e) => change(d.key, { title: e.target.value })} className={`${inputClass} font-extrabold`} aria-label="Focus Title" />
               <select value={d.status} onChange={(e) => change(d.key, { status: e.target.value as Draft['status'] })} className="px-2 py-2.5 rounded-xl border border-slate-200 text-xs font-extrabold bg-white">
                 {(['draft', 'published', 'done'] as const).map((s) => (
                   <option key={s} value={s}>{STATUS_LABEL[s]}</option>
@@ -240,7 +240,7 @@ export default function FocusPlanSheet({
 
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_100px_100px_150px] gap-2 items-end">
               <label className="text-[11px] font-bold text-slate-500">
-                Stat to track
+                Stat to Track
                 <select
                   value={d.metric_key ? `${d.metric_source}|${d.metric_key}` : ''}
                   onChange={(e) => {
@@ -251,7 +251,7 @@ export default function FocusPlanSheet({
                   }}
                   className={inputClass}
                 >
-                  <option value="">No stat (habit or skill)</option>
+                  <option value="">No Stat (Habit or Skill)</option>
                   {(['pitcher', 'hitter'] as const).map((k) => (
                     <optgroup key={k} label={KIND_LABEL[k]}>
                       {METRIC_OPTIONS.filter((m) => m.kind === k).map((m) => (
@@ -276,7 +276,7 @@ export default function FocusPlanSheet({
                 </>
               )}
               <label className="text-[11px] font-bold text-slate-500">
-                Goal date
+                Goal Date
                 <input type="date" value={d.target_date || ''} onChange={(e) => change(d.key, { target_date: e.target.value || null })} className={inputClass} />
               </label>
             </div>
@@ -294,7 +294,7 @@ export default function FocusPlanSheet({
                       placeholder="2x/week"
                       className="w-24 px-2 py-1.5 rounded-lg border border-slate-200 text-xs"
                     />
-                    <button type="button" onClick={() => change(d.key, { drills: d.drills.filter((_, j) => j !== i) })} aria-label="Remove drill" className="p-1.5 rounded-lg bg-slate-100 text-slate-500 cursor-pointer">
+                    <button type="button" onClick={() => change(d.key, { drills: d.drills.filter((_, j) => j !== i) })} aria-label="Remove Drill" className="p-1.5 rounded-lg bg-slate-100 text-slate-500 cursor-pointer">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -324,10 +324,10 @@ export default function FocusPlanSheet({
             </div>
 
             <div className="flex gap-1.5 justify-end">
-              <button type="button" onClick={() => move(idx, -1)} aria-label="Move up" className="p-2 rounded-xl bg-slate-100 text-slate-500 cursor-pointer">
+              <button type="button" onClick={() => move(idx, -1)} aria-label="Move Up" className="p-2 rounded-xl bg-slate-100 text-slate-500 cursor-pointer">
                 <ArrowUp className="w-3.5 h-3.5" />
               </button>
-              <button type="button" onClick={() => move(idx, 1)} aria-label="Move down" className="p-2 rounded-xl bg-slate-100 text-slate-500 cursor-pointer">
+              <button type="button" onClick={() => move(idx, 1)} aria-label="Move Down" className="p-2 rounded-xl bg-slate-100 text-slate-500 cursor-pointer">
                 <ArrowDown className="w-3.5 h-3.5" />
               </button>
               <button type="button" onClick={() => remove(d)} className="px-3 py-2 rounded-xl bg-red-50 text-red-700 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
@@ -339,7 +339,7 @@ export default function FocusPlanSheet({
       })}
 
       <button type="button" onClick={() => add()} className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-300 text-sm font-extrabold text-[#1746b8] flex items-center justify-center gap-1.5 cursor-pointer">
-        <Plus className="w-4 h-4" /> Add a focus area
+        <Plus className="w-4 h-4" /> Add a Focus Area
       </button>
 
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}

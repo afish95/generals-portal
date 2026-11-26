@@ -102,7 +102,7 @@ export default function PracticePrintPage() {
             <p className="min-h-[2.5em]">{sheet.plan.equipment || '—'}</p>
           </div>
           <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Coach notes</div>
+            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Coach Notes</div>
             <div className="space-y-4 pt-2">
               <div className="border-b border-slate-300" />
               <div className="border-b border-slate-300" />

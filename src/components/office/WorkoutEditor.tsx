@@ -319,7 +319,7 @@ export default function WorkoutEditor({
           <button type="button" onClick={onClose} className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center cursor-pointer" aria-label="Close">
             <X className="w-5 h-5" />
           </button>
-          <div className="text-sm font-extrabold text-slate-900">{draft.id ? 'Edit workout' : 'New workout'}</div>
+          <div className="text-sm font-extrabold text-slate-900">{draft.id ? 'Edit Workout' : 'New Workout'}</div>
           <div className="w-10" />
         </div>
 
@@ -337,7 +337,7 @@ export default function WorkoutEditor({
                 onChange={(e) => setDraft({ ...draft, group_id: e.target.value ? Number(e.target.value) : null })}
                 className={`${inputClass} mt-1`}
               >
-                <option value="">Whole team</option>
+                <option value="">Whole Team</option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
@@ -368,7 +368,7 @@ export default function WorkoutEditor({
               <div className="flex gap-1">
                 <IconBtn label="Move block up" onClick={() => moveBlock(b, -1)}><ArrowUp className="w-4 h-4" /></IconBtn>
                 <IconBtn label="Move block down" onClick={() => moveBlock(b, 1)}><ArrowDown className="w-4 h-4" /></IconBtn>
-                <IconBtn label="Delete block" onClick={() => setBlocks((bl) => bl.filter((_, i) => i !== b))}><Trash2 className="w-4 h-4" /></IconBtn>
+                <IconBtn label="Delete Block" onClick={() => setBlocks((bl) => bl.filter((_, i) => i !== b))}><Trash2 className="w-4 h-4" /></IconBtn>
               </div>
             </div>
 
@@ -379,7 +379,7 @@ export default function WorkoutEditor({
                     {itemLabel(b, i, blk.length)}
                   </span>
                   <div className="flex-1 text-sm font-extrabold text-slate-900">{exName(it.exercise_id)}</div>
-                  <IconBtn label="Remove drill" onClick={() => removeItem(b, i)}><X className="w-4 h-4" /></IconBtn>
+                  <IconBtn label="Remove Drill" onClick={() => removeItem(b, i)}><X className="w-4 h-4" /></IconBtn>
                 </div>
                 <div className="grid grid-cols-[70px_1fr_1fr] gap-2">
                   <label className="text-[10px] font-extrabold uppercase text-slate-400">
@@ -422,7 +422,7 @@ export default function WorkoutEditor({
 
         {progs.length > 0 && (
           <div className="space-y-1">
-            <select value="" onChange={(e) => e.target.value && addProgression(Number(e.target.value))} className={`${inputClass} text-[#1746b8] font-bold`} aria-label="Add a progression">
+            <select value="" onChange={(e) => e.target.value && addProgression(Number(e.target.value))} className={`${inputClass} text-[#1746b8] font-bold`} aria-label="Add a Progression">
               <option value="">+ Add a whole progression</option>
               {progs.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -433,12 +433,12 @@ export default function WorkoutEditor({
         )}
 
         <section className="bg-white rounded-3xl border border-amber-200 p-5 shadow-xs space-y-3">
-          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700">Training tools · bullpens</div>
+          <div className="text-xs font-extrabold uppercase tracking-wider text-amber-700">Training Tools · Bullpens</div>
           {tools.map((t, i) => (
             <div key={t.key} className="rounded-2xl border border-amber-200 bg-amber-50/40 p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <div className="flex-1 text-sm font-extrabold text-slate-900">{scripts.find((x) => x.id === t.script_id)?.title ?? 'Bullpen'}</div>
-                <IconBtn label="Remove tool" onClick={() => setTools((ts) => ts.filter((_, ii) => ii !== i))}><X className="w-4 h-4" /></IconBtn>
+                <IconBtn label="Remove Tool" onClick={() => setTools((ts) => ts.filter((_, ii) => ii !== i))}><X className="w-4 h-4" /></IconBtn>
               </div>
               <input
                 value={t.notes}
@@ -466,13 +466,13 @@ export default function WorkoutEditor({
           onClick={() => setBlocks((bl) => [...bl, []])}
           className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-300 text-sm font-extrabold text-slate-500 flex items-center justify-center gap-2 cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> Add block
+          <Plus className="w-4 h-4" /> Add Block
         </button>
 
         {!draft.id && (
           <label className="flex items-center gap-2 px-1 text-xs font-bold text-slate-600 cursor-pointer">
             <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="w-4 h-4 accent-[#1746b8]" />
-            Notify players
+            Notify Players
           </label>
         )}
         {error && <p className="text-sm font-bold text-red-600">{error}</p>}
@@ -486,7 +486,7 @@ export default function WorkoutEditor({
             disabled={saving}
             className="w-full py-3.5 rounded-2xl bg-[#1746b8] text-white text-base font-extrabold shadow-lg disabled:opacity-60 cursor-pointer"
           >
-            {saving ? 'Saving…' : 'Save workout'}
+            {saving ? 'Saving…' : 'Save Workout'}
           </button>
         </div>
       </div>

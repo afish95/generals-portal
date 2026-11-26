@@ -157,7 +157,7 @@ export default function PlanEditorSheet({
           <button type="button" onClick={onClose} className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center cursor-pointer" aria-label="Close">
             <X className="w-5 h-5" />
           </button>
-          <div className="text-sm font-extrabold text-slate-900">{mode === 'template' ? (template ? 'Edit template' : 'New template') : ev.id ? 'Edit practice plan' : 'New practice'}</div>
+          <div className="text-sm font-extrabold text-slate-900">{mode === 'template' ? (template ? 'Edit Template' : 'New Template') : ev.id ? 'Edit Practice Plan' : 'New Practice'}</div>
           <div className="w-10" />
         </div>
 
@@ -173,14 +173,14 @@ export default function PlanEditorSheet({
                   <input type="date" value={ev.event_date} onChange={(e) => setEv({ ...ev, event_date: e.target.value })} className={`${inputClass} mt-1`} />
                 </label>
                 <label className="text-[10px] font-extrabold uppercase text-slate-400">
-                  Start time
+                  Start Time
                   <input value={ev.start_time} onChange={(e) => setEv({ ...ev, start_time: e.target.value })} placeholder="3:45 PM" className={`${inputClass} mt-1`} />
                 </label>
               </div>
               <input value={ev.location} onChange={(e) => setEv({ ...ev, location: e.target.value })} placeholder="Location" className={inputClass} />
               {templates.length > 0 && (
                 <select value="" onChange={(e) => e.target.value && loadTemplate(Number(e.target.value))} className={`${inputClass} text-[#1746b8] font-bold`}>
-                  <option value="">Start from a template…</option>
+                  <option value="">Start from a Template…</option>
                   {templates.map((t) => (
                     <option key={t.id} value={t.id}>{t.name} ({blockTimes(t.plan).total} min)</option>
                   ))}
@@ -226,9 +226,9 @@ export default function PlanEditorSheet({
                 <span />
               )}
               <div className="flex gap-1">
-                <IconBtn label="Move up" onClick={() => move(i, -1)}><ArrowUp className="w-4 h-4" /></IconBtn>
-                <IconBtn label="Move down" onClick={() => move(i, 1)}><ArrowDown className="w-4 h-4" /></IconBtn>
-                <IconBtn label="Delete block" onClick={() => setPlan((p) => ({ ...p, blocks: p.blocks.filter((_, j) => j !== i) }))}><Trash2 className="w-4 h-4" /></IconBtn>
+                <IconBtn label="Move Up" onClick={() => move(i, -1)}><ArrowUp className="w-4 h-4" /></IconBtn>
+                <IconBtn label="Move Down" onClick={() => move(i, 1)}><ArrowDown className="w-4 h-4" /></IconBtn>
+                <IconBtn label="Delete Block" onClick={() => setPlan((p) => ({ ...p, blocks: p.blocks.filter((_, j) => j !== i) }))}><Trash2 className="w-4 h-4" /></IconBtn>
               </div>
             </div>
           </section>
@@ -239,7 +239,7 @@ export default function PlanEditorSheet({
           onClick={() => setPlan((p) => ({ ...p, blocks: [...p.blocks, emptyBlock()] }))}
           className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-300 text-sm font-extrabold text-slate-500 flex items-center justify-center gap-2 cursor-pointer"
         >
-          <Plus className="w-4 h-4" /> Add block
+          <Plus className="w-4 h-4" /> Add Block
         </button>
 
         {mode === 'event' &&
@@ -261,7 +261,7 @@ export default function PlanEditorSheet({
       <div className="fixed bottom-0 inset-x-0 lg:left-[220px] px-4" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
         <div className="max-w-xl lg:max-w-3xl mx-auto">
           <button type="button" onClick={save} disabled={saving} className="w-full py-3.5 rounded-2xl bg-[#1746b8] text-white text-base font-extrabold shadow-lg disabled:opacity-60 cursor-pointer">
-            {saving ? 'Saving…' : mode === 'template' ? 'Save template' : 'Save practice plan'}
+            {saving ? 'Saving…' : mode === 'template' ? 'Save Template' : 'Save Practice Plan'}
           </button>
         </div>
       </div>

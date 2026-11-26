@@ -124,10 +124,10 @@ export default function ProgressionSheet({
   const progFolders = folders.filter((x) => x.kind === 'progression').map((x) => ({ id: x.id, label: folderPath(folders, x.id) })).sort((a, b) => a.label.localeCompare(b.label))
 
   return (
-    <SheetFrame title={isNew ? 'New progression' : progression!.name} subtitle={`${folderPath(folders, folderId) || 'Unfiled'}${slots ? ` · ${slots.length} drills` : ''}`} onClose={onClose}>
+    <SheetFrame title={isNew ? 'New Progression' : progression!.name} subtitle={`${folderPath(folders, folderId) || 'Unfiled'}${slots ? ` · ${slots.length} drills` : ''}`} onClose={onClose}>
       {!editing && progression && (
         <button type="button" onClick={() => setAssigning((a) => !a)} className="w-full py-3 rounded-2xl bg-emerald-600 text-white text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer">
-          <CalendarPlus className="w-4 h-4" /> {assigning ? 'Hide assigning' : 'Assign to players or a group'}
+          <CalendarPlus className="w-4 h-4" /> {assigning ? 'Hide Assigning' : 'Assign to players or a group'}
         </button>
       )}
       {!editing && progression && assigning && <AssignPanel progressionId={progression.id} progressionName={progression.name} />}
@@ -162,8 +162,8 @@ export default function ProgressionSheet({
                       <input key={k} value={s[k] || ''} onChange={(e) => patch(s.key, { [k]: e.target.value })} placeholder={k === 'block' ? 'Block (A1)' : k} className="px-2 py-1.5 rounded-lg border border-slate-200 text-xs" aria-label={k} />
                     ))}
                     <div className="flex gap-1">
-                      <button type="button" onClick={() => move(i, -1)} aria-label="Move up" className="p-1.5 rounded-lg bg-slate-100 cursor-pointer"><ArrowUp className="w-3 h-3" /></button>
-                      <button type="button" onClick={() => move(i, 1)} aria-label="Move down" className="p-1.5 rounded-lg bg-slate-100 cursor-pointer"><ArrowDown className="w-3 h-3" /></button>
+                      <button type="button" onClick={() => move(i, -1)} aria-label="Move Up" className="p-1.5 rounded-lg bg-slate-100 cursor-pointer"><ArrowUp className="w-3 h-3" /></button>
+                      <button type="button" onClick={() => move(i, 1)} aria-label="Move Down" className="p-1.5 rounded-lg bg-slate-100 cursor-pointer"><ArrowDown className="w-3 h-3" /></button>
                       <button type="button" onClick={() => setSlots((x) => x!.filter((y) => y.key !== s.key))} aria-label="Remove" className="p-1.5 rounded-lg bg-red-50 text-red-600 cursor-pointer"><X className="w-3 h-3" /></button>
                     </div>
                   </div>
@@ -195,10 +195,10 @@ export default function ProgressionSheet({
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}
       {editing ? (
         <button type="button" onClick={save} disabled={busy} className="w-full py-3 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-50 cursor-pointer">
-          {busy ? 'Saving…' : isNew ? 'Create progression' : 'Save progression'}
+          {busy ? 'Saving…' : isNew ? 'Create Progression' : 'Save Progression'}
         </button>
       ) : (
-        <button type="button" onClick={() => setEditing(true)} className="w-full py-2.5 rounded-xl bg-slate-100 text-sm font-extrabold text-slate-700 cursor-pointer">Edit progression</button>
+        <button type="button" onClick={() => setEditing(true)} className="w-full py-2.5 rounded-xl bg-slate-100 text-sm font-extrabold text-slate-700 cursor-pointer">Edit Progression</button>
       )}
       {progression && (
         <div className="grid grid-cols-2 gap-2">

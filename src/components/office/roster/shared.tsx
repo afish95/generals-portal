@@ -61,7 +61,7 @@ export function Avatar({ person, size = 'md' }: { person: Profile; size?: 'sm' |
 }
 
 export function NoLoginBadge() {
-  return <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-extrabold uppercase tracking-wide align-middle">No login</span>
+  return <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-extrabold uppercase tracking-wide align-middle">No Login</span>
 }
 
 /** Secondary navigation inside one Coach Office area. */

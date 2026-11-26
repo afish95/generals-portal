@@ -35,7 +35,7 @@ export default function StreakAlerts() {
   if (shown.length === 0) return null
   return (
     <section className="rounded-3xl bg-gradient-to-br from-[#0f2a6e] to-[#1746b8] p-4 text-white shadow-md space-y-2">
-      <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-amber-300">Streak alerts</div>
+      <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-amber-300">Streak Alerts</div>
       <ul className="space-y-1.5">
         {shown.map((a) => (
           <li key={a.id}>

@@ -85,7 +85,7 @@ function MySeason({ lines, mine, name }: { lines: GcLine[]; mine: GcLine[]; name
       <div className="flex items-center gap-3">
         <PlayerPhoto id={mine[0]?.player_id} name={name} size={48} />
         <div>
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">My season</div>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">My Season</div>
           <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Badges show your percentile on the team (99th is the top).</p>
         </div>
       </div>
@@ -147,7 +147,7 @@ function TeamLeaders({ lines }: { lines: GcLine[] }) {
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
       <div>
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Team leaders</div>
+        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Team Leaders</div>
         <p className="text-[11px] font-semibold text-slate-500 mt-0.5">Rate stats need enough playing time to qualify.</p>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -203,7 +203,7 @@ function TeamTable({ lines, myName, career = false }: { lines: GcLine[]; myName?
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
       <div className="p-4 flex flex-wrap items-center gap-2 border-b border-slate-100">
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mr-auto">{career ? 'Program history' : 'Team stats'}</div>
+        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mr-auto">{career ? 'Program History' : 'Team Stats'}</div>
         <div className="flex p-1 rounded-xl bg-slate-100">
           {(['batting', 'pitching', 'fielding'] as const).map((t) => (
             <button key={t} type="button" onClick={() => pick(t)} className={`px-3 py-1.5 rounded-lg text-xs font-extrabold capitalize cursor-pointer ${type === t ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>

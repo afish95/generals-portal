@@ -219,24 +219,24 @@ export default function SandboxPanel({ people, groups, members, onChanged }: { p
               className={`px-3.5 py-2 rounded-full text-xs font-extrabold cursor-pointer flex items-center gap-1.5 ${b.id === boardId ? 'bg-[#1746b8] text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
             >
               {b.name}
-              {pending && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-label="Unpublished changes" />}
+              {pending && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-label="Unpublished Changes" />}
             </button>
           )
         })}
         <button type="button" onClick={() => setEditing('new')} className="px-3 py-2 rounded-full text-xs font-extrabold text-[#1746b8] bg-blue-50 flex items-center gap-1 cursor-pointer">
-          <Plus className="w-3.5 h-3.5" /> New board
+          <Plus className="w-3.5 h-3.5" /> New Board
         </button>
       </div>
 
       <div className="rounded-2xl bg-blue-50 border border-blue-100 px-4 py-2.5 text-[11px] font-semibold text-[#113694]">
-        Sandbox: drag players between columns (or tap a player, then <b>Move here</b>). Nothing changes for players until you press <b>Publish</b>. Then the groups and their chats update.
+        Sandbox: drag players between columns (or tap a player, then <b>Move Here</b>). Nothing changes for players until you press <b>Publish</b>. Then the groups and their chats update.
       </div>
 
       {board && (
         <>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-lg font-extrabold text-slate-900 mr-1">{board.name}</h3>
-            <button type="button" onClick={() => setEditing(board)} className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 cursor-pointer" aria-label="Edit board">
+            <button type="button" onClick={() => setEditing(board)} className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 cursor-pointer" aria-label="Edit Board">
               <Pencil className="w-3.5 h-3.5" />
             </button>
             <div className="ml-auto flex items-center gap-2">
@@ -261,14 +261,14 @@ export default function SandboxPanel({ people, groups, members, onChanged }: { p
                 return column(
                   String(g),
                   <div className="text-sm font-extrabold text-slate-900 truncate flex items-center gap-1.5">
-                    {grp.name} {grp.has_chat && <MessageSquare className="w-3.5 h-3.5 text-[#1746b8]" aria-label="Chat channel" />}
+                    {grp.name} {grp.has_chat && <MessageSquare className="w-3.5 h-3.5 text-[#1746b8]" aria-label="Chat Channel" />}
                   </div>,
                   working(g)
                 )
               })}
               {column(
                 POOL,
-                <div className="text-sm font-extrabold text-slate-600">Not on this board</div>,
+                <div className="text-sm font-extrabold text-slate-600">Not on This Board</div>,
                 pool.map((p) => p.id),
                 <div className="space-y-1.5 mb-2">
                   <div className="relative">
@@ -349,14 +349,14 @@ function BoardEditor({ board, groups, count, onClose, onSaved }: { board: Board 
     <div className="fixed inset-0 z-50 bg-[#0b1f55]/40 flex items-end sm:items-center justify-center p-0 sm:p-6 lg:left-[220px]" onClick={onClose}>
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-3 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <div className="text-base font-extrabold text-slate-900">{board ? 'Edit board' : 'New sandbox board'}</div>
+          <div className="text-base font-extrabold text-slate-900">{board ? 'Edit Board' : 'New Sandbox Board'}</div>
           <button type="button" onClick={onClose} aria-label="Close" className="p-2 rounded-xl bg-slate-100 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Board name (e.g. Summer travel)" className={inputClass} />
         <div>
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Columns (groups on this board)</div>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Columns (Groups on This Board)</div>
           {GROUP_CATEGORIES.map((c) => {
             const list = groups.filter((g) => catOf(g) === c.key && !g.name.startsWith('Demo'))
             if (!list.length) return null
@@ -383,17 +383,17 @@ function BoardEditor({ board, groups, count, onClose, onSaved }: { board: Board 
             <label className="flex items-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer">
               <input type="checkbox" checked={newChat} onChange={(e) => setNewChat(e.target.checked)} className="accent-[#1746b8]" /> Give it a chat channel
             </label>
-            <button type="button" onClick={addGroup} className="px-3 py-1.5 rounded-xl bg-blue-50 text-[#1746b8] text-xs font-extrabold cursor-pointer">Add group</button>
+            <button type="button" onClick={addGroup} className="px-3 py-1.5 rounded-xl bg-blue-50 text-[#1746b8] text-xs font-extrabold cursor-pointer">Add Group</button>
           </div>
         </div>
         {error && <p className="text-xs font-bold text-red-600">{error}</p>}
         <div className="flex gap-2">
           {board && (
             <button type="button" onClick={remove} className="px-3 py-2.5 rounded-xl bg-red-50 text-red-700 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
-              <Trash2 className="w-3.5 h-3.5" /> Delete board
+              <Trash2 className="w-3.5 h-3.5" /> Delete Board
             </button>
           )}
-          <button type="button" onClick={save} className="flex-1 py-2.5 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold cursor-pointer">Save board</button>
+          <button type="button" onClick={save} className="flex-1 py-2.5 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold cursor-pointer">Save Board</button>
         </div>
       </div>
     </div>

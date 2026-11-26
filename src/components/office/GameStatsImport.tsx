@@ -142,7 +142,7 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
           />
         </label>
         <label className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-300 text-sm font-extrabold text-[#1746b8] flex items-center justify-center gap-2 cursor-pointer">
-          <Upload className="w-4 h-4" /> {fileName || 'Choose CSV file'}
+          <Upload className="w-4 h-4" /> {fileName || 'Choose CSV File'}
           <input type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
         </label>
       </section>
@@ -157,7 +157,7 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
 
       {history && history.length > 0 && (
         <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Program history file</div>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Program History File</div>
           <p className="text-xs font-semibold text-slate-600">
             {historySeasons.length} seasons, {new Set(history.map((r) => r.player_name)).size} players. Spring Varsity, Spring JV and Summer are kept separate.
           </p>
@@ -221,7 +221,7 @@ export default function GameStatsImport({ players }: { players: Profile[] }) {
 
       {hasDemo && (
         <button type="button" onClick={removeDemo} className="w-full py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-extrabold text-red-600 cursor-pointer">
-          Delete demo game stats
+          Delete Demo Game Stats
         </button>
       )}
 

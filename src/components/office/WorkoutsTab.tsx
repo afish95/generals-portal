@@ -85,7 +85,7 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
   }, [view, date, reload])
 
   const refresh = useCallback(() => setReload((n) => n + 1), [])
-  const groupName = (id: number | null) => (id === null ? 'Whole team' : groups.find((g) => g.id === id)?.name ?? 'Group')
+  const groupName = (id: number | null) => (id === null ? 'Whole Team' : groups.find((g) => g.id === id)?.name ?? 'Group')
   const exName = (id: number) => exercises.find((e) => e.id === id)?.name ?? 'Drill'
 
   const shown = workouts.filter((w) => filter === 'all' || (filter === 'team' ? w.group_id === null : w.group_id === filter))
@@ -153,7 +153,7 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
       <>
       <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
         <Pill active={filter === 'all'} onClick={() => setFilter('all')}>All</Pill>
-        <Pill active={filter === 'team'} onClick={() => setFilter('team')}>Whole team</Pill>
+        <Pill active={filter === 'team'} onClick={() => setFilter('team')}>Whole Team</Pill>
         {groups.map((g) => (
           <Pill key={g.id} active={filter === g.id} onClick={() => setFilter(g.id)}>{g.name}</Pill>
         ))}
@@ -164,7 +164,7 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
         onClick={() => setEditing({ workout: null, items: [] })}
         className="w-full mb-4 py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer"
       >
-        <Plus className="w-4 h-4" /> New workout
+        <Plus className="w-4 h-4" /> New Workout
       </button>
 
       {message && <p className="text-xs font-bold text-emerald-700 mb-3">{message}</p>}
@@ -190,7 +190,7 @@ export default function WorkoutsTab({ groups, exercises }: { groups: Group[]; ex
                   </div>
                   <div className="flex gap-1">
                     <SmallBtn label="Edit" onClick={() => setEditing({ workout: w, items: its })}><Pencil className="w-4 h-4" /></SmallBtn>
-                    <SmallBtn label="Schedule on more days" onClick={() => setBulk({ workout: w, items: its })}><CalendarRange className="w-4 h-4" /></SmallBtn>
+                    <SmallBtn label="Schedule on More Days" onClick={() => setBulk({ workout: w, items: its })}><CalendarRange className="w-4 h-4" /></SmallBtn>
                     <SmallBtn label="Delete" onClick={() => remove(w)}><Trash2 className="w-4 h-4" /></SmallBtn>
                   </div>
                 </div>

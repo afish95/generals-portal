@@ -31,7 +31,7 @@ export default function FocusLine({ athleteId }: { athleteId: string }) {
     <Link href="/training" className="flex items-center gap-3 rounded-2xl bg-white border border-slate-200 px-4 py-3 shadow-xs">
       <Target className="w-5 h-5 text-[#1746b8] shrink-0" />
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">My focus</div>
+        <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">My Focus</div>
         <div className="text-sm font-extrabold text-slate-900 truncate">
           {title}
           {count > 1 && <span className="text-slate-400 font-bold"> +{count - 1} more</span>}

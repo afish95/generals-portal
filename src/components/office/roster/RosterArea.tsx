@@ -55,9 +55,9 @@ export default function RosterArea({ initial = 'players', onChanged }: { initial
         tabs={[
           { key: 'players', label: 'Players', count: players.filter((p) => p.is_active && !p.is_demo).length },
           { key: 'coaches', label: 'Coaches', count: coaches.length },
-          { key: 'groups', label: 'Groups & tags', count: groups.length },
+          { key: 'groups', label: 'Groups & Tags', count: groups.length },
           { key: 'sandbox', label: 'Sandbox' },
-          { key: 'transfer', label: 'Import / export' },
+          { key: 'transfer', label: 'Import / Export' },
         ]}
         active={sub}
         onChange={setSub}

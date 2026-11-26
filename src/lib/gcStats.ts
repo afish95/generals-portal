@@ -22,19 +22,19 @@ export const COLS = {
 
 /** Plain-English names, shown as hints for players and coaches */
 export const LABELS: Record<string, string> = {
-  GP: 'Games', PA: 'Plate appearances', AB: 'At-bats', AVG: 'Batting average', OBP: 'On-base %', SLG: 'Slugging', OPS: 'On-base + slugging',
-  H: 'Hits', '2B': 'Doubles', '3B': 'Triples', HR: 'Home runs', RBI: 'Runs batted in', R: 'Runs', BB: 'Walks', SO: 'Strikeouts', SB: 'Stolen bases',
-  QAB: 'Quality at-bats', 'QAB%': 'Quality at-bat %', 'C%': 'Contact rate', 'BB/K': 'Walks per strikeout', 'PS/PA': 'Pitches seen per PA',
-  '2S+3%': '3+ pitches after 2 strikes', '6+%': '6+ pitch at-bats', HHB: 'Hard-hit balls', 'LD%': 'Line drive %', 'GB%': 'Ground ball %', 'FB%': 'Fly ball %',
-  BABIP: 'Avg on balls in play', 'BA/RISP': 'Avg with runners in scoring position', '2OUTRBI': '2-out RBI',
-  GS: 'Starts', IP: 'Innings pitched', W: 'Wins', L: 'Losses', SV: 'Saves', ERA: 'Earned run average', WHIP: 'Walks + hits per inning', ER: 'Earned runs',
-  BAA: 'Opponent batting avg', '#P': 'Pitches', 'S%': 'Strike %', 'FPS%': 'First-pitch strike %', 'P/IP': 'Pitches per inning', 'P/BF': 'Pitches per batter',
-  '<3%': 'Batters done in 3 pitches or less', 'K/BF': 'Strikeouts per batter', 'K/BB': 'Strikeouts per walk', 'BB/INN': 'Walks per inning',
-  '123INN': '1-2-3 innings', '0BBINN': 'Walk-free innings', 'SM%': 'Swing-and-miss %', 'WEAK%': 'Weak contact %', 'HHB%': 'Hard contact allowed %',
-  'GO/AO': 'Ground outs per air out', FIP: 'Fielding-independent pitching',
-  TC: 'Total chances', PO: 'Putouts', A: 'Assists', E: 'Errors', FPCT: 'Fielding %', DP: 'Double plays', INN: 'Innings caught', PB: 'Passed balls',
-  'SB-ATT': 'Steals allowed - attempts', 'CS%': 'Caught stealing %', P: 'Inn. at P', C: 'Inn. at C', '1B': 'Inn. at 1B', SS: 'Inn. at SS',
-  LF: 'Inn. at LF', CF: 'Inn. at CF', RF: 'Inn. at RF', Total: 'Total innings',
+  GP: 'Games', PA: 'Plate Appearances', AB: 'At-bats', AVG: 'Batting Average', OBP: 'On-base %', SLG: 'Slugging', OPS: 'On-base + slugging',
+  H: 'Hits', '2B': 'Doubles', '3B': 'Triples', HR: 'Home Runs', RBI: 'Runs Batted In', R: 'Runs', BB: 'Walks', SO: 'Strikeouts', SB: 'Stolen Bases',
+  QAB: 'Quality At-Bats', 'QAB%': 'Quality At-Bat %', 'C%': 'Contact Rate', 'BB/K': 'Walks per Strikeout', 'PS/PA': 'Pitches Seen per PA',
+  '2S+3%': '3+ pitches after 2 strikes', '6+%': '6+ pitch at-bats', HHB: 'Hard-hit balls', 'LD%': 'Line Drive %', 'GB%': 'Ground Ball %', 'FB%': 'Fly Ball %',
+  BABIP: 'Avg on Balls in Play', 'BA/RISP': 'Avg with runners in scoring position', '2OUTRBI': '2-out RBI',
+  GS: 'Starts', IP: 'Innings Pitched', W: 'Wins', L: 'Losses', SV: 'Saves', ERA: 'Earned Run Average', WHIP: 'Walks + Hits per Inning', ER: 'Earned Runs',
+  BAA: 'Opponent Batting Avg', '#P': 'Pitches', 'S%': 'Strike %', 'FPS%': 'First-Pitch Strike %', 'P/IP': 'Pitches per Inning', 'P/BF': 'Pitches per Batter',
+  '<3%': 'Batters done in 3 pitches or less', 'K/BF': 'Strikeouts per Batter', 'K/BB': 'Strikeouts per Walk', 'BB/INN': 'Walks per Inning',
+  '123INN': '1-2-3 innings', '0BBINN': 'Walk-free innings', 'SM%': 'Swing-and-miss %', 'WEAK%': 'Weak Contact %', 'HHB%': 'Hard Contact Allowed %',
+  'GO/AO': 'Ground Outs per Air Out', FIP: 'Fielding-independent pitching',
+  TC: 'Total Chances', PO: 'Putouts', A: 'Assists', E: 'Errors', FPCT: 'Fielding %', DP: 'Double Plays', INN: 'Innings Caught', PB: 'Passed Balls',
+  'SB-ATT': 'Steals Allowed - Attempts', 'CS%': 'Caught Stealing %', P: 'Inn. at P', C: 'Inn. at C', '1B': 'Inn. at 1B', SS: 'Inn. at SS',
+  LF: 'Inn. at LF', CF: 'Inn. at CF', RF: 'Inn. at RF', Total: 'Total Innings',
 }
 
 const THREE = new Set(['AVG', 'OBP', 'SLG', 'OPS', 'BABIP', 'BA/RISP', 'BAA', 'FPCT', 'K/BF'])
@@ -136,7 +136,7 @@ export const HITTER_METRICS: { group: string; metrics: Metric[] }[] = [
   {
     group: 'Results',
     metrics: [
-      { key: 'AVG', label: 'Batting average', type: 'batting', format: 'avg', value: stat('AVG') },
+      { key: 'AVG', label: 'Batting Average', type: 'batting', format: 'avg', value: stat('AVG') },
       { key: 'OBP', label: 'On-base %', type: 'batting', format: 'avg', value: stat('OBP') },
       { key: 'SLG', label: 'Slugging', type: 'batting', format: 'avg', value: stat('SLG') },
       { key: 'OPS', label: 'OPS', type: 'batting', format: 'avg', value: stat('OPS') },
@@ -150,38 +150,38 @@ export const HITTER_METRICS: { group: string; metrics: Metric[] }[] = [
       { key: 'BB%', label: 'BB %', type: 'batting', format: 'pct', value: (s) => ratio(num(s.BB), num(s.PA)) },
       { key: 'QAB%', label: 'Quality AB %', type: 'batting', format: 'pct', value: stat('QAB%') },
       { key: 'C%', label: 'Contact %', type: 'batting', format: 'pct', value: stat('C%') },
-      { key: 'PS/PA', label: 'Pitches seen / PA', type: 'batting', format: 'dec2', value: stat('PS/PA') },
+      { key: 'PS/PA', label: 'Pitches Seen / PA', type: 'batting', format: 'dec2', value: stat('PS/PA') },
     ],
   },
   {
-    group: 'Contact quality',
+    group: 'Contact Quality',
     metrics: [
       { key: 'HH%', label: 'Hard-hit %', type: 'batting', format: 'pct', value: (s) => ratio(num(s.HHB), (num(s.AB) ?? 0) - (num(s.SO) ?? 0)) },
-      { key: 'LD%', label: 'Line drive %', type: 'batting', format: 'pct', value: stat('LD%') },
-      { key: 'XBH', label: 'Extra-base hits', type: 'batting', format: 'int', value: stat('XBH') },
+      { key: 'LD%', label: 'Line Drive %', type: 'batting', format: 'pct', value: stat('LD%') },
+      { key: 'XBH', label: 'Extra-Base Hits', type: 'batting', format: 'int', value: stat('XBH') },
     ],
   },
   {
     group: 'Running',
-    metrics: [{ key: 'SB', label: 'Stolen bases', type: 'batting', format: 'int', value: stat('SB') }],
+    metrics: [{ key: 'SB', label: 'Stolen Bases', type: 'batting', format: 'int', value: stat('SB') }],
   },
 ]
 
 export const PITCHER_METRICS: { group: string; metrics: Metric[] }[] = [
   {
-    group: 'Run prevention',
+    group: 'Run Prevention',
     metrics: [
       { key: 'ERA', label: 'ERA', type: 'pitching', lowerIsBetter: true, format: 'dec2', value: stat('ERA') },
       { key: 'WHIP', label: 'WHIP', type: 'pitching', lowerIsBetter: true, format: 'dec2', value: stat('WHIP') },
       { key: 'FIP', label: 'FIP', type: 'pitching', lowerIsBetter: true, format: 'dec2', value: stat('FIP') },
-      { key: 'BAA', label: 'Opponent avg', type: 'pitching', lowerIsBetter: true, format: 'avg', value: stat('BAA') },
+      { key: 'BAA', label: 'Opponent Avg', type: 'pitching', lowerIsBetter: true, format: 'avg', value: stat('BAA') },
     ],
   },
   {
     group: 'Command',
     metrics: [
-      { key: 'TS%', label: 'Total strike %', type: 'pitching', format: 'pct', value: pitcherCalc.ts },
-      { key: 'FPS%', label: 'First-pitch strike %', type: 'pitching', format: 'pct', value: pitcherCalc.fps },
+      { key: 'TS%', label: 'Total Strike %', type: 'pitching', format: 'pct', value: pitcherCalc.ts },
+      { key: 'FPS%', label: 'First-Pitch Strike %', type: 'pitching', format: 'pct', value: pitcherCalc.fps },
       { key: 'E+A%', label: 'Early + Ahead %', type: 'pitching', format: 'pct', value: pitcherCalc.ea },
       { key: 'BB%', label: 'BB %', type: 'pitching', lowerIsBetter: true, format: 'pct', value: pitcherCalc.bb },
       { key: 'Score', label: 'Pitcher Score', type: 'pitching', format: 'dec2', value: pitcherCalc.score },
@@ -192,9 +192,9 @@ export const PITCHER_METRICS: { group: string; metrics: Metric[] }[] = [
     metrics: [
       { key: 'K%', label: 'K %', type: 'pitching', format: 'pct', value: pitcherCalc.k },
       { key: 'K-BB%', label: 'K-BB %', type: 'pitching', format: 'pct', value: pitcherCalc.kbb },
-      { key: 'SM%', label: 'Swing & miss %', type: 'pitching', format: 'pct', value: stat('SM%') },
-      { key: 'WEAK%', label: 'Weak contact %', type: 'pitching', format: 'pct', value: stat('WEAK%') },
-      { key: 'GB%', label: 'Ground ball %', type: 'pitching', format: 'pct', value: stat('GB%') },
+      { key: 'SM%', label: 'Swing & Miss %', type: 'pitching', format: 'pct', value: stat('SM%') },
+      { key: 'WEAK%', label: 'Weak Contact %', type: 'pitching', format: 'pct', value: stat('WEAK%') },
+      { key: 'GB%', label: 'Ground Ball %', type: 'pitching', format: 'pct', value: stat('GB%') },
     ],
   },
 ]
