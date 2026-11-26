@@ -31,7 +31,7 @@ const fmt = (m: M, v: number) => (m.unit === 's' ? v.toFixed(2) : String(round1(
 export default function TrainingPercentiles({ myId, position }: { myId: string; position: string | null | undefined }) {
   const sides = sidesFor(position)
   const [side, setSide] = useState<Side>(sides[0])
-  const [period, setPeriod] = useState<(typeof PERIODS)[number]['key']>('365')
+  const [period, setPeriod] = useState<(typeof PERIODS)[number]['key']>('all')
   const [rows, setRows] = useState<Row[] | null>(null)
   const [compare, setCompare] = useState<string>('')
   const trends = useStatTrends(myId)

@@ -44,7 +44,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
   useEffect(() => {
     let cancelled = false
     createClient()
-      .rpc('position_leaderboard', { p_since: addDays(localDate(), -364) })
+      .rpc('position_leaderboard', { p_since: '2000-01-01' })
       .then(({ data }) => !cancelled && setRows(((data as Row[]) || []).map((r) => ({ ...r, value: Number(r.value) }))))
     return () => {
       cancelled = true
@@ -141,7 +141,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
           ) : null}
         </div>
       )}
-      <div className="px-4 pb-2.5 text-center text-[9px] font-bold text-white/55">Team percentile · last 12 months · tap a stat for tips</div>
+      <div className="px-4 pb-2.5 text-center text-[9px] font-bold text-white/55">Team percentile · all time · tap a stat for tips</div>
     </section>
   )
 }

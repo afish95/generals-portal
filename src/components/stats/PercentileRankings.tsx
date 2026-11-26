@@ -33,7 +33,7 @@ export default function PercentileRankings({ myId, isCoach }: { myId: string; is
 
   const merged = useMemo(() => (all ? applyEarlyAhead(all, ea) : null), [all, ea])
   const latest = useMemo(() => (merged ? Math.max(0, ...merged.filter((l) => l.season_type === seasonType).map((l) => l.season_year)) : 0), [merged, seasonType])
-  const p: Period = period ?? latest
+  const p: Period = period ?? 'all'
   const scoped = useMemo(() => (merged ? linesFor(merged, seasonType, p) : null), [merged, seasonType, p])
   const lines = scoped
   // Players open on their own pitching card if they only pitch
