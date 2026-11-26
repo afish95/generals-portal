@@ -25,7 +25,7 @@ export default function StreakCard({ athleteId, refreshKey = 0 }: { athleteId: s
     let cancelled = false
     const today = localDate()
     createClient()
-      .rpc('daily_points', { p_from: streakAddDays(today, -119), p_to: today })
+      .rpc('athlete_points', { p_athlete: athleteId, p_from: streakAddDays(today, -119), p_to: today })
       .then(({ data }) => {
         if (cancelled) return
         const mine: DayScore[] = ((data as { athlete_id: string; d: string; earned: number; available: number }[]) || [])
@@ -85,7 +85,7 @@ export default function StreakCard({ athleteId, refreshKey = 0 }: { athleteId: s
       ? `Streak complete! Keep it going for the next ${STREAK_GOAL}.`
       : `Today locked in ✓ Come back tomorrow for day ${Math.min(nextDay, s.completions * STREAK_GOAL + STREAK_GOAL)}.`
     : s.streak === 0
-      ? `Earn all ${s.todayAvailable || 5} points today to start your streak.`
+      ? `Earn all ${s.todayAvailable} points today to start your streak.`
       : `Today ${s.todayEarned}/${s.todayAvailable}: ${left} more point${left === 1 ? '' : 's'} to make it day ${nextDay}.`
 
   return (
