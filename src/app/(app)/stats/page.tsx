@@ -24,7 +24,7 @@ export default function StatsPage() {
       <div className={isCoach ? 'lg:hidden' : ''}>
         <PageTitle title="Stats" subtitle={mode === 'game' ? 'Program game stat history' : 'How you rank against teammates'} />
       </div>
-      <div className={`grid grid-cols-2 gap-1 p-1 rounded-2xl bg-white border border-slate-200 shadow-xs sticky top-2 z-20 ${isCoach ? 'lg:hidden' : ''}`}>
+      <div className={`grid grid-cols-2 gap-1 p-1 rounded-2xl bg-white border border-slate-200 shadow-xs sticky top-[calc(env(safe-area-inset-top)+3.5rem)] lg:top-2 z-20 ${isCoach ? 'lg:hidden' : ''}`}>
         {(['game', 'percentiles'] as const).map((m) => (
           <button
             key={m}
