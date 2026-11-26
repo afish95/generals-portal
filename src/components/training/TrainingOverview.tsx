@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { Activity, Crosshair, Footprints, Gauge, MoveRight, Rocket, Target, Timer, TrendingUp, Zap, type LucideIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { addDays, localDate, round1 } from '@/lib/training'
 import { ordinal, percentileRank, rankOf } from '@/lib/rank'
@@ -12,6 +13,19 @@ import DrillOfWeekCard from './DrillOfWeekCard'
 type Row = { athlete_id: string; metric: string; value: number }
 type M = (typeof METRICS)['pitchers'][number]
 
+const ICONS: Record<string, LucideIcon> = {
+  mound_velo: Gauge,
+  pulldown_velo: Zap,
+  long_toss: MoveRight,
+  strike_pct: Target,
+  ahead_pct: TrendingUp,
+  miss_in: Crosshair,
+  bat_speed: Activity,
+  exit_velo: Rocket,
+  time_to_first: Footprints,
+  pos_velo: Zap,
+  pop_time: Timer,
+}
 /** Green 70th+, yellow 40–69th, red under 40th. */
 const toneFor = (p: number | null) =>
   p == null ? { text: 'text-white', pill: 'bg-white/10 text-white' } : p >= 70 ? { text: 'text-green-300', pill: 'bg-green-500 text-white' } : p >= 40 ? { text: 'text-yellow-300', pill: 'bg-yellow-400 text-slate-900' } : { text: 'text-red-300', pill: 'bg-red-500 text-white' }
@@ -71,6 +85,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
               {sec.items.map(({ m, mine, pctl }) => {
                 const tone = toneFor(pctl)
                 const sel = open === m.key
+                const Icon = ICONS[m.key] || Gauge
                 return (
                   <button
                     key={m.key}
@@ -78,6 +93,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
                     onClick={() => setOpen(sel ? null : m.key)}
                     className={`min-w-0 flex flex-col items-center py-1.5 rounded-xl cursor-pointer ${sel ? 'bg-white/15' : ''}`}
                   >
+                    <Icon className="w-3.5 h-3.5 text-white/85 mb-0.5" />
                     <span className="text-[8.5px] font-extrabold uppercase tracking-tight text-white/80 text-center leading-tight h-[1.35rem] flex items-center">{m.short}</span>
                     <span className={`text-lg font-black leading-none mt-0.5 ${mine ? tone.text : 'text-white/30'}`}>{mine ? valueOf(m, mine.value) : '—'}</span>
                     <span className="text-[8px] font-bold uppercase text-white/60">{unitOf(m)}</span>
