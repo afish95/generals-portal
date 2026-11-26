@@ -14,6 +14,9 @@ import type { FocusDrill } from '@/lib/focus'
 import { normalizePoints, type DayPoints } from '@/lib/points'
 import { KIND_STYLE, kindOf, minutesOf, timeRange, visibleTo } from '@/lib/schedule'
 import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
+import { useDrillsOfWeek } from '@/components/training/useDrillsOfWeek'
+import DrillOfWeekCard from '@/components/training/DrillOfWeekCard'
+import LogStat from '@/components/training/LogStat'
 
 const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id6445937141'
 
@@ -74,6 +77,7 @@ export default function DayPlan({
   const [classOverride, setClassOverride] = useState<string | null>(null)
   const [schoolOff, setSchoolOff] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+  const dow = useDrillsOfWeek(day)
   const [busy, setBusy] = useState<string | null>(null)
   const [pop, setPop] = useState<{ key: string; amount: number } | null>(null)
   const [tools, setTools] = useState<Tool[]>([])
@@ -508,6 +512,8 @@ export default function DayPlan({
                       ))}
                     </div>
                   )}
+                  {!isCoach && dow.team && <DrillOfWeekCard drill={dow.team} />}
+                  {!isCoach && <LogStat athleteId={athleteId} date={day} interactive={interactive} />}
                   {renderWorkout ? (
                     its.length > 0 && renderWorkout(w, its)
                   ) : (
@@ -559,7 +565,11 @@ export default function DayPlan({
               onCheck={() => toggleCheck('training', 0)}
             />
             {open === 'training' && (
-              <p className="px-5 pb-4 pl-[4.25rem] text-xs text-slate-600">Nothing assigned today. Check it off when you’ve done your throwing or hitting.</p>
+              <div className="px-4 pb-4 space-y-2">
+                <p className="pl-[3.25rem] text-xs text-slate-600">Nothing assigned today. Check it off when you’ve done your throwing or hitting.</p>
+                {dow.team && <DrillOfWeekCard drill={dow.team} />}
+                <LogStat athleteId={athleteId} date={day} interactive={interactive} />
+              </div>
             )}
           </li>
         )}

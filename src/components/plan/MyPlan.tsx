@@ -37,9 +37,10 @@ export function FocusProgress({ f, now }: { f: PlayerFocus; now: number | null }
   )
 }
 
-export default function MyPlan({ athleteId, onStartTool }: { athleteId: string; onStartTool?: (scriptId: number, title: string) => void }) {
+export default function MyPlan({ athleteId, onStartTool, title = 'My Plan' }: { athleteId: string; onStartTool?: (scriptId: number, title: string) => void; title?: string }) {
   const [focus, setFocus] = useState<PlayerFocus[] | null>(null)
   const [open, setOpen] = useState<string | null>(null)
+  const [openGoal, setOpenGoal] = useState<number | null>(null)
   const { lines, ea, training, drills } = useFocusData()
 
   useEffect(() => {
@@ -79,7 +80,7 @@ export default function MyPlan({ athleteId, onStartTool }: { athleteId: string; 
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
       <div className="flex items-baseline justify-between">
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">My Plan</div>
+        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{title}</div>
         {updated && <div className="text-[10px] font-bold text-slate-400">Updated {new Date(updated).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>}
       </div>
       {active.map((f, i) => {
@@ -99,7 +100,13 @@ export default function MyPlan({ athleteId, onStartTool }: { athleteId: string; 
             </div>
             {f.metric_key && <FocusProgress f={f} now={now} />}
             {f.drills.length > 0 && (
-              <div className="mt-3 border-t border-slate-100 pt-2 space-y-1">
+              <button type="button" onClick={() => setOpenGoal(openGoal === f.id ? null : f.id)} className="mt-3 w-full flex items-center justify-between border-t border-slate-100 pt-2 text-left cursor-pointer">
+                <span className="text-xs font-extrabold text-[#1746b8]">{f.drills.length} drill{f.drills.length === 1 ? '' : 's'} &amp; videos</span>
+                <ChevronDown className={`w-4 h-4 text-[#1746b8] transition ${openGoal === f.id ? 'rotate-180' : ''}`} />
+              </button>
+            )}
+            {f.drills.length > 0 && openGoal === f.id && (
+              <div className="mt-1 space-y-1">
                 {f.drills.map((d) => {
                   const info = drillInfo(d)
                   const key = `${f.id}-${d.kind}-${d.id}`
