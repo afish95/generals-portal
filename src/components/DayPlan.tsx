@@ -417,7 +417,7 @@ export default function DayPlan({
             icon={<Dumbbell className="w-4 h-4" />}
             tone={TRAINING.tone}
             title="Lift / Workout"
-            subtitle={liftStatus === 'rest' ? 'Rest Day' : teamLift ? `Team Lift · ${timeRange(teamLift)}${teamLift.location ? ` · ${teamLift.location}` : ''}` : 'Driveline Baseball strength & conditioning'}
+            subtitle={liftStatus === 'rest' ? 'Rest Day' : teamLift ? `${teamLift.title} · ${timeRange(teamLift)}${teamLift.location ? ` · ${teamLift.location}` : ''}` : 'Driveline Baseball strength & conditioning'}
             open={open === 'driveline'}
             onClick={() => toggle('driveline')}
             showCheck={showCheck && liftStatus !== 'rest'}
@@ -431,9 +431,9 @@ export default function DayPlan({
           {open === 'driveline' && (
             <div className="px-5 pb-4 pl-[4.25rem] space-y-2">
               {teamLift && (
-                <div className="rounded-xl bg-teal-50 border border-teal-200 px-3 py-2 text-xs">
-                  <div className="font-extrabold text-teal-800">Team Lift · {timeRange(teamLift)}</div>
-                  <div className="font-semibold text-teal-700">{teamLift.location || 'Weight Room'} · Driveline Baseball workout</div>
+                <div className="rounded-xl bg-purple-50 border border-purple-200 px-3 py-2 text-xs">
+                  <div className="font-extrabold text-purple-800">{teamLift.title} · {timeRange(teamLift)}</div>
+                  <div className="font-semibold text-purple-700">{teamLift.location || 'Weight Room'} · Driveline Baseball workout</div>
                 </div>
               )}
               <p className="text-xs text-slate-600">

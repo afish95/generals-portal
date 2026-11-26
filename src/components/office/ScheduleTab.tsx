@@ -88,7 +88,7 @@ export default function ScheduleTab({ groups, openEventId }: { groups: Group[]; 
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {(['all', ...EVENT_KINDS.map((k) => k.key)] as const).map((k) => (
           <button key={k} type="button" onClick={() => setKind(k)} className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold shrink-0 cursor-pointer ${kind === k ? 'bg-[#1746b8] text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
-            {k === 'all' ? 'All' : EVENT_KINDS.find((x) => x.key === k)!.label + 's'}
+            {k === 'all' ? 'All' : k === 'lift' ? 'Training' : EVENT_KINDS.find((x) => x.key === k)!.label + 's'}
           </button>
         ))}
         <button type="button" onClick={() => setPast((p) => !p)} className={`ml-auto px-3 py-1.5 rounded-full text-[11px] font-extrabold shrink-0 cursor-pointer ${past ? 'bg-slate-700 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
@@ -269,12 +269,27 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
     <SheetFrame title={row ? 'Edit Event' : 'New Event'} subtitle={row && row.days.length > 1 ? `${row.days.length} days · changes apply to every day` : undefined} onClose={onClose}>
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title (e.g. Poinsettia sales)" className={inputClass} />
-        <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-slate-100">
-          {EVENT_KINDS.map((k) => (
-            <button key={k.key} type="button" onClick={() => setKind(k.key)} className={`py-2 px-0.5 rounded-lg text-[10px] leading-tight font-extrabold cursor-pointer ${kind === k.key ? 'bg-white shadow-sm ' + KIND_STYLE[k.key].text : 'text-slate-500'}`}>
-              {k.label}
-            </button>
-          ))}
+        <div>
+          <div className="text-[11px] font-bold text-slate-500 mb-1.5">Category</div>
+          <div className="flex flex-wrap gap-1.5">
+            {EVENT_KINDS.map((k) => {
+              const on = kind === k.key
+              return (
+                <button
+                  key={k.key}
+                  type="button"
+                  onClick={() => setKind(k.key)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-extrabold border cursor-pointer ${on ? `${KIND_STYLE[k.key].block} ${KIND_STYLE[k.key].text} ring-2 ring-offset-1 ring-current` : 'bg-white border-slate-200 text-slate-600'}`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${KIND_STYLE[k.key].dot}`} />
+                  {k.label}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[10px] font-semibold text-slate-400 mt-1.5">
+            {kind === 'lift' ? 'Team lifts, conditioning, group training. Shows in players’ Lift / Workout row.' : kind === 'program' ? 'Fundraisers, meetings, team events.' : kind === 'deadline' ? 'Forms, payments, cut-off dates.' : kind === 'game' ? 'Pick the opponent below for its logo.' : 'Shows with the practice plan.'}
+          </p>
         </div>
       </section>
 
