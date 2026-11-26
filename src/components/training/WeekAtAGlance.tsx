@@ -30,7 +30,7 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
         sb.from('workouts').select('id, title, workout_date, group_id, intent, program_assignment_id').gte('workout_date', start).lte('workout_date', end),
         sb.from('group_members').select('group_id').eq('athlete_id', athleteId),
         sb.rpc('athlete_points', { p_athlete: athleteId, p_from: start, p_to: end }),
-        sb.from('team_schedule').select('event_date, event_type, start_time, group_ids, is_cancelled').gte('event_date', start).lte('event_date', end).ilike('event_type', '%lift%'),
+        sb.from('team_schedule').select('event_date, event_type, start_time, group_ids, is_cancelled').gte('event_date', start).lte('event_date', end).or('event_type.ilike.%lift%,event_type.ilike.training'),
       ])
       const mine = new Set(((gm as { group_id: number }[]) || []).map((g) => g.group_id))
       const list = ((w as W[]) || []).filter((x) => x.group_id == null || mine.has(x.group_id))
@@ -100,7 +100,7 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
               </span>
               <span className="text-[8px] font-extrabold uppercase text-slate-400 h-2">{it ? (it === 'low' ? 'Rec' : it) : ''}</span>
               <span className="h-3.5 flex items-center" title={lifts.has(d) ? `Team Lift ${lifts.get(d)}` : undefined}>
-                {lifts.has(d) && <Dumbbell className="w-3.5 h-3.5 text-teal-600" />}
+                {lifts.has(d) && <Dumbbell className="w-3.5 h-3.5 text-purple-600" />}
               </span>
             </button>
           )
@@ -114,7 +114,7 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
         ))}
         {lifts.size > 0 && (
           <span className="flex items-center gap-1">
-            <Dumbbell className="w-3 h-3 text-teal-600" /> Team Lift
+            <Dumbbell className="w-3 h-3 text-purple-600" /> Team Lift
           </span>
         )}
       </div>

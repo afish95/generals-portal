@@ -20,7 +20,7 @@ export type EventKind = 'game' | 'practice' | 'lift' | 'program' | 'deadline'
 export const EVENT_KINDS: { key: EventKind; label: string; type: string }[] = [
   { key: 'game', label: 'Game', type: 'Game' },
   { key: 'practice', label: 'Practice', type: 'practice' },
-  { key: 'lift', label: 'Team Lift', type: 'Team lift' },
+  { key: 'lift', label: 'Training', type: 'Training' },
   { key: 'program', label: 'Program Event', type: 'Program event' },
   { key: 'deadline', label: 'Deadline', type: 'Deadline' },
 ]
@@ -29,19 +29,19 @@ export const kindOf = (eventType: string | null | undefined): EventKind => {
   const t = (eventType || '').toLowerCase()
   if (t.includes('game')) return 'game'
   if (t.includes('practice')) return 'practice'
-  if (t.includes('lift')) return 'lift'
+  if (t.includes('lift') || t.includes('training')) return 'lift'
   if (t.includes('deadline') || t.includes('cut off')) return 'deadline'
   return 'program'
 }
 
-/** Calendar colors: games red, practices indigo, team lifts teal, program events (fundraisers, meetings) violet, deadlines slate, training amber. */
+/** Calendar colors: games red, practices indigo, training events such as team lifts purple, program events (fundraisers, meetings) sky blue, deadlines slate, assigned workouts amber. */
 export const KIND_STYLE: Record<EventKind | 'training', { block: string; bar: string; text: string; dot: string; label: string }> = {
   game: { block: 'bg-red-50 border-red-200', bar: 'bg-red-500', text: 'text-red-700', dot: 'bg-red-500', label: 'Game' },
   practice: { block: 'bg-indigo-50 border-indigo-200', bar: 'bg-indigo-600', text: 'text-indigo-700', dot: 'bg-indigo-600', label: 'Practice' },
-  lift: { block: 'bg-teal-50 border-teal-200', bar: 'bg-teal-600', text: 'text-teal-700', dot: 'bg-teal-600', label: 'Team Lift' },
-  program: { block: 'bg-violet-50 border-violet-200', bar: 'bg-violet-500', text: 'text-violet-700', dot: 'bg-violet-500', label: 'Program' },
+  lift: { block: 'bg-purple-50 border-purple-200', bar: 'bg-purple-600', text: 'text-purple-700', dot: 'bg-purple-600', label: 'Training' },
+  program: { block: 'bg-sky-50 border-sky-200', bar: 'bg-sky-500', text: 'text-sky-700', dot: 'bg-sky-500', label: 'Program' },
   deadline: { block: 'bg-slate-50 border-slate-200', bar: 'bg-slate-500', text: 'text-slate-600', dot: 'bg-slate-500', label: 'Deadline' },
-  training: { block: 'bg-amber-50 border-amber-200', bar: 'bg-amber-500', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Training' },
+  training: { block: 'bg-amber-50 border-amber-200', bar: 'bg-amber-500', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Workout' },
 }
 
 /** "3:45 PM" / "15:45" → minutes after midnight (null when there's no time). */
