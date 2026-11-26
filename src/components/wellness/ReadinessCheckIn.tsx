@@ -9,8 +9,9 @@ import { withPointsDelta } from '@/lib/pointsDelta'
 import { PointBubble, buzz } from '@/components/points/PointBurst'
 
 const SCALES = [
-  { key: 'sleep_quality', label: 'Sleep', low: 'Rough', high: 'Great' },
-  { key: 'soreness', label: 'Soreness', low: 'None', high: 'Very sore' },
+  { key: 'sleep_quality', label: 'Sleep quality', low: 'Rough', high: 'Great' },
+  { key: 'soreness', label: 'Body soreness', low: 'None', high: 'Very sore' },
+  { key: 'arm_soreness', label: 'Arm soreness', low: 'None', high: 'Very sore' },
   { key: 'stress', label: 'Stress', low: 'Calm', high: 'Stressed' },
 ] as const
 type ScaleKey = (typeof SCALES)[number]['key']
@@ -20,8 +21,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
   const isToday = day === localDate()
   const [today, setToday] = useState<Checkin | null | undefined>(undefined)
   const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState<Record<ScaleKey, number | null>>({ sleep_quality: null, soreness: null, stress: null })
-  const [hours, setHours] = useState('')
+  const [form, setForm] = useState<Record<ScaleKey, number | null>>({ sleep_quality: null, soreness: null, arm_soreness: null, stress: null })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [burst, setBurst] = useState(0)
@@ -30,8 +30,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
     let cancelled = false
     setToday(undefined)
     setEditing(false)
-    setForm({ sleep_quality: null, soreness: null, stress: null })
-    setHours('')
+    setForm({ sleep_quality: null, soreness: null, arm_soreness: null, stress: null })
     createClient()
       .from('daily_checkins')
       .select('*')
@@ -42,10 +41,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
         if (cancelled) return
         const c = (data as Checkin) || null
         setToday(c)
-        if (c) {
-          setForm({ sleep_quality: c.sleep_quality, soreness: c.soreness, stress: c.stress })
-          setHours(c.sleep_hours != null ? String(c.sleep_hours) : '')
-        }
+        if (c) setForm({ sleep_quality: c.sleep_quality, soreness: c.soreness, arm_soreness: c.arm_soreness, stress: c.stress })
       })
     return () => {
       cancelled = true
@@ -53,13 +49,8 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
   }, [athleteId, day])
 
   const save = async () => {
-    const h = parseFloat(hours)
-    if (form.sleep_quality == null || form.soreness == null || form.stress == null) {
-      setError('Pick a number for sleep, soreness and stress.')
-      return
-    }
-    if (!Number.isFinite(h) || h < 0 || h > 16) {
-      setError('Enter how many hours you slept. It counts toward your daily points.')
+    if (SCALES.some((s) => form[s.key] == null)) {
+      setError('Pick a number for each question.')
       return
     }
     setSaving(true)
@@ -74,8 +65,8 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
             check_date: day,
             sleep_quality: form.sleep_quality,
             soreness: form.soreness,
+            arm_soreness: form.arm_soreness,
             stress: form.stress,
-            sleep_hours: h,
           },
           { onConflict: 'athlete_id,check_date' }
         )
@@ -101,25 +92,26 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
   if (today === undefined) return <div className="h-32 rounded-3xl bg-white/60 animate-pulse" />
 
   const meta = readinessMeta(today?.readiness)
-  const showForm = !today || editing
+  const done = !!today && today.soreness != null && today.stress != null
+  const showForm = !done || editing
 
   return (
     <section className={embedded ? 'space-y-4' : 'bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4'}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{embedded ? 'Readiness score' : 'Daily readiness'}</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{embedded ? 'Readiness score' : 'Readiness check-in'}</span>
         <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${meta.chip}`}>{meta.label}</span>
       </div>
 
-      {!showForm && today && (
+      {!showForm && today && done && (
         <div className="flex items-center gap-4">
           <span key={burst > 0 ? 'pop' : 'still'} className={`relative inline-flex ${burst > 0 ? 'animate-gen-pop' : ''}`}>
-            <ReadinessRing score={today.readiness} color={meta.ring} />
+            <ReadinessRing score={today.readiness ?? 0} color={meta.ring} />
             <PointBubble amount={burst} />
           </span>
           <div className="min-w-0">
             <h2 className="text-base font-extrabold text-slate-900">{meta.headline}</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Sleep {today.sleep_quality}/5{today.sleep_hours != null ? ` (${today.sleep_hours}h)` : ''} · Soreness {today.soreness}/5 · Stress {today.stress}/5
+              Sleep {today.sleep_quality}/5 · Body {today.soreness}/5{today.arm_soreness != null ? ` · Arm ${today.arm_soreness}/5` : ''} · Stress {today.stress}/5
             </p>
             <button type="button" onClick={() => setEditing(true)} className="text-xs font-extrabold text-[#1746b8] mt-1 cursor-pointer">
               Update check-in
@@ -130,7 +122,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
 
       {showForm && (
         <div className="space-y-3">
-          {!today && <p className="text-sm font-bold text-slate-700">{isToday ? 'How are you feeling today?' : `How were you feeling on ${prettyDate(day, { weekday: 'long' })}?`}</p>}
+          {!done && <p className="text-sm font-bold text-slate-700">{isToday ? 'How are you feeling today?' : `How were you feeling on ${prettyDate(day, { weekday: 'long' })}?`}</p>}
           {SCALES.map((s) => (
             <div key={s.key}>
               <div className="flex items-center justify-between text-xs font-extrabold text-slate-700 mb-1.5">
@@ -153,19 +145,9 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
               </div>
             </div>
           ))}
-          <label className="flex items-center justify-between gap-3 text-xs font-extrabold text-slate-700">
-            Hours of sleep last night
-            <input
-              inputMode="decimal"
-              value={hours}
-              onChange={(e) => setHours(e.target.value.replace(/[^0-9.]/g, ''))}
-              placeholder="8"
-              className="w-20 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-900 text-center"
-            />
-          </label>
           {error && <p className="text-xs font-bold text-red-600">{error}</p>}
           <div className="flex gap-2">
-            {today && (
+            {done && (
               <button type="button" onClick={() => setEditing(false)} className="flex-1 py-3 rounded-2xl bg-slate-100 text-sm font-extrabold text-slate-600 cursor-pointer">
                 Cancel
               </button>

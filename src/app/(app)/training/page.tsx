@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useProfile } from '@/components/shell/AppShell'
 import { DateStepper, EmptyState, PageTitle } from '@/components/ui'
-import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
 import DayPlan from '@/components/DayPlan'
 import LoggedWorkout from '@/components/training/LoggedWorkout'
 import ProgressTrends from '@/components/training/ProgressTrends'
@@ -78,10 +77,7 @@ export default function TrainingPage() {
       {/* 0. My plan: focus areas, goals and drills from the coach */}
       <MyPlan athleteId={profile.id} onStartTool={(scriptId, title) => setRunning({ scriptId, title })} />
 
-      {/* 1. Arm readiness survey (same check-in as Home) */}
-      <ReadinessCheckIn athleteId={profile.id} onSaved={refresh} />
-
-      {/* 2. Day plan with set logging and prescribed tools */}
+      {/* 1. Day plan (sleep, class, lift, training, readiness check-in) with set logging and prescribed tools */}
       <div>
         <DateStepper value={date} onChange={setDate} />
         <DayPlan

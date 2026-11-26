@@ -55,7 +55,7 @@ export default function CoachDashboard() {
       const gList = (g.data as Group[]) || []
       const mem = (m.data as { group_id: number; athlete_id: string }[]) || []
       const logList = (logs as { athlete_id: string; workout_item_id: number }[]) || []
-      const checkins = new Map(((c.data as Checkin[]) || []).map((x) => [x.athlete_id, x]))
+      const checkins = new Map(((c.data as Checkin[]) || []).filter((x) => x.readiness != null).map((x) => [x.athlete_id, x]))
       const att = new Map(((a.data as { athlete_id: string; status: AttendanceStatus }[]) || []).map((x) => [x.athlete_id, x.status]))
       const flags = new Map(((f.data as { athlete_id: string; reason: string | null }[]) || []).map((x) => [x.athlete_id, x.reason]))
       const pts = new Map(((dp.data as { athlete_id: string; earned: number; available: number }[]) || []).map((x) => [x.athlete_id, { earned: Number(x.earned), available: Number(x.available) }]))
@@ -132,7 +132,7 @@ export default function CoachDashboard() {
             {alerts.map((r) => (
               <li key={r.athlete.id}>
                 <button type="button" onClick={() => setOpen(r.athlete)} className="text-sm font-bold text-amber-900 cursor-pointer text-left">
-                  {r.athlete.full_name} · readiness {r.checkin!.readiness}, soreness {r.checkin!.soreness}/5
+                  {r.athlete.full_name} · readiness {r.checkin!.readiness}, body {r.checkin!.soreness}/5{r.checkin!.arm_soreness != null ? `, arm ${r.checkin!.arm_soreness}/5` : ''}
                 </button>
               </li>
             ))}

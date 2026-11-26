@@ -2,12 +2,13 @@ export type Checkin = {
   id: number
   athlete_id: string
   check_date: string
-  sleep_quality: number
-  soreness: number
-  stress: number
+  sleep_quality: number | null
+  soreness: number | null
+  arm_soreness: number | null
+  stress: number | null
   sleep_hours: number | null
   note: string | null
-  readiness: number
+  readiness: number | null
 }
 
 export type AttendanceStatus = 'present' | 'late' | 'absent' | 'excused'
@@ -27,6 +28,6 @@ export function readinessMeta(score: number | null | undefined) {
 }
 
 /** A check-in that should catch the coach's eye. */
-export function needsAttention(c: Pick<Checkin, 'readiness' | 'soreness'> | undefined) {
-  return !!c && (c.readiness < 50 || c.soreness >= 4)
+export function needsAttention(c: Pick<Checkin, 'readiness' | 'soreness' | 'arm_soreness'> | undefined) {
+  return !!c && c.readiness != null && (c.readiness < 50 || (c.soreness ?? 0) >= 4 || (c.arm_soreness ?? 0) >= 4)
 }
