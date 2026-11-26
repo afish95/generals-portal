@@ -73,7 +73,14 @@ export default function CoachOfficePage() {
     setTabRaw(k)
   }
   const section = sectionOf(tab)
+  const pickTab = (k: TabKey) => {
+    setDeep({})
+    setOpenEventId(null)
+    setTab(k)
+  }
   const goSection = (key: string) => {
+    setDeep({})
+    setOpenEventId(null)
     const sec = SECTIONS.find((s) => s.key === key)!
     setTab(lastSub.current[key] || (sec.subs[0].key as TabKey))
   }
@@ -102,6 +109,7 @@ export default function CoachOfficePage() {
     const ev = Number(q.get('event'))
     if (ev) setOpenEventId(ev)
     setDeep({ sub: q.get('sub') || undefined, workout: Number(q.get('workout')) || undefined, date: q.get('date') || undefined })
+    if (window.location.search) window.history.replaceState(null, '', window.location.pathname)
   }, [])
 
   useEffect(() => {
@@ -137,7 +145,7 @@ export default function CoachOfficePage() {
           </button>
         ))}
       </div>
-      <SubTabs<TabKey> tabs={section.subs.map((x) => ({ key: x.key as TabKey, label: x.label }))} active={tab} onChange={setTab} />
+      <SubTabs<TabKey> tabs={section.subs.map((x) => ({ key: x.key as TabKey, label: x.label }))} active={tab} onChange={pickTab} />
       {tab === 'schedule' && <ScheduleTab groups={groups} openEventId={openEventId} />}
       {tab === 'assignments' && (
         <AssignmentsTab
@@ -145,7 +153,7 @@ export default function CoachOfficePage() {
             setDeep({ date, workout: id })
             setTab('workouts')
           }}
-          onOpenLibrary={(s) => setTab(s)}
+          onOpenLibrary={(s) => pickTab(s)}
         />
       )}
       {tab === 'workouts' && <WorkoutsTab groups={groups} exercises={exercises} openWorkoutId={deep.workout} openDate={deep.date} key={`w${deep.workout || ''}`} />}
