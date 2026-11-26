@@ -49,6 +49,8 @@ export default function PersonSheet({
   const [error, setError] = useState<string | null>(null)
   const [username, setUsername] = useState(person.username)
   const [credential, setCredential] = useState<{ username: string; password: string } | null>(null)
+  const [newPw, setNewPw] = useState('')
+  const [pwSaved, setPwSaved] = useState(false)
   const [stats, setStats] = useState(false)
   const [tagsChanged, setTagsChanged] = useState(false)
 
@@ -115,6 +117,15 @@ export default function PersonSheet({
     const res = await callApi<{ password: string }>('/api/players', { body: { action: 'reset_password', id: person.id } })
     if (!res.ok) return setError(res.error)
     setCredential({ username: person.username, password: res.data.password })
+  }
+
+  const setPassword = async () => {
+    setError(null)
+    if (newPw.length < 6) return setError('Password needs at least 6 characters.')
+    const res = await callApi('/api/players', { body: { action: 'reset_password', id: person.id, password: newPw } })
+    if (!res.ok) return setError(res.error)
+    setNewPw('')
+    setPwSaved(true)
   }
 
   const setActive = async (is_active: boolean) => {
@@ -238,11 +249,18 @@ export default function PersonSheet({
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-slate-600">Signs in as <b>{person.username}</b></span>
-            <button type="button" onClick={resetPassword} className="px-3 py-2 rounded-xl bg-slate-100 text-xs font-extrabold text-slate-700 flex items-center gap-1.5 cursor-pointer">
-              <KeyRound className="w-3.5 h-3.5" /> Reset Password
-            </button>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-600">Signs in as <b>{person.username}</b></span>
+              <button type="button" onClick={resetPassword} className="px-3 py-2 rounded-xl bg-slate-100 text-xs font-extrabold text-slate-700 flex items-center gap-1.5 cursor-pointer">
+                <KeyRound className="w-3.5 h-3.5" /> Random Password
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input value={newPw} onChange={(e) => { setNewPw(e.target.value); setPwSaved(false) }} placeholder="New password" autoComplete="off" autoCapitalize="none" className={inputClass} aria-label="New password" />
+              <button type="button" onClick={setPassword} disabled={newPw.length < 6} className="px-4 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold whitespace-nowrap disabled:opacity-40 cursor-pointer">Set Password</button>
+            </div>
+            {pwSaved && <p className="text-xs font-extrabold text-emerald-700">Password updated. Their old password no longer works.</p>}
           </div>
         )}
       </section>
