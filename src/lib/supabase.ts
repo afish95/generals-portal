@@ -12,6 +12,7 @@ export const READ_ONLY_EVENT = 'generals-read-only-blocked'
 /** RPCs that only read data and are safe in player view. Anything else is blocked. */
 const READ_RPCS = new Set([
   'daily_points',
+  'athlete_points',
   'class_points',
   'leaderboard',
   'position_leaderboard',

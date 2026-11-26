@@ -121,7 +121,7 @@ export default function DayPlan({
         !isCoach
           ? supabase.from('habit_logs').select('status').eq('athlete_id', athleteId).eq('log_date', day).eq('habit', 'lift').maybeSingle()
           : Promise.resolve({ data: null }),
-        !isCoach ? supabase.rpc('daily_points', { p_from: day, p_to: day }) : Promise.resolve({ data: [] }),
+        !isCoach ? supabase.rpc('athlete_points', { p_athlete: athleteId, p_from: day, p_to: day }) : Promise.resolve({ data: [] }),
         !isCoach ? supabase.from('daily_checkins').select('sleep_hours').eq('athlete_id', athleteId).eq('check_date', day).maybeSingle() : Promise.resolve({ data: null }),
         !isCoach ? supabase.from('class_attendance').select('status').eq('athlete_id', athleteId).eq('attend_date', day).maybeSingle() : Promise.resolve({ data: null }),
       ])
@@ -257,13 +257,14 @@ export default function DayPlan({
         <div className="px-5 pt-4 pb-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Day Plan</span>
-            {!isCoach && pts ? (
-              <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full ${perfect ? 'bg-emerald-500 text-white' : 'bg-amber-100 text-amber-700'}`}>
-                {perfect ? 'Perfect day · ' : ''}{earned}/{available} pts
-              </span>
-            ) : (
-              <span className="text-[10px] font-bold text-slate-400">{prettyDate(day, { weekday: 'long', month: 'short', day: 'numeric' })}</span>
-            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400">{prettyDate(day, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+              {!isCoach && pts && (
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${perfect ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {earned}/{available} pts
+                </span>
+              )}
+            </div>
           </div>
           {!isCoach && pts && (
             <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
@@ -283,7 +284,7 @@ export default function DayPlan({
                 icon={isGame ? <Trophy className="w-4 h-4" /> : <Users className="w-4 h-4" />}
                 tone={SCHEDULE.tone}
                 title={e.title}
-                subtitle={[e.event_type, e.start_time, e.location].filter(Boolean).join(' · ')}
+                subtitle={[e.event_type?.replace(/^./, (c) => c.toUpperCase()), e.start_time, e.location].filter(Boolean).join(' · ')}
                 open={open === k}
                 onClick={() => toggle(k)}
                 showCheck={false}
@@ -634,7 +635,7 @@ function Row({
         <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>{icon}</span>
         <div className="flex-1 min-w-0">
           <div className={`text-sm font-extrabold truncate ${checked && showCheck ? 'text-slate-400 line-through decoration-2' : 'text-slate-900'}`}>{title}</div>
-          <div className="text-[11px] font-semibold text-slate-500 truncate capitalize">{subtitle}</div>
+          <div className="text-[11px] font-semibold text-slate-500 truncate">{subtitle}</div>
         </div>
         <ChevronDown className={`w-4 h-4 text-slate-300 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
       </button>
