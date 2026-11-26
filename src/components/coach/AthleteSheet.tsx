@@ -127,11 +127,11 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
             <ReadinessRing score={latest?.check_date === localDate() ? latest.readiness : null} color={meta.ring} size={64} />
             <div className="flex-1 flex items-end gap-1 h-16">
               {Array.from({ length: 14 }, (_, i) => addDays(localDate(), i - 13)).map((d) => {
-                const c = checkins.find((x) => x.check_date === d)
+                const c = checkins.find((x) => x.check_date === d && x.readiness != null)
                 const m = readinessMeta(c?.readiness)
                 return (
                   <div key={d} className="flex-1 flex flex-col justify-end h-full" title={`${prettyDate(d)}: ${c ? c.readiness : 'no check-in'}`}>
-                    <div className="rounded-sm" style={{ height: c ? `${Math.max(8, c.readiness)}%` : '4px', background: c ? m.ring : '#e2e8f0' }} />
+                    <div className="rounded-sm" style={{ height: c ? `${Math.max(8, c.readiness ?? 0)}%` : '4px', background: c ? m.ring : '#e2e8f0' }} />
                   </div>
                 )
               })}
@@ -139,7 +139,7 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
           </div>
           {latest && (
             <p className="text-xs font-semibold text-slate-500">
-              Last check-in {prettyDate(latest.check_date)}: sleep {latest.sleep_quality}/5, soreness {latest.soreness}/5, stress {latest.stress}/5
+              Last check-in {prettyDate(latest.check_date)}: sleep {latest.sleep_quality ?? '–'}/5, body {latest.soreness ?? '–'}/5, arm {latest.arm_soreness ?? '–'}/5, stress {latest.stress ?? '–'}/5{latest.sleep_hours != null ? ` · ${latest.sleep_hours}h sleep` : ''}
             </p>
           )}
         </section>

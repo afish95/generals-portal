@@ -44,7 +44,7 @@ export default function ProgressTrends({ athleteId }: { athleteId: string }) {
           key: 'readiness',
           label: 'Readiness',
           unit: '',
-          points: ((ci.data as { check_date: string; readiness: number }[]) || []).map((r) => ({ x: r.check_date, y: Number(r.readiness) })),
+          points: ((ci.data as { check_date: string; readiness: number }[]) || []).filter((r) => r.readiness != null).map((r) => ({ x: r.check_date, y: Number(r.readiness) })),
         },
       ]
       // One series per drill that has data, most-logged first

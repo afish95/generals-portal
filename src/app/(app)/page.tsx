@@ -2,15 +2,13 @@
 
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { addDays, canLogDay, localDate, LOG_BACK_DAYS, prettyDate } from '@/lib/training'
+import { addDays, localDate, LOG_BACK_DAYS, prettyDate } from '@/lib/training'
 import { useProfile } from '@/components/shell/AppShell'
 import NotificationSetup from '@/components/NotificationSetup'
 import AnnouncementsFeed from '@/components/AnnouncementsFeed'
 import TeamPrFeed from '@/components/TeamPrFeed'
 import CoachDashboard from '@/components/coach/CoachDashboard'
-import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
 import DayPlan from '@/components/DayPlan'
-import DailyPointsCard from '@/components/points/DailyPointsCard'
 import ClassStandings from '@/components/points/ClassStandings'
 import BodyWeightCard from '@/components/wellness/BodyWeightCard'
 import ViewAsPicker from '@/components/shell/ViewAsPicker'
@@ -47,7 +45,7 @@ export default function HomePage() {
     )
   }
 
-  // Player Home, in Coach's order: date + greeting → Announcements → Streak → Day plan → points (with readiness) → Class Cup → Body weight
+  // Player Home, in Coach's order: date + greeting → Announcements → Streak → Day plan (with points and the readiness check-in) → Class Cup → Body weight by week
   const today = localDate()
   const isToday = day === today
   const earliest = addDays(today, -LOG_BACK_DAYS)
@@ -68,13 +66,6 @@ export default function HomePage() {
       <FocusLine athleteId={profile.id} />
       <StreakCard athleteId={profile.id} refreshKey={pointsKey} />
       <DayPlan athleteId={profile.id} date={day} refreshKey={pointsKey} onChange={refresh} />
-      <DailyPointsCard
-        athleteId={profile.id}
-        date={day}
-        refreshKey={pointsKey}
-        onChange={refresh}
-        readiness={canLogDay(day) ? <ReadinessCheckIn athleteId={profile.id} date={day} embedded onSaved={refresh} /> : undefined}
-      />
       <ClassStandings myClass={profile.grad_year} />
       <BodyWeightCard athleteId={profile.id} date={day} key={day} />
     </div>

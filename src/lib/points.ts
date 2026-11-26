@@ -20,6 +20,11 @@ export const normalizePoints = (rows: unknown): DayPoints[] =>
 
 export const pct = (earned: number, available: number) => (available ? Math.round((100 * earned) / available) : 0)
 
+/** Class Cup season start (Coach reset it on Nov 25, 2026). */
+export const CUP_SEASON_START = '2026-11-25'
+/** The four classes in the Class Cup. */
+export const CUP_CLASSES = [2027, 2028, 2029, 2030]
+
 /** Start of the school-year season: Aug 1 of the current school year. */
 export function seasonStart(today: string) {
   const [y, m] = today.split('-').map(Number)
