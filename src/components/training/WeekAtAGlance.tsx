@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Check, Target } from 'lucide-react'
+import { Check, Dumbbell, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { addDays, localDate } from '@/lib/training'
 import { INTENT_LONG, INTENT_STYLE, INTENTS, type Intent } from '@/lib/programs'
@@ -19,16 +19,18 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
   const [workouts, setWorkouts] = useState<W[] | null>(null)
   const [done, setDone] = useState<Set<string>>(new Set())
   const [prog, setProg] = useState<Prog | null>(null)
+  const [lifts, setLifts] = useState<Map<string, string>>(new Map())
 
   useEffect(() => {
     let cancelled = false
     const sb = createClient()
     const end = addDays(start, 6)
     ;(async () => {
-      const [{ data: w }, { data: gm }, { data: pts }] = await Promise.all([
+      const [{ data: w }, { data: gm }, { data: pts }, { data: ev }] = await Promise.all([
         sb.from('workouts').select('id, title, workout_date, group_id, intent, program_assignment_id').gte('workout_date', start).lte('workout_date', end),
         sb.from('group_members').select('group_id').eq('athlete_id', athleteId),
         sb.rpc('athlete_points', { p_athlete: athleteId, p_from: start, p_to: end }),
+        sb.from('team_schedule').select('event_date, event_type, start_time, group_ids, is_cancelled').gte('event_date', start).lte('event_date', end).ilike('event_type', '%lift%'),
       ])
       const mine = new Set(((gm as { group_id: number }[]) || []).map((g) => g.group_id))
       const list = ((w as W[]) || []).filter((x) => x.group_id == null || mine.has(x.group_id))
@@ -42,6 +44,13 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
       setWorkouts(list)
       setDone(new Set(((pts as { d: string; throw_ok: boolean }[]) || []).filter((r) => r.throw_ok).map((r) => String(r.d))))
       setProg(p)
+      setLifts(
+        new Map(
+          ((ev as { event_date: string; start_time: string | null; group_ids: number[] | null; is_cancelled: boolean | null }[]) || [])
+            .filter((e) => !e.is_cancelled && (!e.group_ids?.length || e.group_ids.some((g) => mine.has(g))))
+            .map((e) => [e.event_date, e.start_time || ''])
+        )
+      )
     })()
     return () => {
       cancelled = true
@@ -58,12 +67,12 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
   const trainDone = trainDays.filter((d) => done.has(d)).length
 
   // Built for throwing programs: pitchers and two-way players always see it; position players only when a throwing program is on their week.
-  if (workouts !== null && position !== 'pitcher' && position !== 'two_way' && throwDays.length === 0) return null
+  if (workouts !== null && position !== 'pitcher' && position !== 'two_way' && throwDays.length === 0 && lifts.size === 0) return null
 
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-4 space-y-3">
       <div className="flex items-baseline justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Throwing Week</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Week at a Glance</span>
         <span className="text-[10px] font-bold text-slate-400">
           {new Date(`${start}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {new Date(`${addDays(start, 6)}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
         </span>
@@ -90,6 +99,9 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
                 )}
               </span>
               <span className="text-[8px] font-extrabold uppercase text-slate-400 h-2">{it ? (it === 'low' ? 'Rec' : it) : ''}</span>
+              <span className="h-3.5 flex items-center" title={lifts.has(d) ? `Team Lift ${lifts.get(d)}` : undefined}>
+                {lifts.has(d) && <Dumbbell className="w-3.5 h-3.5 text-teal-600" />}
+              </span>
             </button>
           )
         })}
@@ -100,6 +112,11 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
             <span className={`w-2 h-2 rounded-full ${INTENT_STYLE[i].dot}`} /> {INTENT_LONG[i]}
           </span>
         ))}
+        {lifts.size > 0 && (
+          <span className="flex items-center gap-1">
+            <Dumbbell className="w-3 h-3 text-teal-600" /> Team Lift
+          </span>
+        )}
       </div>
 
       {workouts !== null && (
@@ -114,9 +131,10 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
           <ul className="mt-2 space-y-1">
             {throwDays.length > 0 && <Goal text={`${throwDays.length} throwing day${throwDays.length === 1 ? '' : 's'}`} have={throwDone} need={throwDays.length} />}
             {highDays > 0 && <Goal text={`${highDays} High-intent day${highDays === 1 ? '' : 's'}`} />}
+            {lifts.size > 0 && <Goal text={`${lifts.size} Team Lift${lifts.size === 1 ? '' : 's'} (Driveline Baseball)`} />}
             {!throwDays.length && trainDays.length > 0 && <Goal text={`Train ${trainDays.length}x`} have={trainDone} need={trainDays.length} />}
             {(prog?.weekly_goals || []).map((g) => <Goal key={g} text={g} />)}
-            {!trainDays.length && !(prog?.weekly_goals || []).length && <li className="text-xs font-semibold text-slate-400">Nothing assigned this week yet.</li>}
+            {!trainDays.length && !lifts.size && !(prog?.weekly_goals || []).length && <li className="text-xs font-semibold text-slate-400">Nothing assigned this week yet.</li>}
           </ul>
         </div>
       )}
