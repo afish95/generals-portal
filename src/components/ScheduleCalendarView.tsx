@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, MapPin, Clock, CheckCircle2 } from 'lucide-react'
+import WeekAgenda, { type AgendaWorkout } from '@/components/calendar/WeekAgenda'
+import { KIND_STYLE, kindOf, visibleTo, type ScheduleEvent } from '@/lib/schedule'
 
 type CalendarDrill = {
   id: number
@@ -15,15 +17,7 @@ type CalendarDrill = {
   is_completed?: boolean
 }
 
-type CalendarEvent = {
-  id: number
-  title: string
-  event_type: string
-  event_date: string
-  start_time?: string | null
-  location?: string | null
-  practice_plan?: string | null
-}
+type CalendarEvent = ScheduleEvent
 
 function formatDateKey(date: Date): string {
   const y = date.getFullYear()
@@ -57,6 +51,9 @@ export default function ScheduleCalendarView({
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents || [])
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
   const [workoutTitles, setWorkoutTitles] = useState<Record<string, string>>({})
+  const [weekWorkouts, setWeekWorkouts] = useState<AgendaWorkout[]>([])
+  const [groupNames, setGroupNames] = useState<Map<number, string>>(new Map())
+  const [myGroups, setMyGroups] = useState<Set<number> | null>(null)
 
   useEffect(() => {
     if (initialEvents?.length) setEvents(initialEvents)
@@ -72,16 +69,20 @@ export default function ScheduleCalendarView({
     const { data: { user } } = await supabase.auth.getUser()
     const { data: workoutRows } = await supabase
       .from('workouts')
-      .select('id, title, workout_date, group_id, sort_order')
+      .select('id, title, workout_date, group_id, sort_order, intent')
       .gte('workout_date', start)
       .lte('workout_date', end)
       .order('sort_order', { ascending: true })
-    let wList = (workoutRows as { id: number; title: string; workout_date: string; group_id: number | null }[]) || []
-    if (athleteId && wList.some((w) => w.group_id != null)) {
+    let wList = (workoutRows as AgendaWorkout[]) || []
+    let mine: Set<number> | null = null
+    if (athleteId) {
       const { data: gm } = await supabase.from('group_members').select('group_id').eq('athlete_id', athleteId)
-      const mine = new Set(((gm as { group_id: number }[]) || []).map((g) => g.group_id))
-      wList = wList.filter((w) => w.group_id == null || mine.has(w.group_id))
+      mine = new Set(((gm as { group_id: number }[]) || []).map((g) => g.group_id))
+      const m = mine
+      wList = wList.filter((w) => w.group_id == null || m.has(w.group_id))
     }
+    setMyGroups(mine)
+    setWeekWorkouts(wList)
     const wIds = wList.map((w) => w.id)
     const [{ data: itemRows }, { data: exRows }, { data: groupRows }] = await Promise.all([
       wIds.length
@@ -100,6 +101,7 @@ export default function ScheduleCalendarView({
     for (const l of (logRows as { workout_item_id: number }[]) || []) loggedSets.set(l.workout_item_id, (loggedSets.get(l.workout_item_id) || 0) + 1)
     const exName = new Map(((exRows as { id: number; name: string }[]) || []).map((e) => [e.id, e.name]))
     const gName = new Map(((groupRows as { id: number; name: string }[]) || []).map((g) => [g.id, g.name]))
+    setGroupNames(gName)
     const byWorkout = new Map(wList.map((w) => [w.id, w]))
     const titles: Record<string, string> = {}
     wList.forEach((w) => {
@@ -127,7 +129,7 @@ export default function ScheduleCalendarView({
       .gte('event_date', start)
       .lte('event_date', end)
       .order('event_date', { ascending: true })
-    if (eventRows) setEvents(eventRows)
+    if (eventRows) setEvents((eventRows as CalendarEvent[]).filter((e) => !e.is_cancelled))
   }, [currentMonth, supabase, athleteId])
 
   useEffect(() => {
@@ -188,7 +190,8 @@ export default function ScheduleCalendarView({
   }
 
   const monthLabel = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  const selectedDayEvents = events.filter((e) => e.event_date === selectedDate)
+  const shownEvents = events.filter((e) => visibleTo(e, myGroups))
+  const selectedDayEvents = shownEvents.filter((e) => e.event_date === selectedDate)
   const selectedDayDrills = monthDrills.filter((d) => d.scheduled_date === selectedDate)
   const groupedPhases = Array.from(new Set(selectedDayDrills.map((d) => d.phase))).map((phase) => ({
     phase,
@@ -232,14 +235,12 @@ export default function ScheduleCalendarView({
         </div>
 
         <div className="flex items-center justify-end gap-4 text-[11px] font-bold text-slate-500 mb-3 px-1">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block" />
-            Games &amp; Practices
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-            Training &amp; Workouts
-          </span>
+          {(['game', 'practice', 'program', 'training'] as const).map((k) => (
+            <span key={k} className="flex items-center gap-1.5">
+              <span className={`w-2.5 h-2.5 rounded-full inline-block ${KIND_STYLE[k].dot}`} />
+              {KIND_STYLE[k].label}
+            </span>
+          ))}
         </div>
 
         <div className="grid grid-cols-7 text-center text-[11px] font-bold text-slate-400 pb-2">
@@ -253,7 +254,7 @@ export default function ScheduleCalendarView({
             const key = formatDateKey(date)
             const isSelected = key === selectedDate
             const isToday = key === today
-            const hasTeamEvent = events.some((e) => e.event_date === key)
+            const kinds = Array.from(new Set(shownEvents.filter((e) => e.event_date === key).map((e) => kindOf(e.event_type))))
             const hasWorkout = monthDrills.some((d) => d.scheduled_date === key)
 
             return (
@@ -277,7 +278,7 @@ export default function ScheduleCalendarView({
                   {date.getDate()}
                 </span>
                 <div className="flex items-center justify-center gap-1 h-2 mt-1">
-                  {hasTeamEvent && <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />}
+                  {kinds.map((k) => <span key={k} className={`w-1.5 h-1.5 rounded-full ${KIND_STYLE[k].dot}`} />)}
                   {hasWorkout && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
                 </div>
               </button>
@@ -286,10 +287,26 @@ export default function ScheduleCalendarView({
         </div>
       </div>
 
-      {renderDay ? (
+      {viewMode === 'week' ? (
+        <div className="space-y-2">
+          <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 px-1">Week of {visibleDays[0].date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</h3>
+          <WeekAgenda
+            days={visibleDays.map((v) => formatDateKey(v.date))}
+            today={today}
+            events={shownEvents}
+            workouts={weekWorkouts}
+            groups={groupNames}
+            isCoach={!athleteId}
+            onPickDay={(d) => {
+              setSelectedDate(d)
+              setViewMode('month')
+            }}
+          />
+        </div>
+      ) : renderDay ? (
         <div className="space-y-2 lg:sticky lg:top-24">
           <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 px-1">
-            Day plan · {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            Day Plan · {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </h3>
           {renderDay(selectedDate)}
         </div>

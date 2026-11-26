@@ -12,11 +12,12 @@ import { normalizePlan } from '@/lib/practicePlan'
 import { INTENT_LABEL, INTENT_STYLE, sectionOf } from '@/lib/programs'
 import type { FocusDrill } from '@/lib/focus'
 import { normalizePoints, type DayPoints } from '@/lib/points'
+import { KIND_STYLE, kindOf, minutesOf, timeRange, visibleTo } from '@/lib/schedule'
 import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
 
 const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id6445937141'
 
-type Event = { id: number; title: string; event_type: string; start_time: string | null; location: string | null; practice_plan: string | null; plan: unknown }
+type Event = { id: number; title: string; event_type: string; start_time: string | null; end_time: string | null; location: string | null; practice_plan: string | null; notes: string | null; group_ids: number[] | null; is_cancelled: boolean | null; plan: unknown }
 type Tool = { id: number; workout_id: number; script_id: number; notes: string | null }
 type Script = { id: number; title: string; pitch_count: number }
 
@@ -85,17 +86,20 @@ export default function DayPlan({
     let cancelled = false
     const load = async () => {
       const [{ data: ev }, { data: w }, { data: gr }, { data: off }] = await Promise.all([
-        supabase.from('team_schedule').select('id, title, event_type, start_time, location, practice_plan, plan').eq('event_date', day).order('start_time'),
+        supabase.from('team_schedule').select('id, title, event_type, start_time, end_time, location, practice_plan, notes, group_ids, is_cancelled, plan').eq('event_date', day),
         supabase.from('workouts').select('*').eq('workout_date', day).order('sort_order'),
         supabase.from('team_groups').select('id, name'),
         supabase.from('school_days_off').select('label').eq('day', day).maybeSingle(),
       ])
       let wList = (w as Workout[]) || []
-      if (!isCoach && wList.some((x) => x.group_id != null)) {
+      let evList = ((ev as Event[]) || []).filter((e) => !e.is_cancelled)
+      if (!isCoach) {
         const { data: gm } = await supabase.from('group_members').select('group_id').eq('athlete_id', athleteId)
         const mine = new Set(((gm as { group_id: number }[]) || []).map((g) => g.group_id))
         wList = wList.filter((x) => x.group_id == null || mine.has(x.group_id))
+        evList = evList.filter((e) => visibleTo(e, mine))
       }
+      evList.sort((a, b) => (minutesOf(a.start_time) ?? -1) - (minutesOf(b.start_time) ?? -1))
       const ids = wList.map((x) => x.id)
       const [{ data: it }, { data: ex }, { data: tl }, { data: sc }, { data: bs }, { data: pf }] = await Promise.all([
         ids.length ? supabase.from('workout_items').select('*').in('workout_id', ids) : Promise.resolve({ data: [] }),
@@ -137,7 +141,7 @@ export default function DayPlan({
       setHoursInput(sh != null ? String(sh) : '')
       setClassOverride((ca as { status: string } | null)?.status ?? null)
       setSchoolOff((off as { label: string | null } | null) ? (off as { label: string | null }).label || 'No school' : null)
-      setEvents((ev as Event[]) || [])
+      setEvents(evList)
       setWorkouts(wList)
       setItems(itemList)
       setExercises(new Map(((ex as Exercise[]) || []).map((e) => [e.id, e])))
@@ -284,7 +288,7 @@ export default function DayPlan({
                 icon={isGame ? <Trophy className="w-4 h-4" /> : <Users className="w-4 h-4" />}
                 tone={SCHEDULE.tone}
                 title={e.title}
-                subtitle={[e.event_type?.replace(/^./, (c) => c.toUpperCase()), e.start_time, e.location].filter(Boolean).join(' · ')}
+                subtitle={[KIND_STYLE[kindOf(e.event_type)].label, e.start_time ? timeRange(e) : null, e.location].filter(Boolean).join(' · ')}
                 open={open === k}
                 onClick={() => toggle(k)}
                 showCheck={false}
@@ -304,7 +308,8 @@ export default function DayPlan({
                   )}
                   {(() => {
                     const plan = normalizePlan(e.plan)
-                    if (!plan || plan.blocks.length === 0) return <p className="text-xs text-slate-600 whitespace-pre-line">{e.practice_plan || 'No plan posted yet.'}</p>
+                    if (!plan || plan.blocks.length === 0)
+                      return <p className="text-xs text-slate-600 whitespace-pre-line">{e.notes || e.practice_plan || (kindOf(e.event_type) === 'practice' ? 'No plan posted yet.' : 'No details yet.')}</p>
                     return (
                       <>
                         <PracticePlanView plan={plan} startTime={e.start_time} />
@@ -321,7 +326,7 @@ export default function DayPlan({
                       </>
                     )
                   })()}
-                  {isCoach && !normalizePlan(e.plan)?.blocks.length && (
+                  {isCoach && kindOf(e.event_type) === 'practice' && !normalizePlan(e.plan)?.blocks.length && (
                     <Link href={`/office?tab=practices&event=${e.id}`} className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#1746b8]">
                       <Pencil className="w-3.5 h-3.5" /> Build a Practice Plan
                     </Link>
