@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase'
 import { inputClass, SectionLabel } from '@/components/ui'
 import { SheetFrame } from '@/components/office/roster/shared'
 import { addDays, localDate, prettyDate, type Group } from '@/lib/training'
+import { notifyPlayers } from '@/lib/notify'
+import SendNotification from '@/components/SendNotification'
 import { EVENT_KINDS, KIND_STYLE, kindOf, timeRange, to12h, to24h, type EventKind, type ScheduleEvent } from '@/lib/schedule'
 
 type Row = { key: string; first: ScheduleEvent; days: ScheduleEvent[] }
@@ -137,6 +139,28 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
   const [notes, setNotes] = useState(first?.notes || '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notify, setNotify] = useState(!row)
+
+  // Push + announcement to everyone the event is for (whole program, or players in the chosen groups)
+  const sendNotice = async (days: string[], updated: boolean) => {
+    const sorted = [...days].sort()
+    const when =
+      sorted.length > 1
+        ? `${prettyDate(sorted[0], { month: 'short', day: 'numeric' })} – ${prettyDate(sorted[sorted.length - 1], { month: 'short', day: 'numeric' })}`
+        : prettyDate(sorted[0], { weekday: 'short', month: 'short', day: 'numeric' })
+    const f = fields()
+    const body = [when, f.start_time ? (f.end_time ? `${f.start_time} – ${f.end_time}` : f.start_time) : null, f.location].filter(Boolean).join(' · ')
+    let recipientIds: string[] | undefined
+    if (f.group_ids) {
+      const sb = createClient()
+      const { data: gm } = await sb.from('group_members').select('athlete_id').in('group_id', f.group_ids)
+      const ids = [...new Set(((gm as { athlete_id: string }[]) || []).map((m) => m.athlete_id))]
+      const { data: pl } = ids.length ? await sb.from('profiles').select('id').in('id', ids).eq('role', 'player').eq('is_active', true) : { data: [] }
+      recipientIds = ((pl as { id: string }[]) || []).map((p) => p.id)
+      if (!recipientIds.length) return
+    }
+    await notifyPlayers({ title: `${updated ? 'Updated: ' : ''}${f.title}`.slice(0, 120), body, url: '/calendar', recipientIds, everyone: !f.group_ids, kind: 'workout' })
+  }
 
   const pickable = groups.filter((g) => !g.name.startsWith('Demo') && !(g.category === 'Workout' && g.name.includes(' · ')))
   const dates = useMemo(() => {
@@ -171,12 +195,14 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
       const patch: Record<string, unknown> = fields()
       if (row.days.length === 1) patch.event_date = start
       const { error: e } = await sb.from('team_schedule').update(patch).in('id', ids)
+      if (!e && notify) await sendNotice(row.days.length === 1 ? [start] : row.days.map((d) => d.event_date), true)
       setBusy(false)
       if (e) return setError(e.message)
       return onSaved(row.days.length > 1 ? `Updated all ${row.days.length} days.` : 'Event saved.')
     }
     const series = dates.length > 1 ? crypto.randomUUID() : null
     const { error: e } = await sb.from('team_schedule').insert(dates.map((d) => ({ ...fields(), event_date: d, series_id: series, source: 'manual' })))
+    if (!e && notify) await sendNotice(dates, false)
     setBusy(false)
     if (e) return setError(e.message)
     onSaved(dates.length > 1 ? `Added ${dates.length} days.` : 'Event added.')
@@ -263,6 +289,7 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Details (shifts, what to wear, what to bring)" className={inputClass} />
       </section>
 
+      <SendNotification checked={notify} onChange={setNotify} />
       <button type="button" onClick={save} disabled={busy} className="w-full py-3 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-40 cursor-pointer">
         {busy ? 'Saving…' : row ? 'Save Event' : dates.length > 1 ? `Add ${dates.length} Days` : 'Add Event'}
       </button>

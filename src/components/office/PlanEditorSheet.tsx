@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { inputClass } from '@/components/ui'
+import SendNotification from '@/components/SendNotification'
+import { notifyPlayers } from '@/lib/notify'
 import {
   blockTimes,
   emptyBlock,
@@ -40,6 +42,7 @@ export default function PlanEditorSheet({
   const [name, setName] = useState(template?.name ?? '')
   const [ev, setEv] = useState<EventDraft>(() => event ?? { title: 'Team Practice', event_date: '', start_time: '3:45 PM', location: '', plan: null })
   const [saving, setSaving] = useState(false)
+  const [notify, setNotify] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [templateName, setTemplateName] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
@@ -128,6 +131,10 @@ export default function PlanEditorSheet({
         } else {
           const { error: e } = await supabase.from('team_schedule').insert({ ...fields, event_type: 'practice', source: 'manual' })
           if (e) throw e
+        }
+        if (notify) {
+          const when = new Date(`${fields.event_date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+          await notifyPlayers({ title: `${ev.id ? 'Updated: ' : ''}${fields.title}`, body: [when, fields.start_time, fields.location].filter(Boolean).join(' · '), url: '/calendar', everyone: true, kind: 'workout' })
         }
         onSaved('Practice plan saved')
       }
@@ -254,6 +261,7 @@ export default function PlanEditorSheet({
             </div>
           ))}
 
+        {mode !== 'template' && <SendNotification checked={notify} onChange={setNotify} />}
         {note && <p className="text-xs font-bold text-emerald-700">{note}</p>}
         {error && <p className="text-sm font-bold text-red-600">{error}</p>}
       </div>

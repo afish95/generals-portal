@@ -7,6 +7,7 @@ import { inputClass, SectionLabel } from '@/components/ui'
 import type { Group, Profile } from '@/lib/training'
 import { catOf, TagChip } from '@/components/office/roster/shared'
 import { notifyPlayers } from '@/lib/notify'
+import SendNotification from '@/components/SendNotification'
 
 type Pattern = 'daily' | 'every_other' | 'weekdays'
 type Assignment = { id: number; target_label: string; pattern: Pattern; weekdays: number[]; start_date: string; end_date: string; dates: string[]; status: 'active' | 'stopped' }
@@ -44,6 +45,7 @@ export default function AssignPanel({ progressionId, progressionName }: { progre
   const [start, setStart] = useState(ymd(tomorrow))
   const [weeks, setWeeks] = useState(4)
   const [list, setList] = useState<Assignment[]>([])
+  const [notify, setNotify] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -91,15 +93,16 @@ export default function AssignPanel({ progressionId, progressionName }: { progre
       setBusy(null)
       return setError(e.message)
     }
-    setBusy('Notifying players…')
-    const n = await notifyPlayers({
+    const n = notify
+      ? (setBusy('Notifying players…'), await notifyPlayers({
       title: progressionName,
       body: `${patternText(pattern, weekdays)} · starts ${short(start)}`,
       url: '/',
       groupId: mode === 'group' ? groupId : undefined,
       recipientIds: mode === 'players' ? [...picked] : undefined,
       kind: 'assignment',
-    })
+    }))
+      : { ok: false }
     setBusy(null)
     setMsg(`Assigned to ${label}${n.ok ? ' · notified' : ''}`)
     setPicked(new Set())
@@ -224,6 +227,7 @@ export default function AssignPanel({ progressionId, progressionName }: { progre
           {dates.length > 0 && <div className="text-[11px] text-slate-400 mt-0.5">First: {dates.slice(0, 3).map(nice).join(', ')}{dates.length > 3 ? '…' : ''}</div>}
         </div>
 
+        <SendNotification checked={notify} onChange={setNotify} />
         <button type="button" onClick={assign} disabled={!!busy || !target || !dates.length} className="w-full py-3 rounded-xl bg-emerald-600 text-white text-sm font-extrabold flex items-center justify-center gap-1.5 disabled:opacity-40 cursor-pointer">
           <CalendarCheck className="w-4 h-4" /> {busy || (target ? `Assign to ${target}` : 'Assign')}
         </button>

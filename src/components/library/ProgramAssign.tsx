@@ -7,6 +7,7 @@ import { inputClass, SectionLabel } from '@/components/ui'
 import type { Group, Profile } from '@/lib/training'
 import { catOf, TagChip } from '@/components/office/roster/shared'
 import { notifyPlayers } from '@/lib/notify'
+import SendNotification from '@/components/SendNotification'
 import type { ProgramAssignment } from '@/lib/programs'
 
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -33,6 +34,7 @@ export default function ProgramAssign({ programId, programName, programWeeks }: 
   const [weeks, setWeeks] = useState(Math.max(programWeeks, 4))
   const [list, setList] = useState<ProgramAssignment[]>([])
   const [busy, setBusy] = useState<string | null>(null)
+  const [notify, setNotify] = useState(true)
   const [msg, setMsg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
@@ -68,7 +70,7 @@ export default function ProgramAssign({ programId, programName, programWeeks }: 
         setBusy(null)
         return setError(e.message)
       }
-      await notifyPlayers({
+      if (notify) await notifyPlayers({
         title: programName,
         body: `${weeks} weeks · starts ${short(start)}`,
         url: '/',
@@ -78,7 +80,7 @@ export default function ProgramAssign({ programId, programName, programWeeks }: 
       })
     }
     setBusy(null)
-    setMsg(`Assigned to ${target} · notified`)
+    setMsg(`Assigned to ${target}${notify ? ' · notified' : ''}`)
     setGroupIds(new Set())
     setPicked(new Set())
     setVersion((v) => v + 1)
@@ -156,6 +158,7 @@ export default function ProgramAssign({ programId, programName, programWeeks }: 
           </label>
         </div>
         <p className="text-xs font-semibold text-slate-500">{short(start)} – {short(end)}</p>
+        <SendNotification checked={notify} onChange={setNotify} />
         <button type="button" onClick={assign} disabled={!!busy || !target} className="w-full py-3 rounded-xl bg-emerald-600 text-white text-sm font-extrabold flex items-center justify-center gap-1.5 disabled:opacity-40 cursor-pointer">
           <CalendarCheck className="w-4 h-4" /> {busy || (target ? `Assign to ${target}` : 'Assign')}
         </button>
