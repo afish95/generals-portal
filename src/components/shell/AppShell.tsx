@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { House, MessageCircle, Calendar, Target, TrendingUp, LayoutGrid, Shield, Eye, X } from 'lucide-react'
+import { House, MessageCircle, Calendar, Target, TrendingUp, LayoutGrid, ClipboardList, Eye, X } from 'lucide-react'
 import { createClient, READ_ONLY_EVENT, setReadOnlyMode } from '@/lib/supabase'
 import type { Profile } from '@/lib/training'
 import { PrCelebrationHost } from '@/components/training/PrCelebration'
@@ -38,7 +38,7 @@ const PLAYER_TABS = [
 ]
 const COACH_TABS = [
   { href: '/', label: 'Home', icon: House },
-  { href: '/office', label: 'Coach Office', icon: Shield },
+  { href: '/office', label: 'Coach Office', icon: ClipboardList },
   { href: '/stats', label: 'Stats', icon: TrendingUp },
   { href: '/other', label: 'Other', icon: LayoutGrid },
 ]
@@ -345,7 +345,7 @@ export function useSubnav(tabs: { key: string; label: string }[], active: string
 const DESK_NAV = [
   { href: '/', label: 'Home', icon: House },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/office', label: 'Coach Office', icon: Shield },
+  { href: '/office', label: 'Coach Office', icon: ClipboardList },
   { href: '/stats', label: 'Stats', icon: TrendingUp },
   { href: '/messages', label: 'Messages', icon: MessageCircle },
   { href: '/other', label: 'Other', icon: LayoutGrid },
