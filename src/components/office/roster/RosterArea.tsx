@@ -8,8 +8,9 @@ import PeoplePanel from './PeoplePanel'
 import GroupsPanel from './GroupsPanel'
 import SandboxPanel from './SandboxPanel'
 import ImportExportPanel from './ImportExportPanel'
+import LoginsPanel from './LoginsPanel'
 
-type Sub = 'players' | 'coaches' | 'groups' | 'sandbox' | 'transfer'
+type Sub = 'players' | 'coaches' | 'groups' | 'sandbox' | 'transfer' | 'logins'
 
 /** Coach Office → Roster: players, coaches, groups & tags, and the sandbox roster builder. */
 export default function RosterArea({ initial = 'players', onChanged }: { initial?: Sub; onChanged: () => void }) {
@@ -57,6 +58,7 @@ export default function RosterArea({ initial = 'players', onChanged }: { initial
           { key: 'coaches', label: 'Coaches', count: coaches.length },
           { key: 'groups', label: 'Groups & Tags', count: groups.length },
           { key: 'sandbox', label: 'Sandbox' },
+          { key: 'logins', label: 'Logins', count: people.filter((p) => p.is_active && !p.is_demo && p.has_login === false).length },
           { key: 'transfer', label: 'Import / Export' },
         ]}
         active={sub}
@@ -70,6 +72,8 @@ export default function RosterArea({ initial = 'players', onChanged }: { initial
         <PeoplePanel role="coach" people={coaches} groups={groups} members={members} onChanged={reload} />
       ) : sub === 'groups' ? (
         <GroupsPanel people={people} groups={groups} members={members} onChanged={reload} />
+      ) : sub === 'logins' ? (
+        <LoginsPanel people={people} onChanged={reload} />
       ) : sub === 'transfer' ? (
         <ImportExportPanel people={people} groups={groups} members={members} onChanged={reload} />
       ) : (
