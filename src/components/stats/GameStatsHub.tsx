@@ -17,7 +17,7 @@ export default function GameStatsHub({ myId, isCoach }: { myId: string; isCoach:
 
   const merged = useMemo(() => (all ? applyEarlyAhead(all, ea) : null), [all, ea])
   const latest = useMemo(() => (merged ? Math.max(0, ...merged.filter((l) => l.season_type === type).map((l) => l.season_year)) : 0), [merged, type])
-  const p: Period = period ?? latest
+  const p: Period = period ?? 'all'
   const lines = useMemo(() => (merged ? linesFor(merged, type, p) : null), [merged, type, p])
 
   if (!merged || !lines) return <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />

@@ -41,7 +41,7 @@ const fmt = (m: Metric, v: number) => (m.lowerIsBetter && m.unit === 's' ? v.toF
 
 export default function PositionLeaderboard({ myId, myPosition }: { myId: string; myPosition?: string | null }) {
   const [group, setGroup] = useState<Group>(myPosition && myPosition !== 'pitcher' ? 'hitters' : 'pitchers')
-  const [period, setPeriod] = useState<Period>('12m')
+  const [period, setPeriod] = useState<Period>('all')
   const [metricKey, setMetricKey] = useState<string>(METRICS[group][0].key)
   const [rows, setRows] = useState<Row[] | null>(null)
   const trends = useStatTrends(myId)

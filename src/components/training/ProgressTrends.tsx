@@ -21,7 +21,7 @@ type Series = { key: string; label: string; points: Point[]; unit: string; lower
 export default function ProgressTrends({ athleteId }: { athleteId: string }) {
   const [series, setSeries] = useState<Series[] | null>(null)
   const [selected, setSelected] = useState('points')
-  const [range, setRange] = useState<RangeKey>('90')
+  const [range, setRange] = useState<RangeKey>('all')
 
   useEffect(() => {
     const supabase = createClient()

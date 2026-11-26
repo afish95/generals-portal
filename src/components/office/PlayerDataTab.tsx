@@ -105,7 +105,7 @@ function Saved({ on }: { on: boolean }) {
 
 /* ---------------- Training logs ---------------- */
 function LogsTable({ athleteId }: { athleteId: string }) {
-  const [range, setRange] = useState(90)
+  const [range, setRange] = useState(0)
   const [exFilter, setExFilter] = useState<number | 0>(0)
   const [logs, setLogs] = useState<Log[] | null>(null)
   const [exercises, setExercises] = useState<Map<number, Ex>>(new Map())
