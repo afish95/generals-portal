@@ -38,7 +38,7 @@ export default function OtherPage() {
         <div className="grid grid-cols-2 gap-2">
           {(['hitter', 'pitcher'] as const).map((k) => (
             <Link key={k} href={`/benchmark?kind=${k}`} className="py-2.5 rounded-xl bg-[#1746b8] text-white text-xs font-extrabold flex items-center justify-center gap-1">
-              {k === 'hitter' ? 'Hitter report' : 'Pitcher report'} <ChevronRight className="w-3.5 h-3.5" />
+              {k === 'hitter' ? 'Hitter Report' : 'Pitcher Report'} <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           ))}
         </div>
@@ -46,7 +46,7 @@ export default function OtherPage() {
       <ThoughtOfWeek />
       {viewAs.active ? (
         <button type="button" onClick={viewAs.exit} className="w-full py-3 rounded-2xl bg-amber-400 text-amber-950 text-sm font-extrabold cursor-pointer">
-          Exit player view
+          Exit Player View
         </button>
       ) : (
       <>
@@ -56,7 +56,7 @@ export default function OtherPage() {
         onClick={signOut}
         className="w-full py-3 rounded-2xl bg-white border border-slate-200 text-sm font-extrabold text-red-600 flex items-center justify-center gap-2 cursor-pointer"
       >
-        <LogOut className="w-4 h-4" /> Sign out
+        <LogOut className="w-4 h-4" /> Sign Out
       </button>
       </>
       )}

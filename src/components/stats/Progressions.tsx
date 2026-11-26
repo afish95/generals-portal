@@ -91,14 +91,14 @@ export default function Progressions({ isCoach, athleteId }: { isCoach: boolean;
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={isCoach ? 'Search athlete or drill' : 'Search drill'} className="flex-1 py-2.5 bg-transparent text-base outline-none" />
       </label>
       <div className="flex gap-2 overflow-x-auto pb-1">
-        <Pill active={discipline === 'all'} onClick={() => setDiscipline('all')}>All drills</Pill>
+        <Pill active={discipline === 'all'} onClick={() => setDiscipline('all')}>All Drills</Pill>
         {DISCIPLINES.filter((d) => d.key !== 'other').map((d) => (
           <Pill key={d.key} active={discipline === d.key} onClick={() => setDiscipline(d.key)}>{d.label}</Pill>
         ))}
       </div>
       {isCoach && (
         <div className="flex gap-2 overflow-x-auto pb-1">
-          <Pill active={group === 'all'} onClick={() => setGroup('all')}>All groups</Pill>
+          <Pill active={group === 'all'} onClick={() => setGroup('all')}>All Groups</Pill>
           {groups.map((g) => (
             <Pill key={g.id} active={group === g.id} onClick={() => setGroup(g.id)}>{g.name}</Pill>
           ))}
@@ -107,9 +107,9 @@ export default function Progressions({ isCoach, athleteId }: { isCoach: boolean;
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-bold text-slate-500">{list.length} result{list.length === 1 ? '' : 's'}</span>
         <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="text-xs font-extrabold text-[#1746b8] bg-white border border-slate-200 rounded-xl px-2.5 py-1.5">
-          <option value="improved">Most improved</option>
-          <option value="recent">Most recent</option>
-          <option value="best">Best result</option>
+          <option value="improved">Most Improved</option>
+          <option value="recent">Most Recent</option>
+          <option value="best">Best Result</option>
           <option value="name">Name</option>
         </select>
       </div>

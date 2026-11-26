@@ -41,7 +41,7 @@ export default function TeamPrFeed({ limit = 8, athleteId }: { limit?: number; a
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
       <div className="flex items-center gap-2 mb-2">
         <Award className="w-4 h-4 text-amber-500" />
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{athleteId ? 'My PRs' : 'Team PR feed'}</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{athleteId ? 'My PRs' : 'Team PR Feed'}</span>
       </div>
       {rows.length === 0 ? (
         <p className="text-xs font-medium text-slate-500">No PRs yet. Go get the first one.</p>

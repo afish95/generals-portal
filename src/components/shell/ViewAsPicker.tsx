@@ -21,7 +21,7 @@ export default function ViewAsPicker() {
             onClick={() => setMode(m)}
             className={`py-2 rounded-xl text-xs font-extrabold cursor-pointer ${mode === m ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}
           >
-            {m === 'coach' ? 'Coach view' : 'Player view'}
+            {m === 'coach' ? 'Coach View' : 'Player View'}
           </button>
         ))}
       </div>
@@ -35,7 +35,7 @@ export default function ViewAsPicker() {
               className="flex-1 bg-transparent text-sm font-extrabold text-slate-900 outline-none cursor-pointer"
               aria-label="Choose a player"
             >
-              <option value="">Choose a player…</option>
+              <option value="">Choose a Player…</option>
               {pitchers.length > 0 && (
                 <optgroup label="Pitchers">
                   {pitchers.map((p) => (
@@ -44,7 +44,7 @@ export default function ViewAsPicker() {
                 </optgroup>
               )}
               {others.length > 0 && (
-                <optgroup label="Position players">
+                <optgroup label="Position Players">
                   {others.map((p) => (
                     <option key={p.id} value={p.id}>{p.full_name}{p.grad_year ? ` · ${p.grad_year}` : ''}</option>
                   ))}

@@ -59,7 +59,7 @@ export function SwipeRow({ onDismiss, children, dark = false }: { onDismiss: () 
       <button
         type="button"
         onClick={clear}
-        aria-label="Mark read"
+        aria-label="Mark Read"
         tabIndex={dx < 0 ? 0 : -1}
         className="absolute inset-y-0 right-0 flex items-center justify-center bg-emerald-500 text-white cursor-pointer"
         style={{ width: Math.max(ACTION, -dx), opacity: dx < -8 ? 1 : 0 }}

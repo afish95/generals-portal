@@ -34,7 +34,7 @@ export default function GroupsPanel({ people, groups, members, onChanged }: { pe
   }
 
   const rename = (g: Group) => {
-    const n = window.prompt('Rename group', g.name)?.trim()
+    const n = window.prompt('Rename Group', g.name)?.trim()
     if (n && n !== g.name) patch(g, { name: n })
   }
 
@@ -60,7 +60,7 @@ export default function GroupsPanel({ people, groups, members, onChanged }: { pe
   return (
     <div className="space-y-5">
       <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-2">
-        <div className="text-sm font-extrabold text-slate-900">New group or tag</div>
+        <div className="text-sm font-extrabold text-slate-900">New Group or Tag</div>
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_170px_auto_auto] gap-2 items-center">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Summer Travel, Bullpen Crew" className={inputClass} />
           <select value={cat} onChange={(e) => setCat(e.target.value as GroupCategory)} className={inputClass}>
@@ -69,7 +69,7 @@ export default function GroupsPanel({ people, groups, members, onChanged }: { pe
             ))}
           </select>
           <label className="flex items-center gap-1.5 text-xs font-extrabold text-slate-600 cursor-pointer px-1">
-            <input type="checkbox" checked={chat} onChange={(e) => setChat(e.target.checked)} className="w-4 h-4 accent-[#1746b8]" /> Chat channel
+            <input type="checkbox" checked={chat} onChange={(e) => setChat(e.target.checked)} className="w-4 h-4 accent-[#1746b8]" /> Chat Channel
           </label>
           <button type="button" onClick={create} className="px-4 py-2.5 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold flex items-center justify-center gap-1 cursor-pointer">
             <Plus className="w-4 h-4" /> Create
@@ -98,7 +98,7 @@ export default function GroupsPanel({ people, groups, members, onChanged }: { pe
                       <span className={`w-2.5 h-10 rounded-full border ${CAT_STYLE[catOf(g)]}`} />
                       <div className="text-left flex-1 min-w-0">
                         <div className="text-base font-extrabold text-slate-900 truncate flex items-center gap-1.5">
-                          {g.name} {g.has_chat && <MessageSquare className="w-3.5 h-3.5 text-[#1746b8]" aria-label="Chat channel" />}
+                          {g.name} {g.has_chat && <MessageSquare className="w-3.5 h-3.5 text-[#1746b8]" aria-label="Chat Channel" />}
                         </div>
                         <div className="text-[11px] font-bold text-slate-500">
                           {[...ids].filter((id) => people.find((p) => p.id === id)?.role === 'player').length} players · {[...ids].filter((id) => people.find((p) => p.id === id)?.role === 'coach').length} coaches
@@ -115,7 +115,7 @@ export default function GroupsPanel({ people, groups, members, onChanged }: { pe
                             ))}
                           </select>
                           <button type="button" onClick={() => patch(g, { has_chat: !g.has_chat })} className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer ${g.has_chat ? 'bg-blue-50 text-[#1746b8]' : 'bg-slate-100 text-slate-600'}`}>
-                            <MessageSquare className="w-3.5 h-3.5" /> {g.has_chat ? 'Chat channel on' : 'Turn on chat channel'}
+                            <MessageSquare className="w-3.5 h-3.5" /> {g.has_chat ? 'Chat Channel On' : 'Turn On Chat Channel'}
                           </button>
                           <button type="button" onClick={() => rename(g)} className="px-3 py-2 rounded-xl bg-slate-100 text-xs font-extrabold text-slate-700 cursor-pointer">Rename</button>
                           <button type="button" onClick={() => remove(g)} className="px-3 py-2 rounded-xl bg-red-50 text-xs font-extrabold text-red-700 flex items-center gap-1 cursor-pointer">
@@ -139,7 +139,7 @@ export default function GroupsPanel({ people, groups, members, onChanged }: { pe
                             )
                           })}
                         </div>
-                        <button type="button" onClick={onChanged} className="text-[11px] font-extrabold text-[#1746b8] cursor-pointer">Refresh counts</button>
+                        <button type="button" onClick={onChanged} className="text-[11px] font-extrabold text-[#1746b8] cursor-pointer">Refresh Counts</button>
                       </div>
                     )}
                   </section>

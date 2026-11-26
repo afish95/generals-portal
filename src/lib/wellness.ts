@@ -21,7 +21,7 @@ export const ATTENDANCE: { key: AttendanceStatus; label: string; on: string }[] 
 ]
 
 export function readinessMeta(score: number | null | undefined) {
-  if (score == null) return { label: 'No check-in', chip: 'bg-slate-100 text-slate-500', ring: '#cbd5e1', headline: 'Check in to see your readiness' }
+  if (score == null) return { label: 'No Check-In', chip: 'bg-slate-100 text-slate-500', ring: '#cbd5e1', headline: 'Check in to see your readiness' }
   if (score >= 75) return { label: 'Green', chip: 'bg-emerald-50 text-emerald-700', ring: '#10b981', headline: 'Ready to go. Full intent today.' }
   if (score >= 50) return { label: 'Yellow', chip: 'bg-amber-50 text-amber-700', ring: '#f59e0b', headline: 'Moderate. Stay sharp, manage volume.' }
   return { label: 'Red', chip: 'bg-red-50 text-red-700', ring: '#ef4444', headline: 'Low readiness. Talk to Coach before high intent.' }

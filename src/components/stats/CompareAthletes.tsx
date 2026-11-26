@@ -88,9 +88,9 @@ export default function CompareAthletes() {
       fmt: (v: number) => `${round1(v)}${e.tracking === 'accuracy' ? '%' : ` ${e.unit ?? ''}`}`,
       lower: e.tracking === 'time',
     })),
-    { label: 'Avg readiness (14d)', vals: picked.map((a) => extras[a]?.readiness), fmt: (v: number) => `${v}` },
+    { label: 'Avg Readiness (14d)', vals: picked.map((a) => extras[a]?.readiness), fmt: (v: number) => `${v}` },
     { label: 'Attendance (30d)', vals: picked.map((a) => extras[a]?.attendance), fmt: (v: number) => `${v}%` },
-    { label: 'Throws & swings (30d)', vals: picked.map((a) => extras[a]?.volume), fmt: (v: number) => `${v}` },
+    { label: 'Throws & Swings (30d)', vals: picked.map((a) => extras[a]?.volume), fmt: (v: number) => `${v}` },
   ]
 
   return (

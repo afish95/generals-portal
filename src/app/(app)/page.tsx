@@ -106,7 +106,7 @@ function PlayerGreeting({
         </button>
         {!isToday && (
           <button type="button" onClick={onToday} className="ml-auto px-3 py-1.5 rounded-full bg-[#1746b8] text-white text-[11px] font-extrabold cursor-pointer">
-            Back to today
+            Back to Today
           </button>
         )}
       </div>

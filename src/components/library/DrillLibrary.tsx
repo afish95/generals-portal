@@ -79,7 +79,7 @@ export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
     else setProgs((ps) => ps.map((p) => (p.id === id ? { ...p, folder_id: folderId } : p)))
   }
 
-  const crumbs = typeof place === 'number' ? folderPath(folders, place).split(' / ') : [place === 'all' ? (kind === 'drill' ? 'All drills' : 'All progressions') : 'Unfiled']
+  const crumbs = typeof place === 'number' ? folderPath(folders, place).split(' / ') : [place === 'all' ? (kind === 'drill' ? 'All Drills' : 'All Progressions') : 'Unfiled']
 
   return (
     <div>
@@ -88,7 +88,7 @@ export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
           { key: 'drills', label: 'Drills', count: drills.filter((d) => d.is_active).length },
           { key: 'progressions', label: 'Progressions', count: progs.filter((p) => p.is_active).length },
           { key: 'programs', label: 'Programs' },
-          { key: 'import', label: 'Import & videos' },
+          { key: 'import', label: 'Import & Videos' },
         ]}
         active={sub}
         onChange={setSub}
@@ -158,7 +158,7 @@ export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
             <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 px-1">
               <span className="hidden lg:inline">{q ? `Results for "${query}"` : crumbs.join(' / ')}</span>
               <label className="flex items-center gap-1.5 cursor-pointer">
-                <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} className="accent-[#1746b8]" /> Show hidden
+                <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} className="accent-[#1746b8]" /> Show Hidden
               </label>
               <span>{list.length} {kind === 'drill' ? 'drills' : 'progressions'}</span>
             </div>
@@ -178,7 +178,7 @@ export default function DrillLibrary({ onChanged }: { onChanged: () => void }) {
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 cursor-pointer ${x.is_active ? '' : 'opacity-50'}`}
                   >
                     {d ? (
-                      <PlayCircle className={`w-5 h-5 shrink-0 ${d.video_url ? 'text-[#1746b8]' : 'text-slate-200'}`} aria-label={d.video_url ? 'Has video' : 'No video'} />
+                      <PlayCircle className={`w-5 h-5 shrink-0 ${d.video_url ? 'text-[#1746b8]' : 'text-slate-200'}`} aria-label={d.video_url ? 'Has video' : 'No Video'} />
                     ) : (
                       <Layers className="w-5 h-5 shrink-0 text-[#1746b8]" />
                     )}

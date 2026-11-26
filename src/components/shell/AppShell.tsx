@@ -239,7 +239,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               <div className="text-lg font-extrabold leading-tight tracking-tight truncate">{(viewing && viewed ? viewed : profile).full_name}</div>
               <div className="text-xs text-blue-100/90 font-medium truncate">
-                {isCoach ? 'Coaching staff' : (viewing && viewed ? viewed : profile).position_group || 'Player'} &bull; #{(viewing && viewed ? viewed : profile).username}
+                {isCoach ? 'Coaching Staff' : (viewing && viewed ? viewed : profile).position_group || 'Player'} &bull; #{(viewing && viewed ? viewed : profile).username}
               </div>
             </div>
             <Link href="/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'} className={`relative ${iconBtn(messagesActive)}`}>
@@ -256,11 +256,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <div className="max-w-xl mx-auto px-4 py-2 flex items-center gap-2">
                 <Eye className="w-4 h-4 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider leading-none">Player view · read-only</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider leading-none">Player View · Read-Only</div>
                   <select
                     value={viewed.id}
                     onChange={(e) => startViewAs(e.target.value)}
-                    aria-label="Switch player"
+                    aria-label="Switch Player"
                     className="mt-0.5 max-w-full bg-transparent text-sm font-extrabold truncate cursor-pointer outline-none"
                   >
                     {players.map((p) => (
@@ -358,7 +358,7 @@ function DesktopSidebar({ pathname, unread, name, onViewAs, onSignOut }: { pathn
         <img src="/icons/icon-192.png" alt="" className="w-9 h-9 rounded-xl" />
         <div className="leading-tight">
           <div className="text-sm font-extrabold">Generals</div>
-          <div className="text-[11px] font-semibold text-blue-200">Coach portal</div>
+          <div className="text-[11px] font-semibold text-blue-200">Coach Portal</div>
         </div>
       </div>
       <nav className="space-y-1">
@@ -382,11 +382,11 @@ function DesktopSidebar({ pathname, unread, name, onViewAs, onSignOut }: { pathn
       </nav>
       <div className="mt-auto space-y-3">
         <button type="button" onClick={onViewAs} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-bold cursor-pointer">
-          <Eye className="w-4 h-4" /> View as player
+          <Eye className="w-4 h-4" /> View as Player
         </button>
         <div className="px-3">
           <div className="text-sm font-extrabold truncate">{name}</div>
-          <button type="button" onClick={onSignOut} className="text-xs font-semibold text-blue-200 hover:text-white cursor-pointer">Sign out</button>
+          <button type="button" onClick={onSignOut} className="text-xs font-semibold text-blue-200 hover:text-white cursor-pointer">Sign Out</button>
         </div>
       </div>
     </aside>

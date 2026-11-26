@@ -79,7 +79,7 @@ export default function ImportPanel({ drills, onChanged }: { drills: Drill[]; on
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-        <SectionLabel>Import drills and progressions</SectionLabel>
+        <SectionLabel>Import Drills and Progressions</SectionLabel>
         <p className="text-xs font-semibold text-slate-600">Upload the drill export and the progression export (CSV). Folders are created from the file. Running it again updates the same drills instead of making copies.</p>
         <label className="flex items-center justify-center gap-2 py-5 rounded-2xl border-2 border-dashed border-slate-300 text-sm font-extrabold text-[#1746b8] cursor-pointer hover:bg-blue-50/50">
           <FileUp className="w-5 h-5" /> Choose CSV files
@@ -110,12 +110,12 @@ export default function ImportPanel({ drills, onChanged }: { drills: Drill[]; on
       </section>
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-        <SectionLabel>Upload drill videos</SectionLabel>
+        <SectionLabel>Upload Drill Videos</SectionLabel>
         <p className="text-xs font-semibold text-slate-600">
           Pick video files (you can select many at once). Each file is matched to its drill by file name, stored in the app, and plays inside the app from then on.
         </p>
         <label className="flex items-center justify-center gap-2 py-5 rounded-2xl border-2 border-dashed border-slate-300 text-sm font-extrabold text-[#1746b8] cursor-pointer hover:bg-blue-50/50">
-          <Film className="w-5 h-5" /> Choose video files
+          <Film className="w-5 h-5" /> Choose Video Files
           <input type="file" accept="video/*" multiple className="hidden" onChange={(e) => (uploadVideos(e.target.files), (e.target.value = ''))} />
         </label>
         {busy && videoLog.length > 0 && <p className="text-xs font-extrabold text-[#1746b8]">{busy}</p>}

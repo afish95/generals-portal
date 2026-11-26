@@ -46,7 +46,7 @@ export default function PracticePlansTab({ openEventId }: { openEventId?: number
     []
   )
 
-  // Deep link from the Day plan's "Edit plan"
+  // Deep link from the Day plan's "Edit Plan"
   useEffect(() => {
     if (!openEventId || !practices || openedFor === openEventId) return
     const p = practices.find((x) => x.id === openEventId)
@@ -83,7 +83,7 @@ export default function PracticePlansTab({ openEventId }: { openEventId?: number
             onClick={() => setEditing({ mode: 'event', event: { title: 'Team Practice', event_date: today, start_time: '3:45 PM', location: '', plan: null } })}
             className="px-3 py-1.5 rounded-xl bg-[#1746b8] text-white text-xs font-extrabold flex items-center gap-1 cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> Add practice
+            <Plus className="w-3.5 h-3.5" /> Add Practice
           </button>
         </div>
         {practices === null ? (
@@ -123,7 +123,7 @@ export default function PracticePlansTab({ openEventId }: { openEventId?: number
         <div className="flex items-center justify-between">
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Templates</div>
           <button type="button" onClick={() => setEditing({ mode: 'template', template: null })} className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-[#1746b8] text-xs font-extrabold flex items-center gap-1 cursor-pointer">
-            <Plus className="w-3.5 h-3.5" /> New template
+            <Plus className="w-3.5 h-3.5" /> New Template
           </button>
         </div>
         <ul className="space-y-2">
@@ -136,7 +136,7 @@ export default function PracticePlansTab({ openEventId }: { openEventId?: number
               <a href={`/practice-print?template=${t.id}`} aria-label="Export 1-page" className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
                 <FileDown className="w-4 h-4" />
               </a>
-              <button type="button" aria-label="Delete template" onClick={() => deleteTemplate(t)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer">
+              <button type="button" aria-label="Delete Template" onClick={() => deleteTemplate(t)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer">
                 <Trash2 className="w-4 h-4" />
               </button>
               <button type="button" onClick={() => setEditing({ mode: 'template', template: t })} className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-extrabold text-[#1746b8] flex items-center gap-1 cursor-pointer">

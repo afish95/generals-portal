@@ -46,12 +46,12 @@ export default function ClassStandings({ myClass }: { myClass?: number | null })
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
       <div className="flex items-center gap-2">
         <Trophy className="w-4 h-4 text-amber-500" />
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex-1">Class Cup · daily points</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex-1">Class Cup · Daily Points</span>
       </div>
       <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-slate-100">
         {(['last', 'week', 'season'] as const).map((p) => (
           <button key={p} type="button" onClick={() => setPeriod(p)} className={`py-1.5 rounded-xl text-xs font-extrabold cursor-pointer ${period === p ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
-            {p === 'last' ? 'Last week' : p === 'week' ? 'This week' : 'Season'}
+            {p === 'last' ? 'Last Week' : p === 'week' ? 'This Week' : 'Season'}
           </button>
         ))}
       </div>

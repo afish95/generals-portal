@@ -11,27 +11,27 @@ type Row = { athlete_id: string; full_name: string; position_group: string | nul
 
 export const METRICS: Record<Group, Metric[]> = {
   pitchers: [
-    { key: 'mound_velo', label: 'Mound velo', short: 'Mound', unit: ' mph', howTo: 'Log Mound Velo or a bullpen with velo.' },
-    { key: 'pulldown_velo', label: 'Pulldown velo', short: 'Pulldown', unit: ' mph', howTo: 'Log Pulldown Throws.' },
-    { key: 'long_toss', label: 'Long toss distance', short: 'Long toss', unit: ' ft', howTo: 'Log Long Toss.' },
+    { key: 'mound_velo', label: 'Mound Velo', short: 'Mound', unit: ' mph', howTo: 'Log Mound Velo or a bullpen with velo.' },
+    { key: 'pulldown_velo', label: 'Pulldown Velo', short: 'Pulldown', unit: ' mph', howTo: 'Log Pulldown Throws.' },
+    { key: 'long_toss', label: 'Long Toss Distance', short: 'Long Toss', unit: ' ft', howTo: 'Log Long Toss.' },
     { key: 'strike_pct', label: 'Strike %', short: 'Strike %', unit: '%', howTo: 'Throw a tracked bullpen (10+ pitches).' },
     { key: 'ahead_pct', label: 'Ahead %', short: 'Ahead %', unit: '%', howTo: 'Throw the Ahead in the Count (2 of 3) bullpen in Training tools.' },
-    { key: 'miss_in', label: 'Avg. miss distance', short: 'Avg miss', unit: '"', lowerIsBetter: true, howTo: 'Track intended zones in a bullpen (10+ pitches).' },
+    { key: 'miss_in', label: 'Avg. Miss Distance', short: 'Avg Miss', unit: '"', lowerIsBetter: true, howTo: 'Track intended zones in a bullpen (10+ pitches).' },
   ],
   hitters: [
-    { key: 'bat_speed', label: 'Bat speed', short: 'Bat speed', unit: ' mph', howTo: 'Log Bat Speed.' },
-    { key: 'exit_velo', label: 'Exit velo', short: 'Exit velo', unit: ' mph', howTo: 'Log Exit Velo (tee or front toss).' },
+    { key: 'bat_speed', label: 'Bat Speed', short: 'Bat Speed', unit: ' mph', howTo: 'Log Bat Speed.' },
+    { key: 'exit_velo', label: 'Exit Velo', short: 'Exit Velo', unit: ' mph', howTo: 'Log Exit Velo (tee or front toss).' },
     { key: 'time_to_first', label: 'Home to 1st', short: 'Home-1st', unit: 's', lowerIsBetter: true, howTo: 'Log Home to 1st.' },
-    { key: 'pos_velo', label: 'Positional velo', short: 'Pos. velo', unit: ' mph', howTo: 'Log Positional Throw Velo.' },
-    { key: 'pop_time', label: 'Pop time (catchers)', short: 'Pop time', unit: 's', lowerIsBetter: true, howTo: 'Catchers: log Pop Time.', catchersOnly: true },
+    { key: 'pos_velo', label: 'Positional Velo', short: 'Pos. velo', unit: ' mph', howTo: 'Log Positional Throw Velo.' },
+    { key: 'pop_time', label: 'Pop Time (Catchers)', short: 'Pop Time', unit: 's', lowerIsBetter: true, howTo: 'Catchers: log Pop Time.', catchersOnly: true },
   ],
 }
 
 const PERIODS = [
-  { key: '30d', label: '30 days', days: 30 },
-  { key: '90d', label: '90 days', days: 90 },
-  { key: '12m', label: '12 months', days: 365 },
-  { key: 'all', label: 'All time', days: 0 },
+  { key: '30d', label: '30 Days', days: 30 },
+  { key: '90d', label: '90 Days', days: 90 },
+  { key: '12m', label: '12 Months', days: 365 },
+  { key: 'all', label: 'All Time', days: 0 },
 ] as const
 type Period = (typeof PERIODS)[number]['key']
 
@@ -112,7 +112,7 @@ export default function PositionLeaderboard({ myId, myPosition }: { myId: string
           {/* Your percentile ranks */}
           {myPosition != null && (
           <div>
-            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Your %ile ranks</div>
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Your %ile Ranks</div>
             <div className="grid grid-cols-2 gap-2">
               {myRanks.map(({ m, mine, rank, n, pctl }) => (
                 <button

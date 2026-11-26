@@ -79,7 +79,7 @@ export default function MyPlan({ athleteId, onStartTool }: { athleteId: string; 
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
       <div className="flex items-baseline justify-between">
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">My plan</div>
+        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">My Plan</div>
         {updated && <div className="text-[10px] font-bold text-slate-400">Updated {new Date(updated).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>}
       </div>
       {active.map((f, i) => {

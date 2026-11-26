@@ -21,7 +21,7 @@ export default function VideoEmbed({ url, title }: { url: string | null | undefi
       ) : (
         <iframe
           src={v.src}
-          title={title || 'Drill video'}
+          title={title || 'Drill Video'}
           className="w-full h-full"
           allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
           allowFullScreen
@@ -66,13 +66,13 @@ export function DrillReveal({
   )
 }
 
-/** "Watch how-to" toggle under a drill in a workout: expands the video and instructions in place. */
+/** "Watch How-To" toggle under a drill in a workout: expands the video and instructions in place. */
 export function DrillHowTo({ url, notes, name }: { url?: string | null; notes?: string | null; name: string }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="mt-1">
       <button type="button" onClick={() => setOpen((o) => !o)} className="inline-flex items-center gap-1 text-xs font-bold text-[#1746b8] cursor-pointer">
-        <PlayCircle className="w-3.5 h-3.5" /> {open ? 'Hide how-to' : url ? 'Watch how-to' : 'How-to'}
+        <PlayCircle className="w-3.5 h-3.5" /> {open ? 'Hide How-To' : url ? 'Watch How-To' : 'How-to'}
       </button>
       {open && (
         <div className="mt-2 space-y-2">

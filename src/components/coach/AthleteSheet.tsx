@@ -108,13 +108,13 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
       <div className="max-w-xl mx-auto px-4 py-5 space-y-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}>
         <section className={`rounded-3xl border p-5 shadow-xs space-y-3 ${flag ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200/90'}`}>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Coach flag · private</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Coach Flag · Private</span>
             <button
               type="button"
               onClick={toggleFlag}
               className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer ${flag ? 'bg-white text-red-700 border border-red-200' : 'bg-red-600 text-white'}`}
             >
-              <Flag className="w-3.5 h-3.5" /> {flag ? 'Remove flag' : 'Flag athlete'}
+              <Flag className="w-3.5 h-3.5" /> {flag ? 'Remove Flag' : 'Flag Athlete'}
             </button>
           </div>
           <input value={reason} onChange={(e) => setReason(e.target.value)} onBlur={saveReason} placeholder="Why? (e.g. elbow tightness, missed 3 days)" className={inputClass} />
@@ -122,7 +122,7 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
         </section>
 
         <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Readiness · last 14 days</div>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Readiness · Last 14 Days</div>
           <div className="flex items-center gap-4">
             <ReadinessRing score={latest?.check_date === localDate() ? latest.readiness : null} color={meta.ring} size={64} />
             <div className="flex-1 flex items-end gap-1 h-16">
@@ -146,7 +146,7 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
 
         <div className="grid grid-cols-2 gap-3">
           <section className="bg-white rounded-3xl border border-slate-200/90 p-4 shadow-xs">
-            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Body weight</div>
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Body Weight</div>
             <div className="text-2xl font-black text-slate-900 mt-1">
               {weights.length ? round1(Number(weights[weights.length - 1].weight_lb)) : '–'}
               <span className="text-xs font-bold text-slate-400 ml-1">lb</span>
@@ -154,7 +154,7 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
             <WeightSparkline entries={weights} height={32} />
           </section>
           <section className="bg-white rounded-3xl border border-slate-200/90 p-4 shadow-xs">
-            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Attendance · 30 days</div>
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Attendance · 30 Days</div>
             <ul className="mt-1.5 space-y-0.5 text-xs font-bold text-slate-700">
               {ATTENDANCE.map((s) => (
                 <li key={s.key} className="flex justify-between">
@@ -167,7 +167,7 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
         </div>
 
         <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Private coach notes</div>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Private Coach Notes</div>
           <div className="flex gap-2">
             <input value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Add a note only coaches can see" className={inputClass} />
             <button type="button" onClick={addNote} className="px-4 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold cursor-pointer">Add</button>
@@ -182,7 +182,7 @@ export default function AthleteSheet({ athlete, onClose, onChanged }: { athlete:
                     <p className="text-sm text-slate-800 whitespace-pre-line">{n.body}</p>
                     <p className="text-[10px] font-bold text-slate-400 mt-0.5">{timeAgo(n.created_at)}</p>
                   </div>
-                  <button type="button" aria-label="Delete note" onClick={() => deleteNote(n.id)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer">
+                  <button type="button" aria-label="Delete Note" onClick={() => deleteNote(n.id)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </li>

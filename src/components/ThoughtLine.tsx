@@ -29,7 +29,7 @@ export default function ThoughtLine() {
   if (!t) return null
   return (
     <div className="rounded-2xl bg-[#0f172a] text-white px-4 py-3">
-      <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Thought of the week</div>
+      <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Thought of the Week</div>
       <p className="text-sm font-bold leading-snug mt-0.5">{t.body}</p>
       {t.attribution && <p className="text-[11px] font-semibold text-slate-400 mt-1">— {t.attribution}</p>}
     </div>

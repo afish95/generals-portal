@@ -129,7 +129,7 @@ export default function AttendanceTab({ players, groups }: { players: Profile[];
           </span>
           {!weekend && (
             <button type="button" onClick={toggleSchoolDay} className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-[11px] font-extrabold text-slate-700 cursor-pointer">
-              {offLabel ? 'Make it a school day' : 'No school'}
+              {offLabel ? 'Make It a School Day' : 'No school'}
             </button>
           )}
         </div>
@@ -149,7 +149,7 @@ export default function AttendanceTab({ players, groups }: { players: Profile[];
         ))}
       </div>
       <button type="button" onClick={markAllPresent} className="w-full lg:w-auto lg:px-8 py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold cursor-pointer">
-        {mode === 'class' ? 'Mark everyone else present (class)' : 'Mark everyone else present'}
+        {mode === 'class' ? 'Mark Everyone Else Present (Class)' : 'Mark Everyone Else Present'}
       </button>
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}
 

@@ -83,7 +83,7 @@ export default function CoachDashboard() {
             workout: wk,
             logged: athletes.size,
             expected: wk.group_id === null ? players.length : mem.filter((x) => x.group_id === wk.group_id).length,
-            groupName: wk.group_id === null ? 'Whole team' : gList.find((x) => x.id === wk.group_id)?.name ?? 'Group',
+            groupName: wk.group_id === null ? 'Whole Team' : gList.find((x) => x.id === wk.group_id)?.name ?? 'Group',
           }
         })
       )
@@ -127,7 +127,7 @@ export default function CoachDashboard() {
 
       {alerts.length > 0 && (
         <section className="rounded-3xl border border-amber-200 bg-amber-50 p-4">
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-700 mb-1.5">Needs a look today</div>
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-700 mb-1.5">Needs a Look Today</div>
           <ul className="space-y-1">
             {alerts.map((r) => (
               <li key={r.athlete.id}>
@@ -141,9 +141,9 @@ export default function CoachDashboard() {
       )}
 
       <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Today’s training</div>
+        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Today’s Training</div>
         {workouts.length === 0 ? (
-          <p className="text-xs font-medium text-slate-500">Nothing scheduled today. <Link href="/office" className="font-bold text-[#1746b8]">Build a workout</Link></p>
+          <p className="text-xs font-medium text-slate-500">Nothing scheduled today. <Link href="/office" className="font-bold text-[#1746b8]">Build a Workout</Link></p>
         ) : (
           <ul className="space-y-2.5">
             {workouts.map((r) => (
@@ -164,7 +164,7 @@ export default function CoachDashboard() {
       <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden lg:col-span-2">
         <div className="px-5 pt-4 pb-2 flex items-center justify-between">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Athletes today · pts · readiness · attendance</span>
-          <Link href="/office" className="text-[11px] font-extrabold text-[#1746b8]">Take attendance</Link>
+          <Link href="/office" className="text-[11px] font-extrabold text-[#1746b8]">Take Attendance</Link>
         </div>
         <ul className="divide-y divide-slate-100">
           {shown.map((r) => {

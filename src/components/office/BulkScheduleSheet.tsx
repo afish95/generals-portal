@@ -110,7 +110,7 @@ export default function BulkScheduleSheet({
         <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Who</div>
           <div className="flex flex-wrap gap-1.5">
-            {[{ id: 'team', name: 'Whole team' }, ...groups.map((g) => ({ id: String(g.id), name: g.name }))].map((g) => (
+            {[{ id: 'team', name: 'Whole Team' }, ...groups.map((g) => ({ id: String(g.id), name: g.name }))].map((g) => (
               <button
                 key={g.id}
                 type="button"

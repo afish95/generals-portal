@@ -9,9 +9,9 @@ import { withPointsDelta } from '@/lib/pointsDelta'
 import { PointBubble, buzz } from '@/components/points/PointBurst'
 
 const SCALES = [
-  { key: 'sleep_quality', label: 'Sleep quality', low: 'Rough', high: 'Great' },
-  { key: 'soreness', label: 'Body soreness', low: 'None', high: 'Very sore' },
-  { key: 'arm_soreness', label: 'Arm soreness', low: 'None', high: 'Very sore' },
+  { key: 'sleep_quality', label: 'Sleep Quality', low: 'Rough', high: 'Great' },
+  { key: 'soreness', label: 'Body Soreness', low: 'None', high: 'Very sore' },
+  { key: 'arm_soreness', label: 'Arm Soreness', low: 'None', high: 'Very sore' },
   { key: 'stress', label: 'Stress', low: 'Calm', high: 'Stressed' },
 ] as const
 type ScaleKey = (typeof SCALES)[number]['key']
@@ -98,7 +98,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
   return (
     <section className={embedded ? 'space-y-4' : 'bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4'}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{embedded ? 'Readiness score' : 'Readiness check-in'}</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{embedded ? 'Readiness Score' : 'Readiness Check-In'}</span>
         <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${meta.chip}`}>{meta.label}</span>
       </div>
 
@@ -114,7 +114,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
               Sleep {today.sleep_quality}/5 · Body {today.soreness}/5{today.arm_soreness != null ? ` · Arm ${today.arm_soreness}/5` : ''} · Stress {today.stress}/5
             </p>
             <button type="button" onClick={() => setEditing(true)} className="text-xs font-extrabold text-[#1746b8] mt-1 cursor-pointer">
-              Update check-in
+              Update Check-In
             </button>
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function ReadinessCheckIn({ athleteId, onSaved, embedded = false,
               </button>
             )}
             <button type="button" onClick={save} disabled={saving} className="flex-1 py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-60 cursor-pointer">
-              {saving ? 'Saving…' : 'Save check-in'}
+              {saving ? 'Saving…' : 'Save Check-In'}
             </button>
           </div>
         </div>

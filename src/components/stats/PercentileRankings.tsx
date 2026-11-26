@@ -98,7 +98,7 @@ export default function PercentileRankings({ myId, isCoach }: { myId: string; is
                 <img src={player.stats.photo} alt="" className="w-12 h-12 rounded-2xl object-cover bg-slate-100 shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Percentile rankings</div>
+                <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Percentile Rankings</div>
                 <div className="text-lg font-black text-slate-900">{player.player_name}</div>
               </div>
               <div className="text-[10px] font-bold text-slate-400 text-right">
@@ -131,7 +131,7 @@ export default function PercentileRankings({ myId, isCoach }: { myId: string; is
             <div className="flex items-center justify-between gap-2">
               <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{kind === 'hitter' ? 'Hitter' : 'Pitcher'} profile</div>
               <select value={compare ?? ''} onChange={(e) => setCompare(e.target.value || null)} className="px-2 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold max-w-[55%]">
-                <option value="">Compare with…</option>
+                <option value="">Compare With…</option>
                 {[...pool].sort((x, y) => x.player_name.localeCompare(y.player_name)).filter((l) => l.id !== player.id).map((l) => <option key={l.id} value={l.player_name}>{l.player_name}</option>)}
               </select>
             </div>
@@ -241,7 +241,7 @@ function Spider({ kind, lines, a, b, eaFor }: { kind: Kind; lines: GcLine[]; a: 
       <div className="flex justify-center gap-4 text-[11px] font-bold mt-1">
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#1746b8]" />{a.player_name}</span>
         {b && <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-amber-500" />{b.player_name}</span>}
-        <span className="flex items-center gap-1.5 text-slate-400"><span className="w-3 border-t-2 border-dashed border-slate-400" />Team middle</span>
+        <span className="flex items-center gap-1.5 text-slate-400"><span className="w-3 border-t-2 border-dashed border-slate-400" />Team Middle</span>
       </div>
       <p className="text-[10px] font-semibold text-slate-400 text-center mt-1">Further out = higher team percentile. {kind === 'hitter' ? 'K% is flipped, so fewer strikeouts reaches further out.' : ''}</p>
     </div>

@@ -167,7 +167,7 @@ export default function ChatThread({
 
       {readOnly ? (
         <div className="shrink-0 bg-amber-50 border-t border-amber-200 text-center text-xs font-extrabold text-amber-800 py-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}>
-          Player view: read-only
+          Player View: Read-Only
         </div>
       ) : (
       <div className="shrink-0 bg-white border-t border-slate-200" style={embedded ? undefined : { paddingBottom: 'env(safe-area-inset-bottom)' }}>

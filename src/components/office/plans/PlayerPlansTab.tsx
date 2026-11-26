@@ -184,7 +184,7 @@ export default function PlayerPlansTab({ initialPlayer = null }: { initialPlayer
               <span
                 className={`text-[10px] font-extrabold px-2 py-1 rounded-lg shrink-0 ${st === 'none' ? 'bg-slate-100 text-slate-500' : st === 'draft' ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}
               >
-                {st === 'none' ? 'No plan' : st === 'draft' ? 'Draft' : 'Live'}
+                {st === 'none' ? 'No Plan' : st === 'draft' ? 'Draft' : 'Live'}
               </span>
             </button>
           )

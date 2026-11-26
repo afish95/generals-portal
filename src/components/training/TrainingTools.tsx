@@ -32,7 +32,7 @@ export default function TrainingTools({ athleteId, refreshKey = 0, onStart }: { 
 
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
-      <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Training tools</div>
+      <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Training Tools</div>
       <p className="text-xs text-slate-500 -mt-1">Start a bullpen game or command drill on your own. Your coach can also add these to your day plan.</p>
       <ul className="space-y-2.5">
         {scripts.map((t) => {

@@ -42,7 +42,7 @@ export default function FolderTree({
     onChanged()
   }
   const rename = async (f: Folder) => {
-    const name = window.prompt('Rename folder', f.name)?.trim()
+    const name = window.prompt('Rename Folder', f.name)?.trim()
     if (!name || name === f.name) return
     await sb().from('library_folders').update({ name }).eq('id', f.id)
     onChanged()
@@ -122,12 +122,12 @@ export default function FolderTree({
             {menu === f.id && (
               <div className="absolute right-0 top-7 z-20 w-40 bg-white text-slate-700 rounded-xl border border-slate-200 shadow-lg py-1 text-xs font-bold" onMouseLeave={() => setMenu(null)}>
                 {[
-                  ['New subfolder', () => add(f.id)],
+                  ['New Subfolder', () => add(f.id)],
                   ['Rename', () => rename(f)],
-                  ['Move to…', () => move(f)],
-                  ['Delete folder', () => remove(f)],
+                  ['Move To…', () => move(f)],
+                  ['Delete Folder', () => remove(f)],
                 ].map(([l, fn]) => (
-                  <button key={l as string} type="button" onClick={() => (setMenu(null), (fn as () => void)())} className={`w-full text-left px-3 py-2 hover:bg-slate-50 cursor-pointer ${l === 'Delete folder' ? 'text-red-600' : ''}`}>
+                  <button key={l as string} type="button" onClick={() => (setMenu(null), (fn as () => void)())} className={`w-full text-left px-3 py-2 hover:bg-slate-50 cursor-pointer ${l === 'Delete Folder' ? 'text-red-600' : ''}`}>
                     {l as string}
                   </button>
                 ))}
@@ -155,11 +155,11 @@ export default function FolderTree({
 
   return (
     <nav className="space-y-0.5" aria-label="Folders">
-      {special('all', kind === 'drill' ? 'All drills' : 'All progressions', Layers)}
+      {special('all', kind === 'drill' ? 'All Drills' : 'All Progressions', Layers)}
       {children(null).map((f) => row(f, 0))}
       {special('unfiled', 'Unfiled', Inbox)}
       <button type="button" onClick={() => add(null)} className="w-full flex items-center gap-1.5 px-2 py-2 mt-1 rounded-xl text-xs font-extrabold text-[#1746b8] hover:bg-blue-50 cursor-pointer">
-        <FolderPlus className="w-4 h-4 ml-5" /> New folder
+        <FolderPlus className="w-4 h-4 ml-5" /> New Folder
       </button>
     </nav>
   )

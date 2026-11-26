@@ -16,13 +16,13 @@ import { PROFILE_FIELDS, type Exercise, type Group, type Profile } from '@/lib/t
 
 const TABS = [
   { key: 'workouts', label: 'Workouts' },
-  { key: 'plans', label: 'Player plans' },
-  { key: 'practices', label: 'Practice plans' },
+  { key: 'plans', label: 'Player Plans' },
+  { key: 'practices', label: 'Practice Plans' },
   { key: 'attendance', label: 'Attendance' },
   { key: 'roster', label: 'Roster' },
   { key: 'drills', label: 'Drills' },
   { key: 'thought', label: 'Thought of the Week' },
-  { key: 'gamestats', label: 'Game stats' },
+  { key: 'gamestats', label: 'Game Stats' },
 ] as const
 type TabKey = (typeof TABS)[number]['key']
 

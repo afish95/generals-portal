@@ -115,7 +115,7 @@ export default function ProgramAssign({ programId, programName, programWeeks }: 
         <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-100">
           {(['groups', 'players'] as const).map((m) => (
             <button key={m} type="button" onClick={() => setMode(m)} className={`py-2 rounded-lg text-xs font-extrabold cursor-pointer ${mode === m ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
-              {m === 'groups' ? 'Groups' : 'Pick players'}
+              {m === 'groups' ? 'Groups' : 'Pick Players'}
             </button>
           ))}
         </div>

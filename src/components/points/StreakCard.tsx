@@ -108,7 +108,7 @@ export default function StreakCard({ athleteId, refreshKey = 0 }: { athleteId: s
 
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-blue-200">Perfect-day streak</span>
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-blue-200">Perfect-Day Streak</span>
               <span className="text-[11px] font-black text-amber-300 tabular-nums">
                 {Math.min(shown, STREAK_GOAL)}/{STREAK_GOAL}
               </span>
@@ -178,11 +178,11 @@ function Celebration({ days, onClose }: { days: number; onClose: () => void }) {
         <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-300 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/50">
           <Trophy className="w-9 h-9 text-white" />
         </div>
-        <div className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.2em] text-amber-300">Achievement unlocked</div>
+        <div className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.2em] text-amber-300">Achievement Unlocked</div>
         <div className="text-2xl font-black leading-tight mt-1">{days}-day streak!</div>
         <div className="text-lg font-extrabold mt-1">Congratulations!</div>
         <p className="text-xs text-blue-100 mt-2">Every point, every day. Your coach has been notified. Check your messages.</p>
-        <div className="mt-4 text-[10px] font-bold text-blue-200">Tap to continue</div>
+        <div className="mt-4 text-[10px] font-bold text-blue-200">Tap to Continue</div>
       </div>
     </button>
   )

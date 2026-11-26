@@ -35,7 +35,7 @@ export default function ProgressTrends({ athleteId }: { athleteId: string }) {
       const out: Series[] = [
         {
           key: 'points',
-          label: 'Daily points',
+          label: 'Daily Points',
           unit: '%',
           byWeek: true,
           points: [...weeks.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([w, v]) => ({ x: w, y: pct(v.e, v.a) })),
@@ -73,7 +73,7 @@ export default function ProgressTrends({ athleteId }: { athleteId: string }) {
 
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
-      <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Progress &amp; trends</div>
+      <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Progress &amp; Trends</div>
       {!series ? (
         <div className="h-48 animate-pulse bg-slate-50 rounded-2xl" />
       ) : (

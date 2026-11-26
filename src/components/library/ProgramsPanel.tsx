@@ -37,7 +37,7 @@ export default function ProgramsPanel({ progressions, onChanged }: { progression
   return (
     <div className="space-y-3">
       <button type="button" onClick={() => setOpen('new')} className="w-full py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer">
-        <Plus className="w-4 h-4" /> New program
+        <Plus className="w-4 h-4" /> New Program
       </button>
       {programs === null ? (
         <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />

@@ -27,7 +27,7 @@ export default function StatsPage() {
       { key: 'leaderboard', label: 'Leaderboards' },
       { key: 'progressions', label: 'Progressions' },
       ...(isCoach ? [{ key: 'compare', label: 'Compare' }] : []),
-      { key: 'game', label: 'Game stats' },
+      { key: 'game', label: 'Game Stats' },
       { key: 'percentiles', label: 'Percentiles' },
     ],
     mode === 'training' ? sub : mode,
@@ -70,7 +70,7 @@ export default function StatsPage() {
   return (
     <div className="space-y-4">
       <div className={isCoach ? 'lg:hidden' : ''}>
-        <PageTitle title="Stats" subtitle={mode === 'training' ? 'Training bests and PRs' : mode === 'game' ? 'Program game stat history' : 'How you rank against teammates'} />
+        <PageTitle title="Stats" subtitle={mode === 'training' ? 'Training Bests and PRs' : mode === 'game' ? 'Program game stat history' : 'How you rank against teammates'} />
       </div>
       <div className={`grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-[#1746b8] ${isCoach ? 'lg:hidden' : ''}`}>
         {(['training', 'game', 'percentiles'] as const).map((m) => (
@@ -109,7 +109,7 @@ export default function StatsPage() {
       <>
       {!isCoach && <WeeklyRecap athleteId={profile.id} />}
       <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
-        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">{isCoach ? 'Team bests' : 'My bests'}</div>
+        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">{isCoach ? 'Team Bests' : 'My Bests'}</div>
         {bests === null ? (
           <div className="h-20 animate-pulse bg-slate-50 rounded-2xl" />
         ) : bests.length === 0 ? (

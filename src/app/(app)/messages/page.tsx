@@ -84,7 +84,7 @@ export default function MessagesPage() {
   const titleOf = (c: Convo) => {
     if (c.kind === 'direct') {
       const other = c.member_a === profile.id ? c.member_b : c.member_b === profile.id ? c.member_a : null
-      if (other) return names.get(other) ?? 'Direct message'
+      if (other) return names.get(other) ?? 'Direct Message'
       return `${names.get(c.member_a || '') ?? '?'} ↔ ${names.get(c.member_b || '') ?? '?'}`
     }
     if (c.kind === 'team') return 'everyone'
@@ -206,7 +206,7 @@ export default function MessagesPage() {
                 {sectionHead('Channels', coachTools ? () => setSheet('channel') : undefined)}
                 <div className="space-y-0.5">{channels.map(row)}</div>
                 {channels.length === 0 && <p className="px-3 py-2 text-xs text-slate-500">No channels yet.</p>}
-                {sectionHead('Direct messages', viewAs.active ? undefined : () => setSheet('dm'))}
+                {sectionHead('Direct Messages', viewAs.active ? undefined : () => setSheet('dm'))}
                 <div className="space-y-0.5">{dms.map(row)}</div>
                 {dms.length === 0 && <p className="px-3 py-2 text-xs text-slate-500">{isCoach ? 'No DMs yet.' : 'Tap + to message a coach.'}</p>}
               </>
@@ -260,7 +260,7 @@ export default function MessagesPage() {
 
       {sheet === 'dm' && (
         <PeoplePicker
-          title={isCoach ? 'New direct message' : 'Message a coach'}
+          title={isCoach ? 'New Direct Message' : 'Message a Coach'}
           people={people.filter((p) => p.is_active && p.has_login !== false && p.id !== profile.id && (isCoach ? true : p.role === 'coach'))}
           onClose={() => setSheet(null)}
           onPick={startDirect}
@@ -404,10 +404,10 @@ function ChannelSheet({
     .sort((a, b) => (a.role === b.role ? (a.grad_year || 0) - (b.grad_year || 0) || a.full_name.localeCompare(b.full_name) : a.role === 'coach' ? -1 : 1))
 
   return (
-    <Overlay title={group ? `# ${group.name} members` : 'New channel'} onClose={onClose}>
+    <Overlay title={group ? `# ${group.name} members` : 'New Channel'} onClose={onClose}>
       {!group && <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Channel name (e.g. Bullpen crew)" className={inputClass} />}
       <div className="shrink-0">
-        <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Add everyone from</div>
+        <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Add Everyone From</div>
         <div className="flex flex-wrap gap-1.5">
           {groups
             .filter((g) => g.id !== group?.id)
@@ -425,7 +425,7 @@ function ChannelSheet({
           <label key={p.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
             <input type="checkbox" checked={picked.has(p.id)} onChange={() => toggle(p.id)} className="w-4 h-4 accent-[#1746b8]" />
             <span className="text-sm font-semibold text-slate-800 flex-1 truncate">{p.full_name}</span>
-            {p.has_login === false && <span className="text-[9px] font-extrabold text-slate-400 uppercase">No login</span>}
+            {p.has_login === false && <span className="text-[9px] font-extrabold text-slate-400 uppercase">No Login</span>}
             <span className="text-[10px] font-bold text-slate-400 uppercase">{p.role === 'coach' ? 'coach' : p.grad_year ? `’${String(p.grad_year).slice(2)}` : ''}</span>
           </label>
         ))}
@@ -438,7 +438,7 @@ function ChannelSheet({
           </Link>
         )}
         <button type="button" onClick={save} disabled={busy} className="px-5 py-2.5 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-60 cursor-pointer">
-          {busy ? 'Saving…' : group ? 'Save members' : 'Create channel'}
+          {busy ? 'Saving…' : group ? 'Save Members' : 'Create Channel'}
         </button>
       </div>
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}

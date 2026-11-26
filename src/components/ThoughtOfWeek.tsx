@@ -34,7 +34,7 @@ export default function ThoughtOfWeek() {
     <section className="rounded-3xl bg-[#0f172a] text-white p-5 shadow-xs">
       <div className="flex items-center gap-2 mb-2">
         <Quote className="w-4 h-4 text-amber-400" />
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Thought of the week</span>
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Thought of the Week</span>
       </div>
       <p className="text-base font-bold leading-snug">{thought.body}</p>
       {thought.attribution && <p className="text-xs font-semibold text-slate-400 mt-2">— {thought.attribution}</p>}

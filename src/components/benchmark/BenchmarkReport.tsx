@@ -119,7 +119,7 @@ function Tile({ m, value, mine, vs, print, onOpen }: { m: BenchMetric; value: nu
       {notes.length > 0 && <div className="text-[9px] font-semibold text-slate-400 mt-1.5">{notes.join(' · ')}</div>}
       {onOpen && (
         <div className="mt-auto pt-2 text-[10px] font-extrabold text-[#1746b8] flex items-center gap-0.5">
-          Full breakdown <ChevronRight className="w-3 h-3" />
+          Full Breakdown <ChevronRight className="w-3 h-3" />
         </div>
       )}
     </div>
