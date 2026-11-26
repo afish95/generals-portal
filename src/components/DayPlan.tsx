@@ -17,10 +17,12 @@ import ReadinessCheckIn from '@/components/wellness/ReadinessCheckIn'
 import { useDrillsOfWeek } from '@/components/training/useDrillsOfWeek'
 import DrillOfWeekCard from '@/components/training/DrillOfWeekCard'
 import LogStat from '@/components/training/LogStat'
+import { useOpponents } from '@/lib/opponents'
+import OpponentBadge from '@/components/OpponentBadge'
 
 const DRIVELINE_APP_URL = 'https://apps.apple.com/us/app/driveline-training/id6445937141'
 
-type Event = { id: number; title: string; event_type: string; start_time: string | null; end_time: string | null; location: string | null; practice_plan: string | null; notes: string | null; group_ids: number[] | null; is_cancelled: boolean | null; plan: unknown }
+type Event = { id: number; title: string; event_type: string; opponent_id: number | null; start_time: string | null; end_time: string | null; location: string | null; practice_plan: string | null; notes: string | null; group_ids: number[] | null; is_cancelled: boolean | null; plan: unknown }
 type Tool = { id: number; workout_id: number; script_id: number; notes: string | null }
 type Script = { id: number; title: string; pitch_count: number }
 
@@ -78,6 +80,7 @@ export default function DayPlan({
   const [schoolOff, setSchoolOff] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
   const dow = useDrillsOfWeek(day)
+  const opps = useOpponents()
   const [busy, setBusy] = useState<string | null>(null)
   const [pop, setPop] = useState<{ key: string; amount: number } | null>(null)
   const [tools, setTools] = useState<Tool[]>([])
@@ -90,7 +93,7 @@ export default function DayPlan({
     let cancelled = false
     const load = async () => {
       const [{ data: ev }, { data: w }, { data: gr }, { data: off }] = await Promise.all([
-        supabase.from('team_schedule').select('id, title, event_type, start_time, end_time, location, practice_plan, notes, group_ids, is_cancelled, plan').eq('event_date', day),
+        supabase.from('team_schedule').select('id, title, event_type, start_time, end_time, location, practice_plan, notes, group_ids, is_cancelled, plan, opponent_id').eq('event_date', day),
         supabase.from('workouts').select('*').eq('workout_date', day).order('sort_order'),
         supabase.from('team_groups').select('id, name'),
         supabase.from('school_days_off').select('label').eq('day', day).maybeSingle(),
@@ -289,7 +292,7 @@ export default function DayPlan({
           return (
             <li key={k} className={`border-l-4 ${SCHEDULE.stripe}`}>
               <Row
-                icon={isGame ? <Trophy className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+                icon={e.opponent_id && opps.get(e.opponent_id) ? <OpponentBadge opp={opps.get(e.opponent_id)} size={36} /> : isGame ? <Trophy className="w-4 h-4" /> : <Users className="w-4 h-4" />}
                 tone={SCHEDULE.tone}
                 title={e.title}
                 subtitle={[KIND_STYLE[kindOf(e.event_type)].label, e.start_time ? timeRange(e) : null, e.location].filter(Boolean).join(' · ')}

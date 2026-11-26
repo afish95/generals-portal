@@ -10,6 +10,7 @@ export type ScheduleEvent = {
   notes?: string | null
   group_ids?: number[] | null
   series_id?: string | null
+  opponent_id?: number | null
   plan?: unknown
   is_cancelled?: boolean | null
 }

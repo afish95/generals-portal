@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { FileDown, MapPin, Users } from 'lucide-react'
 import { KIND_STYLE, kindOf, minutesOf, timeRange, type ScheduleEvent } from '@/lib/schedule'
 import { INTENT_LABEL, INTENT_STYLE, type Intent } from '@/lib/programs'
+import { useOpponents, isAway } from '@/lib/opponents'
+import OpponentBadge from '@/components/OpponentBadge'
 
 export type AgendaWorkout = { id: number; title: string; workout_date: string; group_id: number | null; intent?: Intent | null }
 
@@ -83,14 +85,17 @@ export default function WeekAgenda({
 function EventBlock({ e, open, onToggle, who, isCoach }: { e: ScheduleEvent; open: boolean; onToggle: () => void; who: string; isCoach: boolean }) {
   const k = kindOf(e.event_type)
   const st = KIND_STYLE[k]
+  const opps = useOpponents()
+  const opp = e.opponent_id ? opps.get(e.opponent_id) : null
   const hasPlan = !!e.plan && typeof e.plan === 'object' && Array.isArray((e.plan as { blocks?: unknown[] }).blocks) && (e.plan as { blocks: unknown[] }).blocks.length > 0
   return (
     <div className={`rounded-lg border ${st.block} overflow-hidden`}>
       <button type="button" onClick={onToggle} className="w-full flex gap-2 px-2.5 py-2 text-left cursor-pointer">
         <span className={`w-1.5 rounded-full shrink-0 ${st.bar}`} />
+        {opp && <OpponentBadge opp={opp} size={30} className="self-center" />}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className="text-xs font-extrabold text-slate-900 truncate flex-1">{e.title}</span>
+            <span className="text-xs font-extrabold text-slate-900 truncate flex-1">{opp ? `${isAway(e.title, e.location) ? '@' : 'vs'} ${opp.name}` : e.title}</span>
             <span className={`text-[10px] font-extrabold shrink-0 ${st.text}`}>{timeRange(e)}</span>
           </div>
           {(e.location || who !== 'Whole program') && (

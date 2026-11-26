@@ -9,6 +9,9 @@ import { SheetFrame } from '@/components/office/roster/shared'
 import { addDays, localDate, prettyDate, type Group } from '@/lib/training'
 import { notifyPlayers } from '@/lib/notify'
 import SendNotification from '@/components/SendNotification'
+import OpponentBadge from '@/components/OpponentBadge'
+import OpponentsSheet from './OpponentsSheet'
+import { opponentFromTitle, useOpponents } from '@/lib/opponents'
 import { EVENT_KINDS, KIND_STYLE, kindOf, timeRange, to12h, to24h, type EventKind, type ScheduleEvent } from '@/lib/schedule'
 
 type Row = { key: string; first: ScheduleEvent; days: ScheduleEvent[] }
@@ -23,6 +26,8 @@ export default function ScheduleTab({ groups, openEventId }: { groups: Group[]; 
   const [editing, setEditing] = useState<Row | 'new' | null>(null)
   const [version, setVersion] = useState(0)
   const [msg, setMsg] = useState<string | null>(null)
+  const [showOpps, setShowOpps] = useState(false)
+  const opps = useOpponents()
 
   useEffect(() => {
     createClient()
@@ -70,9 +75,15 @@ export default function ScheduleTab({ groups, openEventId }: { groups: Group[]; 
 
   return (
     <div className="space-y-3">
-      <button type="button" onClick={() => setEditing('new')} className="w-full lg:w-auto lg:px-8 py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer">
-        <CalendarPlus className="w-4 h-4" /> Add Event
-      </button>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setEditing('new')} className="flex-1 lg:flex-none lg:px-8 py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer">
+          <CalendarPlus className="w-4 h-4" /> Add Event
+        </button>
+        <button type="button" onClick={() => setShowOpps(true)} className="px-4 py-3 rounded-2xl bg-white border border-slate-200 text-sm font-extrabold text-slate-700 cursor-pointer">
+          Opponents
+        </button>
+      </div>
+      {showOpps && <OpponentsSheet onClose={() => setShowOpps(false)} />}
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {(['all', ...EVENT_KINDS.map((k) => k.key)] as const).map((k) => (
           <button key={k} type="button" onClick={() => setKind(k)} className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold shrink-0 cursor-pointer ${kind === k ? 'bg-[#1746b8] text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
@@ -95,6 +106,7 @@ export default function ScheduleTab({ groups, openEventId }: { groups: Group[]; 
             return (
               <button key={r.key} type="button" onClick={() => setEditing(r)} className="w-full flex items-center gap-3 px-4 py-3 text-left bg-white hover:bg-slate-50 cursor-pointer">
                 <span className={`w-1.5 self-stretch rounded-full ${st.bar}`} />
+                {r.first.opponent_id && opps.get(r.first.opponent_id) && <OpponentBadge opp={opps.get(r.first.opponent_id)} size={32} />}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-extrabold text-slate-900 truncate">{r.first.title}</div>
                   <div className="text-[11px] font-semibold text-slate-500 truncate">
@@ -140,6 +152,16 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notify, setNotify] = useState(!row)
+  const opps = useOpponents()
+  const [opponentId, setOpponentId] = useState<number | null>(first?.opponent_id ?? null)
+  const [oppTouched, setOppTouched] = useState(!!first?.opponent_id)
+  // Pick the opponent from the title as the coach types ("Varsity vs Lincoln"), until they choose one by hand
+  useEffect(() => {
+    if (oppTouched) return
+    const n = opponentFromTitle(title)?.toLowerCase()
+    const hit = n ? [...opps.values()].find((o) => o.name.toLowerCase() === n || n.startsWith(o.name.toLowerCase())) : null
+    setOpponentId(hit?.id ?? null)
+  }, [title, opps, oppTouched])
 
   // Push + announcement to everyone the event is for (whole program, or players in the chosen groups)
   const sendNotice = async (days: string[], updated: boolean) => {
@@ -181,6 +203,7 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
     location: location.trim() || null,
     group_ids: groupIds.length ? groupIds : null,
     notes: notes.trim() || null,
+    opponent_id: kind === 'game' ? opponentId : null,
     updated_at: new Date().toISOString(),
   })
 
@@ -231,6 +254,25 @@ function EventSheet({ row, groups, onClose, onSaved }: { row: Row | null; groups
           ))}
         </div>
       </section>
+
+      {kind === 'game' && (
+        <section className="bg-white rounded-3xl border border-slate-200 p-5 flex items-center gap-3">
+          <OpponentBadge opp={opponentId ? opps.get(opponentId) : null} size={40} />
+          <select
+            value={opponentId ?? ''}
+            onChange={(e) => {
+              setOppTouched(true)
+              setOpponentId(e.target.value ? Number(e.target.value) : null)
+            }}
+            className={inputClass}
+          >
+            <option value="">Opponent (none)</option>
+            {[...opps.values()].map((o) => (
+              <option key={o.id} value={o.id}>{o.name}</option>
+            ))}
+          </select>
+        </section>
+      )}
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
         <SectionLabel>When</SectionLabel>
