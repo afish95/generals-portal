@@ -13,11 +13,13 @@ import ImportPanel from './ImportPanel'
 import ProgramsPanel from './ProgramsPanel'
 import DrillOfWeekPanel from './DrillOfWeekPanel'
 
-type Sub = 'drills' | 'progressions' | 'programs' | 'dow' | 'import'
+export type LibrarySub = 'drills' | 'progressions' | 'programs' | 'dow' | 'import'
+type Sub = LibrarySub
 
 /** Coach Office → Drills: folder-based drill and progression library with in-app videos. */
-export default function DrillLibrary({ onChanged, initialSub }: { onChanged: () => void; initialSub?: string }) {
-  const [sub, setSub] = useState<Sub>((['drills', 'progressions', 'programs', 'dow', 'import'] as string[]).includes(initialSub || '') ? (initialSub as Sub) : 'drills')
+export default function DrillLibrary({ onChanged, initialSub, only }: { onChanged: () => void; initialSub?: string; only?: Sub }) {
+  const [subState, setSub] = useState<Sub>((['drills', 'progressions', 'programs', 'dow', 'import'] as string[]).includes(initialSub || '') ? (initialSub as Sub) : 'drills')
+  const sub = only || subState
   const [folders, setFolders] = useState<Folder[]>([])
   const [drills, setDrills] = useState<Drill[]>([])
   const [progs, setProgs] = useState<(Progression & { n: number })[]>([])
@@ -84,7 +86,7 @@ export default function DrillLibrary({ onChanged, initialSub }: { onChanged: () 
 
   return (
     <div>
-      <SubTabs<Sub>
+      {!only && <SubTabs<Sub>
         tabs={[
           { key: 'drills', label: 'Drills', count: drills.filter((d) => d.is_active).length },
           { key: 'progressions', label: 'Progressions', count: progs.filter((p) => p.is_active).length },
@@ -94,7 +96,7 @@ export default function DrillLibrary({ onChanged, initialSub }: { onChanged: () 
         ]}
         active={sub}
         onChange={setSub}
-      />
+      />}
       {!loaded ? (
         <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />
       ) : sub === 'dow' ? (
