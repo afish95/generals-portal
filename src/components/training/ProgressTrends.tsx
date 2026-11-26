@@ -6,6 +6,7 @@ import LineChart, { type Point } from '@/components/charts/LineChart'
 import { addDays, localDate, prettyDate, round1, type Exercise } from '@/lib/training'
 import { normalizePoints, pct } from '@/lib/points'
 import { weekStart } from '@/components/stats/WeeklyRecap'
+import Trend from '@/components/Trend'
 
 const RANGES = [
   { key: '30', label: '30 Days', days: 30 },
@@ -84,6 +85,17 @@ export default function ProgressTrends({ athleteId }: { athleteId: string }) {
 
   const current = useMemo(() => series?.find((s) => s.key === selected) ?? series?.[0], [series, selected])
 
+  // Latest point vs the one before, and whether the latest is the best in range (lower is better for times)
+  const trendOf = (s: Series) => {
+    const pts = s.points
+    if (!pts.length) return null
+    const last = pts[pts.length - 1].y
+    const prev = pts.length > 1 ? pts[pts.length - 2].y : null
+    const earlier = pts.slice(0, -1).map((p) => p.y)
+    const isBest = earlier.length > 0 && (s.lowerIsBetter ? last < Math.min(...earlier) : last > Math.max(...earlier))
+    return { last, delta: prev == null ? null : last - prev, isBest }
+  }
+
   return (
     <section className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -109,11 +121,36 @@ export default function ProgressTrends({ athleteId }: { athleteId: string }) {
                 className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap cursor-pointer ${current?.key === s.key ? 'bg-[#1746b8] text-white' : 'bg-slate-100 text-slate-600'}`}
               >
                 {s.label}
+                {(() => {
+                  const t = trendOf(s)
+                  if (!t?.delta) return null
+                  const better = s.lowerIsBetter ? t.delta < 0 : t.delta > 0
+                  return <span className={`ml-1 ${current?.key === s.key ? 'text-white' : better ? 'text-emerald-600' : 'text-red-600'}`}>{t.delta > 0 ? '▲' : '▼'}</span>
+                })()}
               </button>
             ))}
           </div>
           {current && (
             <div>
+              {(() => {
+                const t = trendOf(current)
+                if (!t) return null
+                return (
+                  <div className="flex items-baseline gap-2 mb-0.5">
+                    <span className="text-2xl font-black text-slate-900 tabular-nums">
+                      {round1(t.last)}
+                      <span className="text-xs font-bold text-slate-400">{current.unit}</span>
+                    </span>
+                    {t.isBest && current.key !== 'points' && current.key !== 'readiness' ? (
+                      <span className="px-1.5 py-0.5 rounded bg-amber-400 text-[10px] font-black text-slate-900">PR</span>
+                    ) : t.isBest ? (
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-[10px] font-black text-emerald-700">Best</span>
+                    ) : null}
+                    <Trend delta={t.delta} lowerIsBetter={current.lowerIsBetter} digits={current.unit.trim() === 'sec' ? 2 : 1} className="text-sm" />
+                    {t.delta != null && <span className="text-[10px] font-semibold text-slate-400">vs last {current.byWeek ? 'week' : 'time'}</span>}
+                  </div>
+                )
+              })()}
               <div className="text-sm font-extrabold text-slate-900 mb-1">
                 {current.label}
                 <span className="text-[11px] font-bold text-slate-400 ml-1.5">
