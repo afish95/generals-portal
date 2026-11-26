@@ -14,7 +14,7 @@ import MyPlan from '@/components/plan/MyPlan'
 import TrainingOverview from '@/components/training/TrainingOverview'
 import WeekAtAGlance from '@/components/training/WeekAtAGlance'
 import StatLogCard from '@/components/training/StatLogCard'
-import PercentileRankings from '@/components/stats/PercentileRankings'
+import TrainingPercentiles from '@/components/training/TrainingPercentiles'
 import PrCelebration from '@/components/training/PrCelebration'
 import { PointBubble, buzz } from '@/components/points/PointBurst'
 import type { PrHit } from '@/components/training/WorkoutLogger'
@@ -126,7 +126,7 @@ export default function TrainingPage() {
             <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Training Leaderboards</div>
             <PositionLeaderboard myId={profile.id} myPosition={profile.position_group} key={`lb-${refreshKey}`} />
           </section>
-          <PercentileRankings myId={profile.id} isCoach={false} />
+          <TrainingPercentiles myId={profile.id} position={profile.position_group} key={`tp-${refreshKey}`} />
         </>
       )}
 
