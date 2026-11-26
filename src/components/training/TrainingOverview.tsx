@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, Crosshair, Footprints, Gauge, MoveRight, Rocket, Target, Timer, TrendingUp, Zap, type LucideIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { addDays, localDate, round1 } from '@/lib/training'
 import { ordinal, percentileRank, rankOf } from '@/lib/rank'
@@ -13,22 +12,9 @@ import DrillOfWeekCard from './DrillOfWeekCard'
 type Row = { athlete_id: string; metric: string; value: number }
 type M = (typeof METRICS)['pitchers'][number]
 
-const ICONS: Record<string, LucideIcon> = {
-  mound_velo: Gauge,
-  pulldown_velo: Zap,
-  long_toss: MoveRight,
-  strike_pct: Target,
-  ahead_pct: TrendingUp,
-  miss_in: Crosshair,
-  bat_speed: Activity,
-  exit_velo: Rocket,
-  time_to_first: Footprints,
-  pos_velo: Zap,
-  pop_time: Timer,
-}
 /** Green 70th+, yellow 40–69th, red under 40th. */
 const toneFor = (p: number | null) =>
-  p == null ? { text: 'text-white', pill: 'bg-white/10 text-white' } : p >= 70 ? { text: 'text-green-400', pill: 'bg-green-500 text-white' } : p >= 40 ? { text: 'text-yellow-300', pill: 'bg-yellow-400 text-slate-900' } : { text: 'text-red-400', pill: 'bg-red-500 text-white' }
+  p == null ? { text: 'text-white', pill: 'bg-white/10 text-white' } : p >= 70 ? { text: 'text-green-300', pill: 'bg-green-500 text-white' } : p >= 40 ? { text: 'text-yellow-300', pill: 'bg-yellow-400 text-slate-900' } : { text: 'text-red-300', pill: 'bg-red-500 text-white' }
 const unitOf = (m: M) => ({ ' mph': 'MPH', '%': 'PCT', '"': 'IN', ' ft': 'FT', s: 'SEC' } as Record<string, string>)[m.unit] || m.unit.trim().toUpperCase()
 const valueOf = (m: M, v: number) => (m.unit === 's' ? v.toFixed(2) : String(round1(v)))
 
@@ -71,24 +57,18 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
   })()
 
   return (
-    <section className="rounded-3xl bg-gradient-to-b from-[#0f2557] to-[#13306f] shadow-md overflow-hidden">
-      <div className="px-4 pt-4 pb-1 flex items-baseline justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-200/80">Training Ranks</span>
-        <span className="text-[10px] font-bold text-blue-200/60">Swipe for more →</span>
-      </div>
+    <section className="rounded-3xl bg-gradient-to-br from-[#0f2a6e] via-[#1746b8] to-[#1e54d4] shadow-md overflow-hidden text-white">
+      <div className="px-4 pt-3.5 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-white/70">Training Ranks</div>
       {rows === null ? (
-        <div className="h-36 m-4 rounded-2xl bg-white/10 animate-pulse" />
+        <div className="h-24 m-4 rounded-2xl bg-white/10 animate-pulse" />
       ) : (
         sections.map((sec) => (
-          <div key={sec.side} className="pb-1">
+          <div key={sec.side} className="px-2 pb-2">
             {sections.length > 1 && (
-              <div className={`px-4 pt-1 text-[10px] font-extrabold uppercase tracking-wider ${sec.side === 'pitching' ? 'text-sky-300' : 'text-orange-300'}`}>
-                {sec.side === 'pitching' ? 'Pitching' : 'Hitting'}
-              </div>
+              <div className="px-2 pb-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white/60">{sec.side === 'pitching' ? 'Pitching' : 'Hitting'}</div>
             )}
-            <div className="flex overflow-x-auto snap-x snap-mandatory px-2 pb-2 no-scrollbar">
+            <div className="grid" style={{ gridTemplateColumns: `repeat(${sec.items.length}, minmax(0, 1fr))` }}>
               {sec.items.map(({ m, mine, pctl }) => {
-                const Icon = ICONS[m.key] || Gauge
                 const tone = toneFor(pctl)
                 const sel = open === m.key
                 return (
@@ -96,13 +76,12 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
                     key={m.key}
                     type="button"
                     onClick={() => setOpen(sel ? null : m.key)}
-                    className={`snap-start shrink-0 w-[6.6rem] mx-0.5 flex flex-col items-center gap-0.5 px-1 py-2.5 rounded-2xl cursor-pointer border ${sel ? 'bg-white/15 border-white/40' : 'border-transparent'}`}
+                    className={`min-w-0 flex flex-col items-center py-1.5 rounded-xl cursor-pointer ${sel ? 'bg-white/15' : ''}`}
                   >
-                    <Icon className="w-5 h-5 text-white/90" />
-                    <span className="text-[10px] font-black uppercase tracking-wide text-white text-center leading-tight h-6 flex items-center">{m.short}</span>
-                    <span className={`text-2xl font-black leading-none ${mine ? tone.text : 'text-white/30'}`}>{mine ? valueOf(m, mine.value) : '—'}</span>
-                    <span className="text-[9px] font-extrabold uppercase text-white/70">{unitOf(m)}</span>
-                    <span className={`mt-1 px-2 py-0.5 rounded-full text-[10px] font-black ${mine ? tone.pill : 'bg-white/10 text-white/50'}`}>{pctl != null ? `${ordinal(pctl)} %` : 'Log it'}</span>
+                    <span className="text-[8.5px] font-extrabold uppercase tracking-tight text-white/80 text-center leading-tight h-[1.35rem] flex items-center">{m.short}</span>
+                    <span className={`text-lg font-black leading-none mt-0.5 ${mine ? tone.text : 'text-white/30'}`}>{mine ? valueOf(m, mine.value) : '—'}</span>
+                    <span className="text-[8px] font-bold uppercase text-white/60">{unitOf(m)}</span>
+                    <span className={`mt-1 px-1.5 py-px rounded-full text-[9px] font-black ${mine ? tone.pill : 'bg-white/10 text-white/50'}`}>{pctl != null ? ordinal(pctl) : '—'}</span>
                   </button>
                 )
               })}
@@ -111,7 +90,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
         ))
       )}
       {pickInfo && (
-        <div className="mx-3 mb-3 rounded-2xl bg-white p-4 space-y-2">
+        <div className="mx-3 mb-3 rounded-2xl bg-white text-slate-900 p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-extrabold text-slate-900">{pickInfo.m.label}</span>
             <button type="button" onClick={() => setOpen(null)} className="text-[11px] font-extrabold text-slate-400 cursor-pointer">Close</button>
@@ -136,7 +115,7 @@ export default function TrainingOverview({ athleteId, position }: { athleteId: s
           ) : null}
         </div>
       )}
-      <div className="px-4 pb-3 text-center text-[9px] font-extrabold uppercase tracking-wider text-blue-200/60">Percentile vs. Generals players · last 12 months</div>
+      <div className="px-4 pb-2.5 text-center text-[9px] font-bold text-white/55">Team percentile · last 12 months · tap a stat for tips</div>
     </section>
   )
 }

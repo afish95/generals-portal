@@ -13,6 +13,7 @@ import ToolRunnerSheet from '@/components/training/ToolRunnerSheet'
 import MyPlan from '@/components/plan/MyPlan'
 import TrainingOverview from '@/components/training/TrainingOverview'
 import WeekAtAGlance from '@/components/training/WeekAtAGlance'
+import StatLogCard from '@/components/training/StatLogCard'
 import PercentileRankings from '@/components/stats/PercentileRankings'
 import PrCelebration from '@/components/training/PrCelebration'
 import { PointBubble, buzz } from '@/components/points/PointBurst'
@@ -95,8 +96,9 @@ export default function TrainingPage() {
 
       {tab === 'overview' && (
         <>
-          <TrainingOverview athleteId={profile.id} position={profile.position_group} />
+          <TrainingOverview athleteId={profile.id} position={profile.position_group} key={`ov-${refreshKey}`} />
           <MyPlan athleteId={profile.id} title={`${profile.full_name.split(' ')[0]}’s Personal Development`} onStartTool={(scriptId, title) => setRunning({ scriptId, title })} />
+          <StatLogCard athleteId={profile.id} onLogged={refresh} />
         </>
       )}
 
