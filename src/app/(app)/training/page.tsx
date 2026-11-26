@@ -15,9 +15,8 @@ import TrainingOverview from '@/components/training/TrainingOverview'
 import WeekAtAGlance from '@/components/training/WeekAtAGlance'
 import StatLogCard from '@/components/training/StatLogCard'
 import TrainingPercentiles from '@/components/training/TrainingPercentiles'
-import PrCelebration from '@/components/training/PrCelebration'
+import { celebratePr } from '@/lib/celebrate'
 import { PointBubble, buzz } from '@/components/points/PointBurst'
-import type { PrHit } from '@/components/training/WorkoutLogger'
 import { withPointsDelta } from '@/lib/pointsDelta'
 import { localDate } from '@/lib/training'
 
@@ -36,10 +35,8 @@ export default function TrainingPage() {
   const [date, setDate] = useState(localDate())
   const [tab, setTab] = useState<Tab>('overview')
   const [refreshKey, setRefreshKey] = useState(0)
-  const [pr, setPr] = useState<PrHit | null>(null)
   const [running, setRunning] = useState<Running | null>(null)
   const [toast, setToast] = useState<number>(0)
-  const clearPr = useCallback(() => setPr(null), [])
   const refresh = useCallback(() => setRefreshKey((n) => n + 1), [])
 
   // A finished prescribed bullpen checks off its workout (today only), which can earn the throwing point.
@@ -75,7 +72,6 @@ export default function TrainingPage() {
 
   return (
     <div className="space-y-4">
-      <PrCelebration hit={pr} onDone={clearPr} />
       {toast > 0 && (
         <div className="fixed inset-x-0 z-50 flex justify-center px-4" style={{ top: 'calc(env(safe-area-inset-top) + 100px)' }}>
           <div className="relative rounded-2xl bg-emerald-500 text-white px-4 py-3 text-sm font-extrabold shadow-xl animate-gen-pop">
@@ -113,7 +109,7 @@ export default function TrainingPage() {
               refreshKey={refreshKey}
               onChange={refresh}
               onStartTool={(scriptId, workoutId, title) => setRunning({ scriptId, workoutId, title })}
-              renderWorkout={(w, items) => <LoggedWorkout workout={w} items={items} athleteId={profile.id} onPr={setPr} onChanged={refresh} />}
+              renderWorkout={(w, items) => <LoggedWorkout workout={w} items={items} athleteId={profile.id} onPr={celebratePr} onChanged={refresh} />}
             />
           </div>
           <ProgressTrends athleteId={profile.id} key={`trends-${refreshKey}`} />

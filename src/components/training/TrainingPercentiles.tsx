@@ -6,6 +6,8 @@ import { addDays, localDate, round1 } from '@/lib/training'
 import { percentileRank, rankOf } from '@/lib/rank'
 import { METRICS } from '@/components/stats/PositionLeaderboard'
 import { sidesFor } from '@/lib/trainingMetrics'
+import Trend from '@/components/Trend'
+import { useStatTrends } from './useStatTrends'
 
 type Row = { athlete_id: string; full_name: string; metric: string; value: number }
 type Side = 'pitching' | 'hitting'
@@ -32,6 +34,7 @@ export default function TrainingPercentiles({ myId, position }: { myId: string; 
   const [period, setPeriod] = useState<(typeof PERIODS)[number]['key']>('365')
   const [rows, setRows] = useState<Row[] | null>(null)
   const [compare, setCompare] = useState<string>('')
+  const trends = useStatTrends(myId)
 
   useEffect(() => {
     let cancelled = false
@@ -96,7 +99,7 @@ export default function TrainingPercentiles({ myId, position }: { myId: string; 
             {metrics.map((m, i) => {
               const v = mine[i]
               return (
-                <div key={m.key} className="grid grid-cols-[96px_minmax(0,1fr)_56px] items-center gap-2">
+                <div key={m.key} className="grid grid-cols-[88px_minmax(0,1fr)_64px] items-center gap-2">
                   <span className="text-[11px] font-bold text-slate-600 text-right truncate">{m.label.replace(' (Catchers)', '')}</span>
                   <div className="relative h-5">
                     <div className="absolute inset-y-1.5 inset-x-0 rounded-full bg-slate-100" />
@@ -110,7 +113,12 @@ export default function TrainingPercentiles({ myId, position }: { myId: string; 
                       </>
                     )}
                   </div>
-                  <span className="text-xs font-bold text-slate-900 tabular-nums">{v.value != null ? fmt(m, v.value) : '—'}</span>
+                  <span className="text-xs font-bold text-slate-900 tabular-nums leading-tight">
+                    {v.value != null ? fmt(m, v.value) : '—'}
+                    <span className="block text-[10px]">
+                      <Trend delta={trends.get(m.key)?.delta} lowerIsBetter={m.lowerIsBetter} digits={m.unit === 's' ? 2 : 1} />
+                    </span>
+                  </span>
                 </div>
               )
             })}

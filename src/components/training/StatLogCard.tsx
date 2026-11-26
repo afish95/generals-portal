@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { localDate, prettyDate } from '@/lib/training'
 import { STAT_EXERCISES } from '@/lib/trainingMetrics'
 import LogStat from './LogStat'
+import Trend from '@/components/Trend'
 
 type Recent = { id: number; exercise_id: number; value: number; logged_at: string }
 
@@ -21,7 +22,7 @@ export default function StatLogCard({ athleteId, interactive = true, onLogged }:
       .eq('athlete_id', athleteId)
       .in('exercise_id', STAT_EXERCISES.map((s) => s.exerciseId))
       .order('logged_at', { ascending: false })
-      .limit(6)
+      .limit(60)
       .then(({ data }) => !cancelled && setRecent(((data as Recent[]) || []).map((r) => ({ ...r, value: Number(r.value) }))))
     return () => {
       cancelled = true
@@ -44,14 +45,18 @@ export default function StatLogCard({ athleteId, interactive = true, onLogged }:
         <div>
           <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Recent</div>
           <ul className="divide-y divide-slate-100">
-            {recent.map((r) => {
+            {recent.slice(0, 6).map((r, i) => {
               const s = STAT_EXERCISES.find((x) => x.exerciseId === r.exercise_id)
+              const prev = recent.slice(i + 1).find((x) => x.exercise_id === r.exercise_id)
               return (
                 <li key={r.id} className="flex items-center justify-between py-1.5 text-xs">
                   <span className="font-bold text-slate-700">{s?.label}</span>
                   <span className="flex items-center gap-3">
                     <span className="font-black text-slate-900">
                       {r.value} <span className="text-[10px] font-bold text-slate-400">{s?.unit}</span>
+                    </span>
+                    <span className="w-12 text-right text-[10px]">
+                      <Trend delta={prev ? r.value - prev.value : null} lowerIsBetter={s?.unit === 'sec'} digits={s?.unit === 'sec' ? 2 : 1} />
                     </span>
                     <span className="w-14 text-right text-[10px] font-semibold text-slate-400">{prettyDate(r.logged_at.slice(0, 10), { month: 'short', day: 'numeric' })}</span>
                   </span>
