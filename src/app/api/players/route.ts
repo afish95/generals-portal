@@ -165,7 +165,9 @@ export async function POST(req: Request) {
 
   if (action === 'reset_password') {
     if (target.has_login === false) return Response.json({ error: 'No login yet. Use Create login.' }, { status: 400 })
-    const password = tempPassword()
+    const chosen = typeof body.password === 'string' ? body.password : ''
+    if (chosen && (chosen.length < 6 || chosen.length > 72)) return Response.json({ error: 'Password needs 6–72 characters' }, { status: 400 })
+    const password = chosen || tempPassword()
     const { error } = await admin.auth.admin.updateUserById(id, { password })
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json({ ok: true, password })
