@@ -73,5 +73,5 @@ export const timeRange = (e: Pick<ScheduleEvent, 'start_time' | 'end_time'>) =>
   e.start_time ? (e.end_time ? `${e.start_time} – ${e.end_time}` : e.start_time) : 'All day'
 
 /** Whole-program events (no groups) show for everyone; group events only for members. Coaches see everything. */
-export const visibleTo = (e: ScheduleEvent, myGroups: Set<number> | null) =>
+export const visibleTo = (e: Pick<ScheduleEvent, 'group_ids'>, myGroups: Set<number> | null) =>
   !myGroups || !e.group_ids || e.group_ids.length === 0 || e.group_ids.some((g) => myGroups.has(g))
