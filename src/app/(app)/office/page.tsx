@@ -12,9 +12,11 @@ import AttendanceTab from '@/components/office/AttendanceTab'
 import ThoughtTab from '@/components/office/ThoughtTab'
 import GameStatsImport from '@/components/office/GameStatsImport'
 import PracticePlansTab from '@/components/office/PracticePlansTab'
+import ScheduleTab from '@/components/office/ScheduleTab'
 import { PROFILE_FIELDS, type Exercise, type Group, type Profile } from '@/lib/training'
 
 const TABS = [
+  { key: 'schedule', label: 'Schedule' },
   { key: 'workouts', label: 'Workouts' },
   { key: 'plans', label: 'Player Plans' },
   { key: 'practices', label: 'Practice Plans' },
@@ -84,6 +86,7 @@ export default function CoachOfficePage() {
           <Pill key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>{t.label}</Pill>
         ))}
       </div>
+      {tab === 'schedule' && <ScheduleTab groups={groups} openEventId={openEventId} />}
       {tab === 'workouts' && <WorkoutsTab groups={groups} exercises={exercises} />}
       {tab === 'plans' && <PlayerPlansTab initialPlayer={planPlayer} />}
       {tab === 'practices' && <PracticePlansTab openEventId={openEventId} />}
