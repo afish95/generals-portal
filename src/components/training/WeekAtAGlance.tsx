@@ -8,7 +8,7 @@ import { addDays, localDate } from '@/lib/training'
 import { INTENT_LONG, INTENT_STYLE, INTENTS, type Intent } from '@/lib/programs'
 import { sundayOf } from '@/lib/trainingMetrics'
 
-type W = { id: number; title: string; workout_date: string; group_id: number | null; intent: Intent | null; program_assignment_id: number | null }
+type W = { id: number; title: string; workout_date: string; group_id: number | null; intent: Intent | null; program_assignment_id: number | null; program_kind?: string | null }
 type Prog = { name: string; phase: string | null; weekly_goals: string[] | null }
 const RANK: Record<Intent, number> = { low: 1, med: 2, high: 3 }
 
@@ -28,13 +28,16 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
     const end = addDays(start, 6)
     ;(async () => {
       const [{ data: w }, { data: gm }, { data: pts }, { data: ev }] = await Promise.all([
-        sb.from('workouts').select('id, title, workout_date, group_id, intent, program_assignment_id').gte('workout_date', start).lte('workout_date', end),
+        sb.from('workouts').select('id, title, workout_date, group_id, intent, program_assignment_id, program_kind').gte('workout_date', start).lte('workout_date', end),
         sb.from('group_members').select('group_id').eq('athlete_id', athleteId),
         sb.rpc('athlete_points', { p_athlete: athleteId, p_from: start, p_to: end }),
         sb.from('team_schedule').select('event_date, event_type, start_time, group_ids, is_cancelled').gte('event_date', start).lte('event_date', end).or('event_type.ilike.%lift%,event_type.ilike.training'),
       ])
       const mine = new Set(((gm as { group_id: number }[]) || []).map((g) => g.group_id))
-      const list = ((w as W[]) || []).filter((x) => x.group_id == null || mine.has(x.group_id))
+      // Throwing Week is about throwing: hitting and catching program days don't color it
+      const list = ((w as W[]) || [])
+        .filter((x) => x.group_id == null || mine.has(x.group_id))
+        .map((x) => (x.program_kind && x.program_kind !== 'throwing' ? { ...x, intent: null, program_assignment_id: null } : x))
       const aid = list.find((x) => x.program_assignment_id)?.program_assignment_id
       let p: Prog | null = null
       if (aid) {

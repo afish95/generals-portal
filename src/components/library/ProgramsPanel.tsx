@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import { ChevronRight, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
-import { INTENT_STYLE, type Program, type ProgramDay } from '@/lib/programs'
+import { INTENT_STYLE, KIND_INFO, PROGRAM_KINDS, type Program, type ProgramDay, type ProgramKind } from '@/lib/programs'
 import ProgramSheet from './ProgramSheet'
 
-/** Coach Office → Drills → Programs: throwing programs built from progressions. */
+/** Coach Office → Training → Programs: throwing, hitting and catching programs built from progressions. */
 export default function ProgramsPanel({ progressions, onChanged }: { progressions: { id: number; name: string }[]; onChanged: () => void }) {
   const [programs, setPrograms] = useState<Program[] | null>(null)
+  const [kindFilter, setKindFilter] = useState<ProgramKind | 'all'>('all')
   const [days, setDays] = useState<ProgramDay[]>([])
   const [active, setActive] = useState<Record<number, number>>({})
   const [open, setOpen] = useState<Program | 'new' | null>(null)
@@ -39,13 +40,20 @@ export default function ProgramsPanel({ progressions, onChanged }: { progression
       <button type="button" onClick={() => setOpen('new')} className="w-full py-3 rounded-2xl bg-[#1746b8] text-white text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer">
         <Plus className="w-4 h-4" /> New Program
       </button>
+      <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-white border border-slate-200">
+        {(['all', ...PROGRAM_KINDS] as const).map((k) => (
+          <button key={k} type="button" onClick={() => setKindFilter(k)} className={`py-1.5 rounded-lg text-xs font-extrabold cursor-pointer ${kindFilter === k ? 'bg-[#1746b8] text-white' : 'text-slate-500'}`}>
+            {k === 'all' ? 'All' : KIND_INFO[k].label}
+          </button>
+        ))}
+      </div>
       {programs === null ? (
         <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />
       ) : programs.length === 0 ? (
         <p className="text-center text-xs font-semibold text-slate-500 py-6">No programs yet.</p>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-          {programs.map((p) => {
+          {programs.filter((p) => kindFilter === 'all' || (p.kind || 'throwing') === kindFilter).map((p) => {
             const wk = days.filter((d) => d.program_id === p.id)
             return (
               <button key={p.id} type="button" onClick={() => setOpen(p)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 cursor-pointer">
@@ -57,7 +65,7 @@ export default function ProgramsPanel({ progressions, onChanged }: { progression
                       return <span key={dow} className={`w-5 h-1.5 rounded-full ${d ? INTENT_STYLE[d.intent].dot : 'bg-slate-200'}`} />
                     })}
                     <span className="ml-2 text-[11px] font-semibold text-slate-400">
-                      {p.weeks} wk{active[p.id] ? ` · ${active[p.id]} active` : ''}
+                      {KIND_INFO[p.kind || 'throwing'].label} · {p.weeks} wk{active[p.id] ? ` · ${active[p.id]} active` : ''}
                     </span>
                   </div>
                 </div>

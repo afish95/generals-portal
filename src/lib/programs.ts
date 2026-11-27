@@ -1,10 +1,19 @@
 export type Intent = 'low' | 'med' | 'high'
+export type ProgramKind = 'throwing' | 'hitting' | 'catching'
+export const PROGRAM_KINDS: ProgramKind[] = ['throwing', 'hitting', 'catching']
+/** Labels for each kind of program (the builder's three slots and the day note). */
+export const KIND_INFO: Record<ProgramKind, { label: string; pre: string; main: string; post: string; note: string; days: string }> = {
+  throwing: { label: 'Throwing', pre: 'Pre-Throw', main: 'Throwing', post: 'Post-Throw', note: 'Throwing note (e.g. Long toss to 180 ft, 25 throws)', days: 'throwing days' },
+  hitting: { label: 'Hitting', pre: 'Warm-Up', main: 'Hitting', post: 'Finish', note: 'Hitting note (e.g. 5 rounds front toss, 2 rounds BP)', days: 'hitting days' },
+  catching: { label: 'Catching', pre: 'Warm-Up', main: 'Catching', post: 'Finish', note: 'Catching note (e.g. 30 blocks, 20 throws to 2B)', days: 'catching days' },
+}
 
 export type Program = {
   id: number
   name: string
   description: string | null
   weeks: number
+  kind?: ProgramKind
   focus_intents: Intent[]
   is_active: boolean
   phase?: string | null

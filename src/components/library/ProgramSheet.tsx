@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { inputClass, SectionLabel } from '@/components/ui'
 import { SheetFrame } from '@/components/office/roster/shared'
 import type { Group } from '@/lib/training'
-import { DOW_SHORT, INTENT_LABEL, INTENT_STYLE, INTENTS, type Intent, type Program, type ProgramAddon, type ProgramDay } from '@/lib/programs'
+import { DOW_SHORT, INTENT_LABEL, INTENT_STYLE, INTENTS, KIND_INFO, PROGRAM_KINDS, type Intent, type ProgramKind, type Program, type ProgramAddon, type ProgramDay } from '@/lib/programs'
 import ProgramAssign from './ProgramAssign'
 
 type Opt = { id: number; name: string }
@@ -21,10 +21,12 @@ const blankDay = (week: number, dow: number, intent: Intent): ProgramDay => ({
   script_id: null,
 })
 
-/** One throwing program: a week-by-week layout of Low / Med / High days, each with pre-throw, throwing and post-throw progressions. */
+/** One program (throwing, hitting or catching): a week-by-week layout of Low / Med / High days, each with before, main and after progressions. */
 export default function ProgramSheet({ program, progressions, onClose, onChanged }: { program: Program | null; progressions: Opt[]; onClose: () => void; onChanged: () => void }) {
   const isNew = !program
   const [name, setName] = useState(program?.name || '')
+  const [kind, setKind] = useState<ProgramKind>(program?.kind || 'throwing')
+  const K = KIND_INFO[kind]
   const [desc, setDesc] = useState(program?.description || '')
   const [weeks, setWeeks] = useState(program?.weeks || 1)
   const [phase, setPhase] = useState(program?.phase || '')
@@ -88,7 +90,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
     setBusy(true)
     setError(null)
     const sb = createClient()
-    const row = { name: name.trim(), description: desc.trim() || null, weeks, focus_intents: focusIntents, phase: phase.trim() || null, weekly_goals: goals.split('\n').map((g) => g.trim()).filter(Boolean), updated_at: new Date().toISOString() }
+    const row = { name: name.trim(), kind, description: desc.trim() || null, weeks, focus_intents: focusIntents, phase: phase.trim() || null, weekly_goals: goals.split('\n').map((g) => g.trim()).filter(Boolean), updated_at: new Date().toISOString() }
     let id = savedId
     if (!id) {
       const { data, error: e } = await sb.from('programs').insert(row).select('id').single()
@@ -139,13 +141,20 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
   )
 
   return (
-    <SheetFrame title={name || 'New Program'} subtitle={`${weeks} week${weeks === 1 ? '' : 's'} · ${throwDays(1)} throwing days in week 1`} onClose={onClose}>
+    <SheetFrame title={name || 'New Program'} subtitle={`${K.label} · ${weeks} week${weeks === 1 ? '' : 's'} · ${throwDays(1)} ${K.days} in week 1`} onClose={onClose}>
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Program name (e.g. Winter Throwing – Phase 1)" className={inputClass} />
+        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100">
+          {PROGRAM_KINDS.map((k) => (
+            <button key={k} type="button" onClick={() => setKind(k)} className={`py-2 rounded-lg text-xs font-extrabold cursor-pointer ${kind === k ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
+              {KIND_INFO[k].label}
+            </button>
+          ))}
+        </div>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={`Program name (e.g. Winter ${K.label} – Phase 1)`} className={inputClass} />
         <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Short note (optional)" className={inputClass} />
         <input value={phase} onChange={(e) => setPhase(e.target.value)} placeholder="Phase (e.g. Velocity, Build-Up, In-Season)" className={inputClass} />
         <textarea value={goals} onChange={(e) => setGoals(e.target.value)} rows={3} placeholder={'Weekly goals, one per line (e.g. Complete 1 velo session / Hit 5x / Throw 5x)'} className={inputClass} />
-        <p className="text-[11px] font-semibold text-slate-400">Players see the phase and goals on My Training. Throwing-day counts are added automatically.</p>
+        <p className="text-[11px] font-semibold text-slate-400">Players see the phase and goals on My Training. Day counts are added automatically.</p>
         <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
           Length
           <select value={weeks} onChange={(e) => { const w = Number(e.target.value); setWeeks(w); if (week > w) setWeek(1) }} className={`${inputClass} w-auto`}>
@@ -194,15 +203,16 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
                       ))}
                     </div>
                     <button type="button" onClick={() => d && setOpenDow(open ? null : dow)} className="flex-1 min-w-0 text-right text-[11px] font-semibold text-slate-400 truncate cursor-pointer">
-                      {d ? [d.pre_progression_id && 'Pre', d.throw_progression_id && 'Throw', d.post_progression_id && 'Post', d.script_id && 'Bullpen'].filter(Boolean).join(' · ') || 'Tap to set' : 'Off'}
+                      {d ? [d.pre_progression_id && K.pre, d.throw_progression_id && K.main, d.post_progression_id && K.post, kind === 'throwing' && d.script_id && 'Bullpen'].filter(Boolean).join(' · ') || 'Tap to set' : 'Off'}
                     </button>
                   </div>
                   {open && d && (
                     <div className="px-3 pb-3 space-y-2">
-                      <label className="block text-[11px] font-bold text-slate-500">Pre-throw{sel(d.pre_progression_id, (v) => patchDay(dow, { pre_progression_id: v }), 'None')}</label>
-                      <label className="block text-[11px] font-bold text-slate-500">Throwing{sel(d.throw_progression_id, (v) => patchDay(dow, { throw_progression_id: v }), 'None')}</label>
-                      <input value={d.throw_note || ''} onChange={(e) => patchDay(dow, { throw_note: e.target.value })} placeholder="Throwing note (e.g. Long toss to 180 ft, 25 throws)" className={inputClass} />
-                      <label className="block text-[11px] font-bold text-slate-500">Post-throw{sel(d.post_progression_id, (v) => patchDay(dow, { post_progression_id: v }), 'None')}</label>
+                      <label className="block text-[11px] font-bold text-slate-500">{K.pre}{sel(d.pre_progression_id, (v) => patchDay(dow, { pre_progression_id: v }), 'None')}</label>
+                      <label className="block text-[11px] font-bold text-slate-500">{K.main}{sel(d.throw_progression_id, (v) => patchDay(dow, { throw_progression_id: v }), 'None')}</label>
+                      <input value={d.throw_note || ''} onChange={(e) => patchDay(dow, { throw_note: e.target.value })} placeholder={K.note} className={inputClass} />
+                      <label className="block text-[11px] font-bold text-slate-500">{K.post}{sel(d.post_progression_id, (v) => patchDay(dow, { post_progression_id: v }), 'None')}</label>
+                      {kind === 'throwing' && (
                       <label className="block text-[11px] font-bold text-slate-500">
                         Bullpen
                         <select value={d.script_id ?? ''} onChange={(e) => patchDay(dow, { script_id: e.target.value ? Number(e.target.value) : null })} className={inputClass}>
@@ -212,6 +222,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
                           ))}
                         </select>
                       </label>
+                      )}
                     </div>
                   )}
                 </div>
