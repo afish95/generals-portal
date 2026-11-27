@@ -17,7 +17,7 @@ export type LibrarySub = 'drills' | 'progressions' | 'programs' | 'dow' | 'impor
 type Sub = LibrarySub
 
 /** Coach Office → Drills: folder-based drill and progression library with in-app videos. */
-export default function DrillLibrary({ onChanged, initialSub, only }: { onChanged: () => void; initialSub?: string; only?: Sub }) {
+export default function DrillLibrary({ onChanged, initialSub, only, openProgramId }: { onChanged: () => void; initialSub?: string; only?: Sub; openProgramId?: number }) {
   const [subState, setSub] = useState<Sub>((['drills', 'progressions', 'programs', 'dow', 'import'] as string[]).includes(initialSub || '') ? (initialSub as Sub) : 'drills')
   const sub = only || subState
   const [folders, setFolders] = useState<Folder[]>([])
@@ -102,7 +102,7 @@ export default function DrillLibrary({ onChanged, initialSub, only }: { onChange
       ) : sub === 'dow' ? (
         <DrillOfWeekPanel drills={drills.filter((d) => d.is_active !== false).map((d) => ({ id: d.id, name: d.name }))} />
       ) : sub === 'programs' ? (
-        <ProgramsPanel progressions={progs.filter((p) => p.is_active).map((p) => ({ id: p.id, name: p.name }))} onChanged={refresh} />
+        <ProgramsPanel progressions={progs.filter((p) => p.is_active).map((p) => ({ id: p.id, name: p.name }))} onChanged={refresh} openProgramId={openProgramId} />
       ) : sub === 'import' ? (
         <ImportPanel drills={drills} onChanged={refresh} />
       ) : (

@@ -15,6 +15,7 @@ import PracticePlansTab from '@/components/office/PracticePlansTab'
 import ScheduleTab from '@/components/office/ScheduleTab'
 import PlayerDataTab from '@/components/office/PlayerDataTab'
 import AssignmentsTab from '@/components/office/AssignmentsTab'
+import TemplatesTab from '@/components/library/TemplatesTab'
 import { SubTabs } from '@/components/office/roster/shared'
 import { PROFILE_FIELDS, type Exercise, type Group, type Profile } from '@/lib/training'
 
@@ -33,10 +34,11 @@ const SECTIONS = [
     label: 'Training',
     subs: [
       { key: 'assignments', label: 'Assignments' },
-      { key: 'workouts', label: 'Workouts' },
       { key: 'programs', label: 'Programs' },
+      { key: 'templates', label: 'Workouts' },
       { key: 'progressions', label: 'Progressions' },
       { key: 'drills', label: 'Drills' },
+      { key: 'workouts', label: 'Daily' },
     ],
   },
   {
@@ -91,7 +93,7 @@ export default function CoachOfficePage() {
   const refresh = useCallback(() => setReload((n) => n + 1), [])
   const [openEventId, setOpenEventId] = useState<number | null>(null)
   const [planPlayer, setPlanPlayer] = useState<string | null>(null)
-  const [deep, setDeep] = useState<{ sub?: string; workout?: number; date?: string }>({})
+  const [deep, setDeep] = useState<{ sub?: string; workout?: number; date?: string; program?: number }>({})
   const [rosterSub, setRosterSub] = useState<'players' | 'coaches' | 'groups' | 'sandbox' | 'transfer'>('players')
   useSubnav(MAIN, section.key, goSection)
 
@@ -108,7 +110,7 @@ export default function CoachOfficePage() {
     if (pl) setPlanPlayer(pl)
     const ev = Number(q.get('event'))
     if (ev) setOpenEventId(ev)
-    setDeep({ sub: q.get('sub') || undefined, workout: Number(q.get('workout')) || undefined, date: q.get('date') || undefined })
+    setDeep({ sub: q.get('sub') || undefined, workout: Number(q.get('workout')) || undefined, date: q.get('date') || undefined, program: Number(q.get('program')) || undefined })
     if (window.location.search) window.history.replaceState(null, '', window.location.pathname)
   }, [])
 
@@ -156,7 +158,8 @@ export default function CoachOfficePage() {
       {tab === 'attendance' && <AttendanceTab players={players} groups={groups} />}
       {tab === 'roster' && <RosterArea initial={rosterSub} onChanged={refresh} />}
       {tab === 'data' && <PlayerDataTab players={players} initialPlayer={planPlayer} initialSub={deep.sub} key={`p${planPlayer || ''}`} />}
-      {(tab === 'drills' || tab === 'progressions' || tab === 'programs' || tab === 'dow' || tab === 'import') && <DrillLibrary onChanged={refresh} only={tab} key={tab} />}
+      {(tab === 'drills' || tab === 'progressions' || tab === 'programs' || tab === 'dow' || tab === 'import') && <DrillLibrary onChanged={refresh} only={tab} key={`${tab}${deep.program || ''}`} openProgramId={deep.program} />}
+      {tab === 'templates' && <TemplatesTab />}
       {tab === 'thought' && <ThoughtTab />}
       {tab === 'gamestats' && <GameStatsImport players={players} />}
     </div>
