@@ -97,3 +97,44 @@ body {
 .gen-head-fill { opacity: var(--p, 0); }
 .gen-head-amber { transform: translateY(calc(var(--p, 0) * -36px)); }
 .gen-head-bar, .gen-head-text, .gen-head-icon, .gen-head-fill, .gen-head-amber { transition: opacity 90ms linear, transform 90ms linear; will-change: opacity, transform; }
+
+/* Date, time and dropdown pickers: same height and width everywhere so side-by-side fields line up (iOS gives date inputs their own size). */
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'],
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+/* Standard form fields (inputClass) are one fixed height, so a date next to a dropdown lines up. */
+.gen-field {
+  height: 2.75rem;
+  line-height: 1.25;
+}
+textarea.gen-field {
+  height: auto;
+}
+input[type='date']::-webkit-date-and-time-value,
+input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+}
+select {
+  padding-right: 2rem !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 0.9rem;
+}
+label > input[type='date'],
+label > input[type='time'],
+label > select {
+  margin-top: 0.25rem;
+}

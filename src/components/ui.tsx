@@ -80,4 +80,4 @@ export function EmptyState({ title, body }: { title: string; body?: string }) {
 }
 
 export const inputClass =
-  'w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-base text-slate-900 placeholder:text-slate-400'
+  'gen-field w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-base text-slate-900 placeholder:text-slate-400'
