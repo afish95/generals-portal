@@ -60,13 +60,24 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
   }, [program])
 
   const progName = useMemo(() => new Map(progressions.map((p) => [p.id, p.name])), [progressions])
+  const FW = useMemo(() => {
+    const find = (re: RegExp) => progressions.find((p) => re.test(p.name))?.id ?? null
+    return { activation: find(/pre.?throw activation/i), low: find(/recovery\s*\/\s*mobility/i), med: find(/scap emphasis/i), high: find(/full armor/i) }
+  }, [progressions])
+  const fwPost = useMemo(() => new Set([FW.low, FW.med, FW.high].filter((x): x is number => x != null)), [FW])
   const dayOf = (dow: number) => days?.find((d) => d.week === week && d.dow === dow) || null
   const setIntent = (dow: number, intent: Intent | null) =>
     setDays((ds) => {
       const rest = (ds || []).filter((d) => !(d.week === week && d.dow === dow))
       if (!intent) return rest
       const cur = (ds || []).find((d) => d.week === week && d.dow === dow)
-      return [...rest, cur ? { ...cur, intent } : blankDay(week, dow, intent)]
+      const next = cur ? { ...cur, intent } : blankDay(week, dow, intent)
+      // Arm Health + Gas framework (Coach, Nov 27): Activation before every throw; post-throw by intent.
+      if (kind === 'throwing') {
+        if (next.pre_progression_id == null) next.pre_progression_id = FW.activation
+        if (next.post_progression_id == null || fwPost.has(next.post_progression_id)) next.post_progression_id = FW[intent]
+      }
+      return [...rest, next]
     })
   const patchDay = (dow: number, p: Partial<ProgramDay>) => setDays((ds) => (ds || []).map((d) => (d.week === week && d.dow === dow ? { ...d, ...p } : d)))
   const copyWeekToAll = () => {

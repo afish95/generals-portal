@@ -186,6 +186,36 @@ export default function DayPlan({
     onChange?.()
   }
 
+  // Take Off Day: on a Low/Off throwing day, resting counts as doing the day (saves an off_day mark plus the workout check).
+  const toggleOffDay = async (id: number) => {
+    if (!interactive) return
+    const key = `workout:${id}`
+    const supabase = createClient()
+    setBusy(key)
+    if (checks.has(`off_day:${id}`)) {
+      await supabase.from('plan_checks').delete().eq('athlete_id', athleteId).eq('check_date', day).in('item_type', ['off_day', 'workout']).eq('item_id', id)
+      setChecks((c) => {
+        const n = new Set(c)
+        n.delete(`off_day:${id}`)
+        n.delete(key)
+        return n
+      })
+    } else {
+      let failed = false
+      const gained = await withPointsDelta(athleteId, day, async () => {
+        const rows = [{ athlete_id: athleteId, check_date: day, item_type: 'off_day', item_id: id }, ...(checks.has(key) ? [] : [{ athlete_id: athleteId, check_date: day, item_type: 'workout', item_id: id }])]
+        const { error } = await supabase.from('plan_checks').insert(rows)
+        failed = !!error
+      })
+      if (!failed) {
+        setChecks((c) => new Set(c).add(`off_day:${id}`).add(key))
+        celebrate(key, gained)
+      }
+    }
+    setBusy(null)
+    after()
+  }
+
   const toggleCheck = async (type: 'event' | 'workout' | 'class' | 'training', id: number) => {
     if (!interactive) return
     const key = `${type}:${id}`
@@ -472,6 +502,8 @@ export default function DayPlan({
           const group = w.group_id ? groups.get(w.group_id) : 'Whole Team'
           const wTools = tools.filter((t) => t.workout_id === w.id)
           const toolsDone = wTools.filter((t) => toolDone.has(`${w.id}:${t.script_id}`)).length
+          const offDay = checks.has(`off_day:${w.id}`)
+          const canOff = !isCoach && w.intent === 'low' && (w as Workout & { program_kind?: string | null }).program_kind === 'throwing'
           return (
             <li key={k} className={`border-l-4 ${w.intent ? INTENT_STYLE[w.intent].stripe : TRAINING.stripe}`}>
               <Row
@@ -481,7 +513,9 @@ export default function DayPlan({
                 subtitle={
                   isCoach
                     ? `${group} · ${w.intent ? `${INTENT_LABEL[w.intent]} intent` : phaseLabel(w.phase)}${wTools.length ? ` · ${wTools.length} tool${wTools.length === 1 ? '' : 's'}` : ''}`
-                    : [w.intent ? `${INTENT_LABEL[w.intent]} intent` : phaseLabel(w.phase), total ? `${done}/${total} sets` : null, wTools.length ? `${toolsDone}/${wTools.length} bullpen` : null].filter(Boolean).join(' · ')
+                    : offDay
+                      ? 'Off Day · rest counts'
+                      : [w.intent ? `${INTENT_LABEL[w.intent]} intent` : phaseLabel(w.phase), total ? `${done}/${total} sets` : null, wTools.length ? `${toolsDone}/${wTools.length} bullpen` : null].filter(Boolean).join(' · ')
                 }
                 open={open === k}
                 onClick={() => toggle(k)}
@@ -495,6 +529,16 @@ export default function DayPlan({
               />
               {open === k && (
                 <div className="px-4 pb-4 space-y-2">
+                  {canOff && interactive && (
+                    <button
+                      type="button"
+                      onClick={() => toggleOffDay(w.id)}
+                      disabled={busy === `workout:${w.id}`}
+                      className={`w-full py-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer ${offDay ? 'bg-slate-100 text-slate-600' : 'bg-red-50 text-red-700 border border-red-200'}`}
+                    >
+                      <Moon className="w-3.5 h-3.5" /> {offDay ? 'Undo Off Day' : 'Take Off Day'}
+                    </button>
+                  )}
                   {wTools.length > 0 && (
                     <ul className="space-y-1.5">
                       {wTools.map((t) => {
