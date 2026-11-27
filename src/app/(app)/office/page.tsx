@@ -148,13 +148,7 @@ export default function CoachOfficePage() {
       <SubTabs<TabKey> tabs={section.subs.map((x) => ({ key: x.key as TabKey, label: x.label }))} active={tab} onChange={pickTab} />
       {tab === 'schedule' && <ScheduleTab groups={groups} openEventId={openEventId} />}
       {tab === 'assignments' && (
-        <AssignmentsTab
-          onOpenWorkout={(date, id) => {
-            setDeep({ date, workout: id })
-            setTab('workouts')
-          }}
-          onOpenLibrary={(s) => pickTab(s)}
-        />
+        <AssignmentsTab exercises={exercises} onOpenLibrary={(s) => pickTab(s)} />
       )}
       {tab === 'workouts' && <WorkoutsTab groups={groups} exercises={exercises} openWorkoutId={deep.workout} openDate={deep.date} key={`w${deep.workout || ''}`} />}
       {tab === 'plans' && <PlayerPlansTab initialPlayer={planPlayer} />}
