@@ -1,10 +1,16 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, ChevronRight, Dumbbell, Layers, Plus, Search, Square, Target, Users } from 'lucide-react'
+import BaseballIcon from '@/components/BaseballIcon'
+import { CalendarDays, ChevronRight, Layers, Pencil, Plus, Search, Square, Target, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { inputClass, SectionLabel } from '@/components/ui'
-import type { Group, Profile } from '@/lib/training'
+import type { Exercise, Group, Profile, Workout, WorkoutItem } from '@/lib/training'
+import type { Drill, Folder, Progression } from '@/lib/library'
+import type { Program } from '@/lib/programs'
+import WorkoutEditor from '@/components/office/WorkoutEditor'
+import ProgressionSheet from '@/components/library/ProgressionSheet'
+import ProgramSheet from '@/components/library/ProgramSheet'
 import { catOf, SheetFrame, TagChip } from '@/components/office/roster/shared'
 import { datesFor, patternText } from '@/components/library/AssignPanel'
 import SendNotification from '@/components/SendNotification'
@@ -46,7 +52,7 @@ const firstNames = (ids: string[], players: Profile[]) =>
   ids.map((id) => players.find((p) => p.id === id)?.full_name.split(' ')[0]).filter(Boolean).slice(0, 4).join(', ') + (ids.length > 4 ? ` +${ids.length - 4}` : '')
 
 /** Coach Office → Training → Assignments: every program and progression in one list. Tap to change who, what days and dates. */
-export default function AssignmentsTab({ onOpenWorkout, onOpenLibrary }: { onOpenWorkout: (date: string, id: number) => void; onOpenLibrary: (sub: 'programs' | 'progressions') => void }) {
+export default function AssignmentsTab({ exercises, onOpenLibrary }: { exercises: Exercise[]; onOpenLibrary: (sub: 'programs' | 'progressions') => void }) {
   const today = ymd(new Date())
   const [rows, setRows] = useState<Row[]>([])
   const [groups, setGroups] = useState<Group[]>([])
@@ -61,6 +67,15 @@ export default function AssignmentsTab({ onOpenWorkout, onOpenLibrary }: { onOpe
   const [open, setOpen] = useState<Row | { kind: Kind; id: 0 } | null>(null)
   const [version, setVersion] = useState(0)
   const [loaded, setLoaded] = useState(false)
+  const [editWorkout, setEditWorkout] = useState<{ workout: Workout; items: WorkoutItem[] } | null>(null)
+  const [editItem, setEditItem] = useState<Row | null>(null)
+  const [note, setNote] = useState<string | null>(null)
+
+  const openWorkout = async (id: number) => {
+    const sb = createClient()
+    const [w, it] = await Promise.all([sb.from('workouts').select('*').eq('id', id).single(), sb.from('workout_items').select('*').eq('workout_id', id)])
+    if (w.data) setEditWorkout({ workout: w.data as Workout, items: (it.data as WorkoutItem[]) || [] })
+  }
 
   useEffect(() => {
     const sb = createClient()
@@ -185,6 +200,7 @@ export default function AssignmentsTab({ onOpenWorkout, onOpenLibrary }: { onOpe
         )}
       </div>
 
+      {note && <p className="text-xs font-extrabold text-emerald-700 px-1">{note}</p>}
       {!loaded ? (
         <div className="h-40 rounded-3xl bg-white/60 animate-pulse" />
       ) : view === 'list' ? (
@@ -209,13 +225,15 @@ export default function AssignmentsTab({ onOpenWorkout, onOpenLibrary }: { onOpe
               <SectionLabel>One-Off Workouts</SectionLabel>
               {oneOffByTitle.map((o) => (
                 <div key={`${o.title}${o.group}`} className="flex items-start gap-3">
-                  <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0"><Dumbbell className="w-4 h-4" /></span>
+                  <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0"><BaseballIcon className="w-4 h-4" /></span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-extrabold text-slate-900 truncate">{o.title}</div>
-                    <div className="text-[11px] font-semibold text-slate-500 truncate">{groupName(o.group)?.name || 'Everyone'}</div>
+                    <button type="button" onClick={() => openWorkout(o.dates[0].id)} className="w-full text-left cursor-pointer">
+                      <div className="text-sm font-extrabold text-slate-900 truncate flex items-center gap-1.5">{o.title}<Pencil className="w-3 h-3 text-slate-400" /></div>
+                      <div className="text-[11px] font-semibold text-slate-500 truncate">{groupName(o.group)?.name || 'Everyone'}</div>
+                    </button>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {o.dates.slice(0, 8).map((d) => (
-                        <button key={d.id} type="button" onClick={() => onOpenWorkout(d.date, d.id)} className="px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-extrabold text-slate-600 cursor-pointer">{day(d.date)}</button>
+                        <button key={d.id} type="button" onClick={() => openWorkout(d.id)} className="px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-extrabold text-slate-600 cursor-pointer">{day(d.date)}</button>
                       ))}
                       {o.dates.length > 8 && <span className="text-[10px] font-bold text-slate-400 self-center">+{o.dates.length - 8}</span>}
                     </div>
@@ -258,6 +276,7 @@ export default function AssignmentsTab({ onOpenWorkout, onOpenLibrary }: { onOpe
           groups={groups}
           players={players}
           members={members}
+          onEditItem={() => setEditItem(open as Row)}
           onOpenLibrary={(s) => {
             setOpen(null)
             onOpenLibrary(s)
@@ -268,8 +287,90 @@ export default function AssignmentsTab({ onOpenWorkout, onOpenLibrary }: { onOpe
           }}
         />
       )}
+
+      {editWorkout && (
+        <WorkoutEditor
+          workout={editWorkout.workout}
+          items={editWorkout.items}
+          date={editWorkout.workout.workout_date}
+          defaultGroupId={editWorkout.workout.group_id}
+          defaultPhase={editWorkout.workout.phase || 'off_season'}
+          groups={groups}
+          exercises={exercises}
+          onClose={() => setEditWorkout(null)}
+          onSaved={() => {
+            setEditWorkout(null)
+            setNote('Workout saved')
+            setVersion((v) => v + 1)
+          }}
+        />
+      )}
+
+      {editItem && (
+        <ItemEditor
+          row={editItem}
+          onDone={(msg) => {
+            setEditItem(null)
+            if (msg) setNote(msg)
+            setVersion((v) => v + 1)
+          }}
+        />
+      )}
     </div>
   )
+}
+
+/** Edit the program or progression behind an assignment, then rebuild upcoming days for everyone on it. */
+function ItemEditor({ row, onDone }: { row: Row; onDone: (msg: string | null) => void }) {
+  const [prog, setProg] = useState<Progression | null>(null)
+  const [program, setProgram] = useState<Program | null>(null)
+  const [drills, setDrills] = useState<Drill[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
+  const [progOpts, setProgOpts] = useState<{ id: number; name: string }[]>([])
+  const [changed, setChanged] = useState(false)
+
+  useEffect(() => {
+    const sb = createClient()
+    if (row.kind === 'progression') {
+      Promise.all([
+        sb.from('progressions').select('*').eq('id', row.itemId).single(),
+        sb.from('exercises').select('*').order('name'),
+        sb.from('library_folders').select('*').order('sort_order'),
+      ]).then(([p, d, f]) => {
+        setDrills(((d.data as Drill[]) || []).map((x) => ({ ...x, tags: x.tags || [] })))
+        setFolders((f.data as Folder[]) || [])
+        setProg(p.data as Progression)
+      })
+    } else {
+      Promise.all([sb.from('programs').select('*').eq('id', row.itemId).single(), sb.from('progressions').select('id, name, is_active').order('name')]).then(([p, ps]) => {
+        setProgOpts(((ps.data as { id: number; name: string; is_active: boolean }[]) || []).filter((x) => x.is_active).map(({ id, name }) => ({ id, name })))
+        setProgram(p.data as Program)
+      })
+    }
+  }, [row])
+
+  const close = async () => {
+    if (!changed) return onDone(null)
+    // Push the edits onto upcoming days for every active assignment of this item (logged days are kept).
+    const sb = createClient()
+    const today = ymd(new Date())
+    let n = 0
+    if (row.kind === 'progression') {
+      const { data } = await sb.from('progression_assignments').select('id').eq('progression_id', row.itemId).eq('status', 'active').gte('end_date', today)
+      for (const a of (data as { id: number }[]) || []) n += Number((await sb.rpc('refresh_assignment', { p_assignment: a.id })).data || 0)
+    } else {
+      const { data } = await sb.from('program_assignments').select('id').eq('program_id', row.itemId).eq('status', 'active')
+      for (const a of (data as { id: number }[]) || []) n += Number((await sb.rpc('refresh_program_assignment', { p_assignment: a.id })).data || 0)
+    }
+    onDone(`Saved · updated ${n} upcoming day${n === 1 ? '' : 's'}`)
+  }
+
+  if (row.kind === 'progression') {
+    if (!prog) return <div className="fixed inset-0 z-50 bg-[#f3f5f9]" />
+    return <ProgressionSheet progression={prog} drills={drills} folders={folders} onClose={close} onChanged={() => setChanged(true)} />
+  }
+  if (!program) return <div className="fixed inset-0 z-50 bg-[#f3f5f9]" />
+  return <ProgramSheet program={program} progressions={progOpts} onClose={close} onChanged={() => setChanged(true)} />
 }
 
 function NewButton({ onPick }: { onPick: (k: Kind) => void }) {
@@ -294,7 +395,7 @@ function NewButton({ onPick }: { onPick: (k: Kind) => void }) {
 }
 
 function AssignmentSheet({
-  row, kind, programs, progressions, groups, players, members, onClose, onOpenLibrary,
+  row, kind, programs, progressions, groups, players, members, onClose, onOpenLibrary, onEditItem,
 }: {
   row: Row | null
   kind: Kind
@@ -305,6 +406,7 @@ function AssignmentSheet({
   members: Record<number, string[]>
   onClose: (changed: boolean) => void
   onOpenLibrary: (sub: 'programs' | 'progressions') => void
+  onEditItem: () => void
 }) {
   const nextMon = new Date()
   nextMon.setDate(nextMon.getDate() + ((8 - nextMon.getDay()) % 7 || 7))
@@ -391,8 +493,8 @@ function AssignmentSheet({
         {row ? (
           <div className="flex items-center gap-2">
             <span className="text-sm font-extrabold text-slate-900 flex-1">{row.name}</span>
-            <button type="button" onClick={() => onOpenLibrary(kind === 'program' ? 'programs' : 'progressions')} className="text-xs font-extrabold text-[#1746b8] cursor-pointer">
-              Edit {kind === 'program' ? 'Program' : 'Progression'}
+            <button type="button" onClick={onEditItem} className="px-3 py-1.5 rounded-lg bg-blue-50 text-xs font-extrabold text-[#1746b8] flex items-center gap-1 cursor-pointer">
+              <Pencil className="w-3 h-3" /> Edit Workout
             </button>
           </div>
         ) : (
@@ -403,7 +505,7 @@ function AssignmentSheet({
             ))}
           </select>
         )}
-        {kind === 'program' && row && <p className="text-[11px] font-semibold text-slate-500">{row.freq} · days and intent are set in the program</p>}
+        {row && <p className="text-[11px] font-semibold text-slate-500">{kind === 'program' ? `${row.freq} · Edit Workout changes the days, intent and drills` : 'Edit Workout changes the drills for every upcoming day'}</p>}
       </section>
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
