@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { BellRing, CalendarPlus, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, Dumbbell, Megaphone, Plus, Target, Trophy, Users } from 'lucide-react'
+import { BellRing, CalendarPlus, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, Dumbbell, Megaphone, Plus, Target, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { addDays, localDate, prettyDate, type Group, type Profile, type Workout } from '@/lib/training'
 import { needsAttention, type Checkin } from '@/lib/wellness'
 import { kindOf, KIND_STYLE, minutesOf, timeRange, type ScheduleEvent } from '@/lib/schedule'
 import { INTENT_LABEL, INTENT_STYLE } from '@/lib/programs'
-import { initialsOf, useOpponents } from '@/lib/opponents'
+import { useOpponents } from '@/lib/opponents'
 import { notifyPlayers } from '@/lib/notify'
 import OpponentBadge from '@/components/OpponentBadge'
 import BaseballIcon from '@/components/BaseballIcon'
@@ -31,6 +31,7 @@ type PlanItem = {
 }
 
 const weekStartOf = (d: string) => addDays(d, -new Date(`${d}T12:00:00`).getDay())
+const DOW1 = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 /** Coach Home: day picker, the day at a glance (check-ins + the day's plan by group), needs a look, and this week. */
 export default function CoachHome() {
@@ -196,7 +197,6 @@ export default function CoachHome() {
 
   const ws = weekStartOf(day)
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(ws, i))
-  const short = (gid: number | null) => (gid == null ? 'All' : gName(gid))
 
   return (
     <div className="space-y-4">
@@ -230,6 +230,29 @@ export default function CoachHome() {
       </div>
 
       <StreakAlerts compact />
+
+      {/* Week strip */}
+      <section className="bg-white rounded-3xl border border-slate-200 p-3">
+        <div className="grid grid-cols-7 gap-1">
+          {weekDays.map((d, i) => {
+            const kinds = new Set(week.events.filter((e) => e.event_date === d).map((e) => kindOf(e.event_type)))
+            const hasW = week.workouts.some((w) => w.workout_date === d)
+            const sel = d === day
+            return (
+              <button key={d} type="button" onClick={() => setDay(d)} className={`rounded-xl py-1.5 flex flex-col items-center cursor-pointer ${sel ? 'bg-[#1746b8] text-white' : d === today ? 'bg-blue-50' : ''}`}>
+                <span className={`text-[10px] font-bold ${sel ? 'text-blue-100' : 'text-slate-400'}`}>{DOW1[i]}</span>
+                <span className="text-sm font-extrabold">{Number(d.slice(8))}</span>
+                <span className="flex gap-0.5 h-1.5 mt-0.5">
+                  {(['game', 'practice', 'lift'] as const).filter((k) => kinds.has(k)).map((k) => (
+                    <span key={k} className={`w-1.5 h-1.5 rounded-full ${KIND_STYLE[k].dot}`} />
+                  ))}
+                  {hasW && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
       {!loaded ? (
         <div className="h-48 rounded-3xl bg-white/60 animate-pulse" />
@@ -348,59 +371,6 @@ export default function CoachHome() {
           )}
         </>
       )}
-
-      {/* This week: what's actually on each day */}
-      <section className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
-        <div className="px-4 pt-4 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">This Week</div>
-        <ul className="divide-y divide-slate-100">
-          {weekDays.map((d) => {
-            const evs = week.events.filter((e) => e.event_date === d).sort((a, b) => (minutesOf(a.start_time) ?? 0) - (minutesOf(b.start_time) ?? 0))
-            const wks = week.workouts.filter((w) => w.workout_date === d)
-            const sel = d === day
-            const chips: { key: string; text: string; cls: string; icon?: ReactNode }[] = [
-              ...evs.map((e) => {
-                const k = kindOf(e.event_type)
-                const opp = e.opponent_id ? opponents.get(e.opponent_id) : null
-                const t = e.start_time ? ` ${e.start_time.replace(':00', '').replace(' ', '').toLowerCase()}` : ''
-                return {
-                  key: `e${e.id}`,
-                  text: k === 'game' && opp ? `${/ @ /.test(e.title) ? '@' : 'vs'} ${initialsOf(opp)}${t}` : `${e.title}${t}`,
-                  cls: `${KIND_STYLE[k].block} ${KIND_STYLE[k].text}`,
-                  icon: k === 'lift' ? <Dumbbell className="w-3 h-3" /> : k === 'game' ? <Trophy className="w-3 h-3" /> : undefined,
-                }
-              }),
-              ...wks.map((w) => ({
-                key: `w${w.id}`,
-                text: `${w.title} · ${short(w.group_id)}`,
-                cls: w.intent ? INTENT_STYLE[w.intent].chip : 'bg-amber-50 border-amber-200 text-amber-700',
-                icon: w.intent ? <Target className="w-3 h-3" /> : <BaseballIcon className="w-3 h-3" />,
-              })),
-            ]
-            return (
-              <li key={d}>
-                <button type="button" onClick={() => setDay(d)} className={`w-full flex items-start gap-3 px-4 py-2.5 text-left cursor-pointer ${sel ? 'bg-blue-50' : ''}`}>
-                  <div className="w-10 shrink-0">
-                    <div className={`text-[10px] font-extrabold uppercase ${d === today ? 'text-[#1746b8]' : 'text-slate-400'}`}>{prettyDate(d, { weekday: 'short' })}</div>
-                    <div className={`text-base font-black leading-tight ${sel ? 'text-[#1746b8]' : 'text-slate-900'}`}>{Number(d.slice(8))}</div>
-                  </div>
-                  <div className="flex-1 flex flex-wrap gap-1 pt-0.5">
-                    {chips.length === 0 ? (
-                      <span className="text-[11px] font-semibold text-slate-300 pt-1">Nothing scheduled</span>
-                    ) : (
-                      chips.map((c) => (
-                        <span key={c.key} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[11px] font-bold ${c.cls}`}>
-                          {c.icon}
-                          {c.text}
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
 
       {sheet && <AthleteSheet athlete={sheet} onClose={() => setSheet(null)} onChanged={refresh} />}
     </div>
