@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { BookOpen, ChevronDown, Dumbbell, HeartPulse, Moon, Target, Trophy } from 'lucide-react'
+import { useEffect, useState, type ComponentType } from 'react'
+import { BookOpen, ChevronDown, Dumbbell, HeartPulse, Moon, Trophy } from 'lucide-react'
+import BaseballIcon from '@/components/BaseballIcon'
 import { createClient } from '@/lib/supabase'
 import { addDays, localDate } from '@/lib/training'
 import { className, CUP_CLASSES, CUP_SEASON_START } from '@/lib/points'
@@ -105,7 +106,7 @@ function ClassToday({ rows }: { rows: Day[] | null }) {
   if (rows === null) return <div className="mt-2 h-16 animate-pulse bg-white rounded-xl" />
   if (rows.length === 0) return <p className="mt-2 text-[11px] font-semibold text-slate-400">No players with a login in this class.</p>
   const list = [...rows].sort((a, b) => (b.earned ?? 0) - (a.earned ?? 0) || a.full_name.localeCompare(b.full_name))
-  const Dot = ({ on, avail = true, icon: Icon, label }: { on: boolean; avail?: boolean; icon: typeof Moon; label: string }) =>
+  const Dot = ({ on, avail = true, icon: Icon, label }: { on: boolean; avail?: boolean; icon: ComponentType<{ className?: string }>; label: string }) =>
     !avail ? (
       <span className="w-5 h-5" />
     ) : (
@@ -128,7 +129,7 @@ function ClassToday({ rows }: { rows: Day[] | null }) {
               <Dot on={p.sleep_ok} icon={Moon} label="Sleep" />
               <Dot on={p.attend_ok} avail={p.attend_avail} icon={BookOpen} label="Class" />
               <Dot on={p.lift_ok} avail={p.lift_avail} icon={Dumbbell} label="Lift" />
-              <Dot on={p.throw_ok} avail={p.throw_avail} icon={Target} label="Training" />
+              <Dot on={p.throw_ok} avail={p.throw_avail} icon={BaseballIcon} label="Workouts" />
               <Dot on={p.readiness_ok} icon={HeartPulse} label="Readiness" />
             </div>
             <span className={`w-10 text-center text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${perfect ? 'bg-emerald-500 text-white' : 'bg-amber-100 text-amber-700'}`}>

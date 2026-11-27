@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, ChevronRight, Dumbbell, Layers, Pencil, Plus, Search, Square, Target, Users } from 'lucide-react'
+import BaseballIcon from '@/components/BaseballIcon'
+import { CalendarDays, ChevronRight, Layers, Pencil, Plus, Search, Square, Target, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { inputClass, SectionLabel } from '@/components/ui'
 import type { Exercise, Group, Profile, Workout, WorkoutItem } from '@/lib/training'
@@ -224,7 +225,7 @@ export default function AssignmentsTab({ exercises, onOpenLibrary }: { exercises
               <SectionLabel>One-Off Workouts</SectionLabel>
               {oneOffByTitle.map((o) => (
                 <div key={`${o.title}${o.group}`} className="flex items-start gap-3">
-                  <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0"><Dumbbell className="w-4 h-4" /></span>
+                  <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0"><BaseballIcon className="w-4 h-4" /></span>
                   <div className="min-w-0 flex-1">
                     <button type="button" onClick={() => openWorkout(o.dates[0].id)} className="w-full text-left cursor-pointer">
                       <div className="text-sm font-extrabold text-slate-900 truncate flex items-center gap-1.5">{o.title}<Pencil className="w-3 h-3 text-slate-400" /></div>

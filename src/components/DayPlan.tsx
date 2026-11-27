@@ -1,5 +1,6 @@
 'use client'
 
+import BaseballIcon from '@/components/BaseballIcon'
 import CoachEdit from '@/components/CoachEdit'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -474,7 +475,7 @@ export default function DayPlan({
           return (
             <li key={k} className={`border-l-4 ${w.intent ? INTENT_STYLE[w.intent].stripe : TRAINING.stripe}`}>
               <Row
-                icon={<Target className="w-4 h-4" />}
+                icon={w.intent ? <Target className="w-4 h-4" /> : <BaseballIcon className="w-4 h-4" />}
                 tone={w.intent ? INTENT_STYLE[w.intent].chip : TRAINING.tone}
                 title={w.title}
                 subtitle={
@@ -572,7 +573,7 @@ export default function DayPlan({
         {!isCoach && workouts.length === 0 && (
           <li className={`border-l-4 ${TRAINING.stripe}`}>
             <Row
-              icon={<Target className="w-4 h-4" />}
+              icon={<BaseballIcon className="w-4 h-4" />}
               tone={trainingRest ? 'bg-slate-100 text-slate-400' : TRAINING.tone}
               title="Baseball Training"
               subtitle={trainingRest ? 'Rest Day' : <Txt k="dayplan.training.sub" />}
