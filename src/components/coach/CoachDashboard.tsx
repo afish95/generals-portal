@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { Pill } from '@/components/ui'
 import AthleteSheet from './AthleteSheet'
 import { localDate, type Group, type Profile, type Workout, type WorkoutItem } from '@/lib/training'
-import { ATTENDANCE, needsAttention, readinessMeta, type AttendanceStatus, type Checkin } from '@/lib/wellness'
+import { needsAttention, type AttendanceStatus, type Checkin } from '@/lib/wellness'
 
 type Row = {
   athlete: Profile
@@ -159,45 +159,6 @@ export default function CoachDashboard() {
             ))}
           </ul>
         )}
-      </section>
-
-      <section className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden lg:col-span-2">
-        <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Athletes today · pts · readiness · attendance</span>
-          <Link href="/office" className="text-[11px] font-extrabold text-[#1746b8]">Take Attendance</Link>
-        </div>
-        <ul className="divide-y divide-slate-100">
-          {shown.map((r) => {
-            const meta = readinessMeta(r.checkin?.readiness)
-            const att = ATTENDANCE.find((s) => s.key === r.attendance)
-            return (
-              <li key={r.athlete.id}>
-                <button type="button" onClick={() => setOpen(r.athlete)} className="w-full flex items-center gap-3 px-5 py-3 text-left cursor-pointer">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-extrabold text-slate-900 truncate">
-                      {r.flagged && <span className="mr-1">🚩</span>}
-                      {r.athlete.full_name}
-                    </div>
-                    <div className="text-[11px] font-semibold text-slate-500 truncate">
-                      {r.flagged && r.flagReason ? r.flagReason : `${r.sets} set${r.sets === 1 ? '' : 's'} logged`}
-                    </div>
-                  </div>
-                  {r.points && (
-                    <span className={`text-[10px] font-extrabold px-2 py-1 rounded-full ${r.points.earned === r.points.available ? 'bg-emerald-500 text-white' : 'bg-amber-100 text-amber-700'}`}>
-                      {r.points.earned}/{r.points.available}
-                    </span>
-                  )}
-                  <span className={`text-[10px] font-extrabold px-2 py-1 rounded-full ${meta.chip}`}>
-                    {r.checkin ? r.checkin.readiness : '—'}
-                  </span>
-                  <span className={`text-[10px] font-extrabold px-2 py-1 rounded-full w-16 text-center ${att ? att.on : 'bg-slate-100 text-slate-400'}`}>
-                    {att ? att.label : 'No mark'}
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
       </section>
 
       {open && <AthleteSheet athlete={open} onClose={() => setOpen(null)} onChanged={refresh} />}
