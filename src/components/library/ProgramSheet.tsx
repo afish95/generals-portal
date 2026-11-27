@@ -8,6 +8,7 @@ import { SheetFrame } from '@/components/office/roster/shared'
 import type { Group } from '@/lib/training'
 import { DOW_SHORT, INTENT_LABEL, INTENT_STYLE, INTENTS, KIND_INFO, PROGRAM_KINDS, type Intent, type ProgramKind, type Program, type ProgramAddon, type ProgramDay } from '@/lib/programs'
 import ProgramAssign from './ProgramAssign'
+import { TemplateSheet, type TemplateItem, type WorkoutTemplate } from './WorkoutTemplates'
 
 type Opt = { id: number; name: string }
 const blankDay = (week: number, dow: number, intent: Intent): ProgramDay => ({
@@ -19,6 +20,7 @@ const blankDay = (week: number, dow: number, intent: Intent): ProgramDay => ({
   post_progression_id: null,
   throw_note: null,
   script_id: null,
+  template_id: null,
 })
 
 /** One program (throwing, hitting or catching): a week-by-week layout of Low / Med / High days, each with before, main and after progressions. */
@@ -35,6 +37,10 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
   const [days, setDays] = useState<ProgramDay[] | null>(isNew ? [] : null)
   const [addons, setAddons] = useState<ProgramAddon[]>([])
   const [scripts, setScripts] = useState<{ id: number; title: string }[]>([])
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([])
+  const [tItems, setTItems] = useState<TemplateItem[]>([])
+  const [editTemplate, setEditTemplate] = useState<{ t: WorkoutTemplate | null; dow: number } | null>(null)
+  const [tVersion, setTVersion] = useState(0)
   const [focusGroups, setFocusGroups] = useState<(Group & { n: number })[]>([])
   const [week, setWeek] = useState(1)
   const [openDow, setOpenDow] = useState<number | null>(null)
@@ -59,6 +65,14 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
     })
   }, [program])
 
+  useEffect(() => {
+    const sb = createClient()
+    Promise.all([sb.from('workout_templates').select('*').eq('is_active', true).order('name'), sb.from('workout_template_items').select('*').order('position')]).then(([t, i]) => {
+      setTemplates((t.data as WorkoutTemplate[]) || [])
+      setTItems((i.data as TemplateItem[]) || [])
+    })
+  }, [tVersion])
+
   const progName = useMemo(() => new Map(progressions.map((p) => [p.id, p.name])), [progressions])
   const FW = useMemo(() => {
     const find = (re: RegExp) => progressions.find((p) => re.test(p.name))?.id ?? null
@@ -73,6 +87,11 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
       const cur = (ds || []).find((d) => d.week === week && d.dow === dow)
       const next = cur ? { ...cur, intent } : blankDay(week, dow, intent)
       // Arm Health + Gas framework (Coach, Nov 27): Activation before every throw; post-throw by intent.
+      // Prefer a saved Workout of this kind and intent (W1 on odd weeks, W2 on even weeks when both exist).
+      const cands = templates.filter((t) => t.kind === kind && t.intent === intent)
+      const wv = `W${((week - 1) % 2) + 1}`
+      const pick = cands.find((t) => t.name.includes(wv)) || cands[0]
+      if (pick && (next.template_id == null || templates.find((t) => t.id === next.template_id)?.intent !== intent)) next.template_id = pick.id
       if (kind === 'throwing') {
         if (next.pre_progression_id == null) next.pre_progression_id = FW.activation
         if (next.post_progression_id == null || fwPost.has(next.post_progression_id)) next.post_progression_id = FW[intent]
@@ -167,13 +186,13 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
         <textarea value={goals} onChange={(e) => setGoals(e.target.value)} rows={3} placeholder={'Weekly goals, one per line (e.g. Complete 1 velo session / Hit 5x / Throw 5x)'} className={inputClass} />
         <p className="text-[11px] font-semibold text-slate-400">Players see the phase and goals on My Training. Day counts are added automatically.</p>
         <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
-          Length
+          Cycle
           <select value={weeks} onChange={(e) => { const w = Number(e.target.value); setWeeks(w); if (week > w) setWeek(1) }} className={`${inputClass} w-auto`}>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((w) => (
               <option key={w} value={w}>{w} week{w === 1 ? '' : 's'}</option>
             ))}
           </select>
-          <span className="font-semibold text-slate-400">{weeks === 1 ? 'Repeats every week' : 'Repeats after the last week'}</span>
+          <span className="font-semibold text-slate-400">{weeks === 1 ? 'Repeats every week for as long as it’s assigned' : `Repeats every ${weeks} weeks for as long as it’s assigned`}</span>
         </label>
       </section>
 
@@ -214,15 +233,51 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
                       ))}
                     </div>
                     <button type="button" onClick={() => d && setOpenDow(open ? null : dow)} className="flex-1 min-w-0 text-right text-[11px] font-semibold text-slate-400 truncate cursor-pointer">
-                      {d ? [d.pre_progression_id && K.pre, d.throw_progression_id && K.main, d.post_progression_id && K.post, kind === 'throwing' && d.script_id && 'Bullpen'].filter(Boolean).join(' · ') || 'Tap to set' : 'Off'}
+                      {d ? (d.template_id ? templates.find((t) => t.id === d.template_id)?.name || 'Workout' : [d.pre_progression_id && K.pre, d.throw_progression_id && K.main, d.post_progression_id && K.post, kind === 'throwing' && d.script_id && 'Bullpen'].filter(Boolean).join(' · ') || 'Tap to pick a workout') : 'Off'}
                     </button>
                   </div>
                   {open && d && (
                     <div className="px-3 pb-3 space-y-2">
+                      <label className="block text-[11px] font-bold text-slate-500">
+                        Workout
+                        <select
+                          value={d.template_id ?? ''}
+                          onChange={(e) => {
+                            if (e.target.value === 'new') return setEditTemplate({ t: null, dow })
+                            patchDay(dow, { template_id: e.target.value ? Number(e.target.value) : null })
+                          }}
+                          className={inputClass}
+                        >
+                          <option value="">Custom (pick progressions below)</option>
+                          {templates.filter((t) => t.kind === kind || t.kind === 'general').map((t) => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                          <option value="new">+ New Workout…</option>
+                        </select>
+                      </label>
+                      {d.template_id ? (
+                        <div className="rounded-xl bg-slate-50 p-2.5 space-y-1">
+                          {tItems.filter((i) => i.template_id === d.template_id).map((i) => (
+                            <div key={i.id} className="text-xs font-semibold text-slate-700">
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mr-1.5">{i.label || 'Workout'}</span>
+                              {progName.get(i.progression_id) || 'Progression'}
+                            </div>
+                          ))}
+                          <button type="button" onClick={() => setEditTemplate({ t: templates.find((t) => t.id === d.template_id) || null, dow })} className="text-[11px] font-extrabold text-[#1746b8] cursor-pointer">
+                            Edit Workout
+                          </button>
+                        </div>
+                      ) : null}
+                      {d.template_id ? (
+                        <input value={d.throw_note || ''} onChange={(e) => patchDay(dow, { throw_note: e.target.value })} placeholder={K.note} className={inputClass} />
+                      ) : (
+                      <>
                       <label className="block text-[11px] font-bold text-slate-500">{K.pre}{sel(d.pre_progression_id, (v) => patchDay(dow, { pre_progression_id: v }), 'None')}</label>
                       <label className="block text-[11px] font-bold text-slate-500">{K.main}{sel(d.throw_progression_id, (v) => patchDay(dow, { throw_progression_id: v }), 'None')}</label>
                       <input value={d.throw_note || ''} onChange={(e) => patchDay(dow, { throw_note: e.target.value })} placeholder={K.note} className={inputClass} />
                       <label className="block text-[11px] font-bold text-slate-500">{K.post}{sel(d.post_progression_id, (v) => patchDay(dow, { post_progression_id: v }), 'None')}</label>
+                      </>
+                      )}
                       {kind === 'throwing' && (
                       <label className="block text-[11px] font-bold text-slate-500">
                         Bullpen
@@ -299,6 +354,19 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
       {msg && <p className="text-xs font-extrabold text-emerald-700">{msg}</p>}
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}
       {savedId && assigning && <ProgramAssign programId={savedId} programName={name} programWeeks={weeks} />}
+      {editTemplate && (
+        <TemplateSheet
+          template={editTemplate.t}
+          initialItems={editTemplate.t ? tItems.filter((i) => i.template_id === editTemplate.t!.id) : []}
+          progressions={progressions}
+          defaultKind={kind}
+          onClose={(changed, id) => {
+            if (changed && id && !editTemplate.t) patchDay(editTemplate.dow, { template_id: id })
+            setEditTemplate(null)
+            if (changed) setTVersion((v) => v + 1)
+          }}
+        />
+      )}
       {progName.size === 0 && <p className="text-xs font-semibold text-slate-400">Build progressions first, then pick them here.</p>}
     </SheetFrame>
   )

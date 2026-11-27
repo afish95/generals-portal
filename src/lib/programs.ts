@@ -31,6 +31,7 @@ export type ProgramDay = {
   post_progression_id: number | null
   throw_note: string | null
   script_id: number | null
+  template_id?: number | null
 }
 
 export type ProgramAddon = { id?: number; program_id?: number; group_id: number; progression_id: number | null; script_id: number | null }

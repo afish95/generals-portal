@@ -7,7 +7,8 @@ import { INTENT_STYLE, KIND_INFO, PROGRAM_KINDS, type Program, type ProgramDay, 
 import ProgramSheet from './ProgramSheet'
 
 /** Coach Office → Training → Programs: throwing, hitting and catching programs built from progressions. */
-export default function ProgramsPanel({ progressions, onChanged }: { progressions: { id: number; name: string }[]; onChanged: () => void }) {
+export default function ProgramsPanel({ progressions, onChanged, openProgramId }: { progressions: { id: number; name: string }[]; onChanged: () => void; openProgramId?: number }) {
+  const [autoOpened, setAutoOpened] = useState(false)
   const [programs, setPrograms] = useState<Program[] | null>(null)
   const [kindFilter, setKindFilter] = useState<ProgramKind | 'all'>('all')
   const [days, setDays] = useState<ProgramDay[]>([])
@@ -22,7 +23,13 @@ export default function ProgramsPanel({ progressions, onChanged }: { progression
       sb.from('program_days').select('program_id, week, dow, intent').eq('week', 1),
       sb.from('program_assignments').select('program_id').eq('status', 'active'),
     ]).then(([p, d, a]) => {
-      setPrograms((p.data as Program[]) || [])
+      const list = (p.data as Program[]) || []
+      setPrograms(list)
+      if (openProgramId && !autoOpened) {
+        const hit = list.find((x) => x.id === openProgramId)
+        if (hit) setOpen(hit)
+        setAutoOpened(true)
+      }
       setDays((d.data as ProgramDay[]) || [])
       const m: Record<number, number> = {}
       for (const x of (a.data as { program_id: number }[]) || []) m[x.program_id] = (m[x.program_id] || 0) + 1

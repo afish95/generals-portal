@@ -9,7 +9,7 @@ import { INTENT_LONG, INTENT_STYLE, INTENTS, type Intent } from '@/lib/programs'
 import { sundayOf } from '@/lib/trainingMetrics'
 
 type W = { id: number; title: string; workout_date: string; group_id: number | null; intent: Intent | null; program_assignment_id: number | null; program_kind?: string | null }
-type Prog = { name: string; phase: string | null; weekly_goals: string[] | null }
+type Prog = { id: number; name: string; phase: string | null; weekly_goals: string[] | null }
 const RANK: Record<Intent, number> = { low: 1, med: 2, high: 3 }
 
 /** Sun–Sat strip of training days colored by intent, plus the program's phase and weekly goals. */
@@ -41,7 +41,7 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
       const aid = list.find((x) => x.program_assignment_id)?.program_assignment_id
       let p: Prog | null = null
       if (aid) {
-        const { data: pa } = await sb.from('program_assignments').select('program:programs(name, phase, weekly_goals)').eq('id', aid).maybeSingle()
+        const { data: pa } = await sb.from('program_assignments').select('program:programs(id, name, phase, weekly_goals)').eq('id', aid).maybeSingle()
         p = ((pa as unknown as { program: Prog | null } | null)?.program) || null
       }
       if (cancelled) return
@@ -78,7 +78,7 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
       <div className="flex items-baseline justify-between">
         <span className="flex items-center gap-2">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Week at a Glance</span>
-          <CoachEdit href="/office?tab=drills&sub=programs" label="Edit Program" />
+          <CoachEdit href={prog ? `/office?tab=programs&program=${prog.id}` : '/office?tab=programs'} label="Edit Program" />
         </span>
         <span className="text-[10px] font-bold text-slate-400">
           {new Date(`${start}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {new Date(`${addDays(start, 6)}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -113,6 +113,7 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
           )
         })}
       </div>
+      <div className="text-center text-[10px] font-extrabold uppercase tracking-wider text-slate-400 -mb-1">Throwing Intensity</div>
       <div className="flex items-center justify-center gap-3 text-[10px] font-bold text-slate-500">
         {[...INTENTS].reverse().map((i) => (
           <span key={i} className="flex items-center gap-1">
@@ -134,6 +135,7 @@ export default function WeekAtAGlance({ athleteId, date, onPick, refreshKey = 0,
               <div className="text-sm font-extrabold text-slate-900 truncate">{prog?.phase ? `${prog.phase} Phase` : prog?.name || 'This Week'}</div>
               {prog?.phase && <div className="text-[11px] font-semibold text-slate-500 truncate">{prog.name}</div>}
             </div>
+            {prog && <CoachEdit href={`/office?tab=programs&program=${prog.id}`} label="Edit Goals" />}
           </div>
           <ul className="mt-2 space-y-1">
             {throwDays.length > 0 && <Goal text={`${throwDays.length} throwing day${throwDays.length === 1 ? '' : 's'}`} have={throwDone} need={throwDays.length} />}
