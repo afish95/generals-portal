@@ -10,7 +10,8 @@ import { SwipeRow, useDismissals } from '@/components/Dismissible'
 type Award = { id: number; athlete_id: string; achieved_on: string; days: number; profiles: { full_name: string } | null }
 
 /** Coach Home: players who recently completed a 14-day perfect-points streak. */
-export default function StreakAlerts() {
+export default function StreakAlerts({ compact = false }: { compact?: boolean }) {
+  const [expanded, setExpanded] = useState(false)
   const [awards, setAwards] = useState<Award[]>([])
   const { profile } = useProfile()
   const { dismissed, dismiss } = useDismissals('streak_award', profile.id)
@@ -33,6 +34,14 @@ export default function StreakAlerts() {
 
   const shown = dismissed ? awards.filter((a) => !dismissed.has(a.id)) : []
   if (shown.length === 0) return null
+  if (compact && !expanded)
+    return (
+      <button type="button" onClick={() => setExpanded(true)} className="w-full rounded-2xl bg-gradient-to-br from-[#0f2a6e] to-[#1746b8] px-4 py-2.5 text-white flex items-center gap-2 cursor-pointer">
+        <Trophy className="w-4 h-4 text-amber-300" />
+        <span className="text-xs font-extrabold flex-1 text-left">{shown.length} Streak Alert{shown.length === 1 ? '' : 's'}</span>
+        <span className="text-[11px] font-bold text-blue-200">View</span>
+      </button>
+    )
   return (
     <section className="rounded-3xl bg-gradient-to-br from-[#0f2a6e] to-[#1746b8] p-4 text-white shadow-md space-y-2">
       <div className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-amber-300">Streak Alerts</div>

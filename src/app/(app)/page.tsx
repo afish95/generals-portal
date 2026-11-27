@@ -7,14 +7,13 @@ import { useProfile } from '@/components/shell/AppShell'
 import NotificationSetup from '@/components/NotificationSetup'
 import AnnouncementsFeed from '@/components/AnnouncementsFeed'
 import TeamPrFeed from '@/components/TeamPrFeed'
-import CoachDashboard from '@/components/coach/CoachDashboard'
+import CoachHome from '@/components/coach/CoachHome'
 import DayPlan from '@/components/DayPlan'
 import ClassStandings from '@/components/points/ClassStandings'
 import BodyWeightCard from '@/components/wellness/BodyWeightCard'
 import ViewAsPicker from '@/components/shell/ViewAsPicker'
 import StreakCard from '@/components/points/StreakCard'
 import FocusLine from '@/components/plan/FocusLine'
-import StreakAlerts from '@/components/coach/StreakAlerts'
 
 export default function HomePage() {
   const { profile, isCoach, viewAs } = useProfile()
@@ -29,15 +28,19 @@ export default function HomePage() {
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome back, {profile.full_name.split(' ').slice(-1)[0]}</h1>
         </div>
         <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
+          <div className="lg:hidden">
+            <ViewAsPicker />
+          </div>
           <div className="space-y-4 lg:col-span-2">
             <NotificationSetup />
-            <StreakAlerts />
-            <CoachDashboard />
+            <CoachHome />
           </div>
           <div className="space-y-4">
-            <ViewAsPicker />
+            <div className="hidden lg:block">
+              <ViewAsPicker />
+            </div>
             <ClassStandings coach />
-            <TeamPrFeed limit={6} />
+            <TeamPrFeed limit={3} />
             <AnnouncementsFeed limit={2} dismissible />
           </div>
         </div>
