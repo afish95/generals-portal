@@ -36,7 +36,7 @@ export default function HomePage() {
           </div>
           <div className="space-y-4">
             <ViewAsPicker />
-            <ClassStandings />
+            <ClassStandings coach />
             <TeamPrFeed limit={6} />
             <AnnouncementsFeed limit={2} dismissible />
           </div>
