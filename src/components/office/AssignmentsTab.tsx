@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { inputClass, SectionLabel } from '@/components/ui'
 import type { Exercise, Group, Profile, Workout, WorkoutItem } from '@/lib/training'
 import type { Drill, Folder, Progression } from '@/lib/library'
-import type { Program } from '@/lib/programs'
+import { KIND_INFO, type Program, type ProgramKind } from '@/lib/programs'
 import WorkoutEditor from '@/components/office/WorkoutEditor'
 import ProgressionSheet from '@/components/library/ProgressionSheet'
 import ProgramSheet from '@/components/library/ProgramSheet'
@@ -33,7 +33,7 @@ type Row = {
   weekdays?: number[]
   freq: string
 }
-type Item = { id: number; name: string; weeks?: number }
+type Item = { id: number; name: string; weeks?: number; kind?: string }
 type OneOff = { id: number; title: string; workout_date: string; group_id: number | null }
 
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -82,7 +82,7 @@ export default function AssignmentsTab({ exercises, onOpenLibrary }: { exercises
     Promise.all([
       sb.from('program_assignments').select('*').order('start_date', { ascending: false }),
       sb.from('progression_assignments').select('id, progression_id, group_id, target_label, pattern, weekdays, start_date, end_date, status').order('start_date', { ascending: false }),
-      sb.from('programs').select('id, name, weeks').order('name'),
+      sb.from('programs').select('id, name, weeks, kind').order('name'),
       sb.from('progressions').select('id, name, is_active').order('name'),
       sb.from('program_days').select('program_id, week, dow'),
       sb.from('team_groups').select('*').order('sort_order').order('name'),
@@ -108,7 +108,7 @@ export default function AssignmentsTab({ exercises, onOpenLibrary }: { exercises
           end: endOf(a.start_date, a.weeks),
           status: a.status,
           weeks: a.weeks,
-          freq: freqOf(a.program_id),
+          freq: `${KIND_INFO[(progs.find((x) => x.id === a.program_id)?.kind || 'throwing') as ProgramKind].label} · ${freqOf(a.program_id)}`,
         })),
         ...((pr.data as { id: number; progression_id: number; group_id: number | null; target_label: string | null; pattern: Pattern; weekdays: number[]; start_date: string; end_date: string; status: 'active' | 'stopped' }[]) || []).map((a) => ({
           kind: 'progression' as const,
@@ -501,7 +501,7 @@ function AssignmentSheet({
           <select value={itemId} onChange={(e) => setItemId(Number(e.target.value))} className={inputClass}>
             <option value={0}>Pick a {kind}…</option>
             {items.map((x) => (
-              <option key={x.id} value={x.id}>{x.name}</option>
+              <option key={x.id} value={x.id}>{x.name}{kind === 'program' && x.kind ? ` (${KIND_INFO[x.kind as ProgramKind].label})` : ''}</option>
             ))}
           </select>
         )}
