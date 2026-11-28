@@ -9,7 +9,20 @@ import ActionSheet from './ActionSheet'
 
 export type TreeItem = { id: number; name: string; folder_id: number | null; is_active: boolean; sub: string; video?: boolean }
 
-const FOLDER_COLORS = ['text-red-500', 'text-teal-500', 'text-pink-500', 'text-amber-500', 'text-blue-500', 'text-violet-500', 'text-emerald-500', 'text-slate-400']
+/** Folder colors coaches can pick (stored by key in library_folders.color) */
+export const FOLDER_COLORS: { key: string; label: string; text: string; bg: string }[] = [
+  { key: 'red', label: 'Red', text: 'text-red-500', bg: 'bg-red-500' },
+  { key: 'orange', label: 'Orange', text: 'text-orange-500', bg: 'bg-orange-500' },
+  { key: 'amber', label: 'Yellow', text: 'text-amber-500', bg: 'bg-amber-500' },
+  { key: 'green', label: 'Green', text: 'text-emerald-500', bg: 'bg-emerald-500' },
+  { key: 'teal', label: 'Teal', text: 'text-teal-500', bg: 'bg-teal-500' },
+  { key: 'blue', label: 'Blue', text: 'text-blue-500', bg: 'bg-blue-500' },
+  { key: 'indigo', label: 'Indigo', text: 'text-indigo-600', bg: 'bg-indigo-600' },
+  { key: 'violet', label: 'Purple', text: 'text-violet-500', bg: 'bg-violet-500' },
+  { key: 'pink', label: 'Pink', text: 'text-pink-500', bg: 'bg-pink-500' },
+  { key: 'gray', label: 'Gray', text: 'text-slate-400', bg: 'bg-slate-400' },
+]
+const AUTO = ['red', 'teal', 'pink', 'amber', 'blue', 'violet', 'green', 'gray']
 
 /**
  * VeloBeam-style library list: folders with a chevron to open them in place and a ⋯ menu
@@ -41,6 +54,8 @@ export default function LibraryTree({
   const [itemMenu, setItemMenu] = useState<TreeItem | null>(null)
   const [moving, setMoving] = useState<{ type: 'folder'; f: Folder } | { type: 'item'; it: TreeItem } | null>(null)
   const [overId, setOverId] = useState<number | null>(null)
+  // Folder name + color form (new folder, new subfolder, or edit)
+  const [form, setForm] = useState<{ id: number | null; parent: number | null; name: string; color: string } | null>(null)
   const sb = () => createClient()
 
   const mine = useMemo(() => folders.filter((f) => f.kind === kind), [folders, kind])
@@ -50,12 +65,18 @@ export default function LibraryTree({
     const ids = subtree(mine, id)
     return active.filter((x) => x.folder_id != null && ids.has(x.folder_id)).length
   }
-  const topColor = (f: Folder) => {
-    let top = f
-    for (let g = 0; top.parent_id != null && g < 20; g++) top = mine.find((x) => x.id === top.parent_id) || top
-    const i = kids(null).findIndex((x) => x.id === top.id)
-    return FOLDER_COLORS[(i < 0 ? 7 : i) % FOLDER_COLORS.length]
+  // A folder's own color, else its parent's, else an automatic one for top-level folders
+  const colorKey = (f: Folder): string => {
+    let cur: Folder | undefined = f
+    for (let g = 0; cur && g < 20; g++) {
+      if (cur.color) return cur.color
+      if (cur.parent_id == null) break
+      cur = mine.find((x) => x.id === cur!.parent_id)
+    }
+    const i = kids(null).findIndex((x) => x.id === (cur || f).id)
+    return AUTO[(i < 0 ? 7 : i) % AUTO.length]
   }
+  const topColor = (f: Folder) => (FOLDER_COLORS.find((c) => c.key === colorKey(f)) || FOLDER_COLORS[9]).text
   const toggle = (id: number) => setOpen((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const expand = (id: number | null) => {
     if (id == null) return
@@ -68,19 +89,24 @@ export default function LibraryTree({
   }
 
   // ----- Folder actions -----
-  const newFolder = async (parent: number | null) => {
-    const name = window.prompt(parent ? `New subfolder in "${mine.find((f) => f.id === parent)?.name}"` : 'New folder name')?.trim()
-    if (!name) return
-    const { data, error } = await sb().from('library_folders').insert({ kind, parent_id: parent, name, sort_order: kids(parent).length }).select('id').single()
-    if (error) return window.alert(error.message)
-    expand(parent)
-    if (data) setOpen((s) => new Set([...s, (data as { id: number }).id]))
-    onFoldersChanged()
+  const newFolder = (parent: number | null) => {
+    const p = parent != null ? mine.find((f) => f.id === parent) : null
+    setForm({ id: null, parent, name: '', color: p ? colorKey(p) : AUTO[kids(null).length % AUTO.length] })
   }
-  const renameFolder = async (f: Folder) => {
-    const name = window.prompt('Folder name', f.name)?.trim()
-    if (!name || name === f.name) return
-    await sb().from('library_folders').update({ name }).eq('id', f.id)
+  const renameFolder = (f: Folder) => setForm({ id: f.id, parent: f.parent_id, name: f.name, color: colorKey(f) })
+  const saveForm = async () => {
+    if (!form || !form.name.trim()) return
+    const name = form.name.trim()
+    if (form.id == null) {
+      const { data, error } = await sb().from('library_folders').insert({ kind, parent_id: form.parent, name, color: form.color, sort_order: kids(form.parent).length }).select('id').single()
+      if (error) return window.alert(error.message)
+      expand(form.parent)
+      if (data) setOpen((s) => new Set([...s, (data as { id: number }).id]))
+    } else {
+      const { error } = await sb().from('library_folders').update({ name, color: form.color }).eq('id', form.id)
+      if (error) return window.alert(error.message)
+    }
+    setForm(null)
     onFoldersChanged()
   }
   const deleteFolder = async (f: Folder) => {
@@ -268,6 +294,40 @@ export default function LibraryTree({
               : { label: 'Restore', icon: ArchiveRestore, onClick: () => setItemActive(itemMenu, true) },
           ]}
         />
+      )}
+      {form && (
+        <ActionSheet title={form.id == null ? (form.parent != null ? 'New Subfolder' : 'New Folder') : 'Edit Folder'} onClose={() => setForm(null)}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              saveForm()
+            }}
+            className="space-y-3"
+          >
+            <div className="flex items-center gap-2">
+              <FolderIcon className={`w-7 h-7 shrink-0 ${(FOLDER_COLORS.find((c) => c.key === form.color) || FOLDER_COLORS[9]).text}`} />
+              <input autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Folder name" className={inputClass} />
+            </div>
+            <div>
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Color</div>
+              <div className="grid grid-cols-5 gap-2">
+                {FOLDER_COLORS.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setForm({ ...form, color: c.key })}
+                    aria-label={c.label}
+                    aria-pressed={form.color === c.key}
+                    className={`h-10 rounded-xl ${c.bg} cursor-pointer ring-offset-2 ${form.color === c.key ? 'ring-2 ring-slate-900' : ''}`}
+                  />
+                ))}
+              </div>
+            </div>
+            <button type="submit" disabled={!form.name.trim()} className="w-full py-2.5 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-40 cursor-pointer">
+              {form.id == null ? 'Create Folder' : 'Save'}
+            </button>
+          </form>
+        </ActionSheet>
       )}
       {moving && (
         <ActionSheet title={`Move “${moving.type === 'folder' ? moving.f.name : moving.it.name}” to…`} onClose={() => setMoving(null)}>

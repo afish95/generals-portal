@@ -4,7 +4,7 @@ import { parseCsv } from '@/lib/gcImport'
 import type { Exercise } from '@/lib/training'
 
 export type FolderKind = 'drill' | 'progression'
-export type Folder = { id: number; kind: FolderKind; parent_id: number | null; name: string; sort_order: number }
+export type Folder = { id: number; kind: FolderKind; parent_id: number | null; name: string; sort_order: number; color?: string | null }
 export type Drill = Exercise & {
   folder_id: number | null
   tags: string[]
