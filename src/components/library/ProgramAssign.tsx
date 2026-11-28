@@ -59,25 +59,32 @@ export default function ProgramAssign({ programId, programName, programWeeks }: 
     if (!target) return setError(mode === 'groups' ? 'Pick a group.' : 'Pick at least one player.')
     setError(null)
     const sb = createClient()
-    const jobs: { group: number | null; athletes: string[]; label: string }[] =
+    const jobs: { groups: number[]; athletes: string[]; label: string }[] =
       mode === 'groups'
-        ? [...groupIds].map((id) => ({ group: id, athletes: [], label: groups.find((g) => g.id === id)?.name || 'Group' }))
-        : [{ group: null, athletes: [...picked], label: [...picked].map((id) => players.find((p) => p.id === id)?.full_name.split(' ')[0]).filter(Boolean).slice(0, 4).join(', ') + (picked.size > 4 ? ` +${picked.size - 4}` : '') }]
+        ? [{ groups: [...groupIds], athletes: [] as string[], label: groups.filter((g) => groupIds.has(g.id)).map((g) => g.name).join(' + ') }]
+        : [{ groups: [] as number[], athletes: [...picked], label: [...picked].map((id) => players.find((p) => p.id === id)?.full_name.split(' ')[0]).filter(Boolean).slice(0, 4).join(', ') + (picked.size > 4 ? ` +${picked.size - 4}` : '') }]
     for (const j of jobs) {
       setBusy(`Assigning ${j.label}…`)
-      const { error: e } = await sb.rpc('assign_program', { p_program: programId, p_group: j.group, p_athletes: j.athletes, p_label: j.label, p_start: start, p_weeks: weeks })
+      const { error: e } = await sb.rpc('assign_program_v2', { p_program: programId, p_groups: j.groups, p_athletes: j.athletes, p_label: j.label, p_start: start, p_weeks: weeks })
       if (e) {
         setBusy(null)
         return setError(e.message)
       }
-      if (notify) await notifyPlayers({
-        title: programName,
-        body: `${weeks} weeks · starts ${short(start)}`,
-        url: '/',
-        groupId: j.group ?? undefined,
-        recipientIds: j.group ? undefined : j.athletes,
-        kind: 'assignment',
-      })
+      if (notify) {
+        let ids = j.athletes
+        if (j.groups.length > 1) {
+          const { data: gm } = await sb.from('group_members').select('athlete_id').in('group_id', j.groups)
+          ids = [...new Set(((gm as { athlete_id: string }[]) || []).map((m) => m.athlete_id))]
+        }
+        await notifyPlayers({
+          title: programName,
+          body: `${weeks} weeks · starts ${short(start)}`,
+          url: '/',
+          groupId: j.groups.length === 1 ? j.groups[0] : undefined,
+          recipientIds: j.groups.length === 1 ? undefined : ids,
+          kind: 'assignment',
+        })
+      }
     }
     setBusy(null)
     setMsg(`Assigned to ${target}${notify ? ' · notified' : ''}`)
