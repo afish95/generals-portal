@@ -53,7 +53,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center px-4 py-12">
       <div className="max-w-md w-full mx-auto">
         <div className="text-center mb-8">
-          <img src="/icons/logo-512.png?v=2" alt="Generals Baseball" className="inline-block w-24 h-24 rounded-3xl shadow-lg shadow-blue-700/25 mb-4" />
+          <img src="/icons/icon-512.png?v=3" alt="Generals Baseball" className="inline-block w-24 h-24 rounded-3xl shadow-lg shadow-blue-700/25 mb-4" />
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
             GENERALS BASEBALL
           </h1>
