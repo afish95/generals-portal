@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendWebPush } from '@/lib/webpush'
 import { SUPABASE_URL } from '@/lib/server-auth'
 
+const ATTACH_LABEL: Record<string, string> = { image: '📷 Photo', video: '🎬 Video', file: '📎 File', gif: 'GIF' }
 const PUBLISHABLE_KEY = 'sb_publishable_oZ2LGTvtC4RT0ThclPshKw_cjTdvwwg'
 
 // POST /api/messages: send a chat message, then push it to everyone else in the conversation.
@@ -9,7 +10,7 @@ export async function POST(req: Request) {
   const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
   if (!token) return Response.json({ error: 'Not signed in' }, { status: 401 })
 
-  let input: { conversation_id?: unknown; body?: unknown }
+  let input: { conversation_id?: unknown; body?: unknown; attachment?: unknown }
   try {
     input = await req.json()
   } catch {
@@ -18,7 +19,22 @@ export async function POST(req: Request) {
   const conversationId = Number(input.conversation_id)
   const body = typeof input.body === 'string' ? input.body.trim() : ''
   if (!Number.isInteger(conversationId)) return Response.json({ error: 'Missing conversation' }, { status: 400 })
-  if (!body || body.length > 4000) return Response.json({ error: 'Message must be 1–4000 characters' }, { status: 400 })
+  // Optional photo / video / file (uploaded to chat-media/<conversation>/…) or a GIPHY GIF
+  let attachment: Record<string, string | number> | null = null
+  const a = input.attachment as Record<string, unknown> | undefined
+  if (a && typeof a === 'object') {
+    const type = String(a.type || '')
+    if (type === 'gif') {
+      const url = String(a.url || '')
+      if (!/^https:\/\/media[0-9]*\.giphy\.com\//.test(url)) return Response.json({ error: 'Invalid GIF' }, { status: 400 })
+      attachment = { type, url, w: Number(a.w) || 0, h: Number(a.h) || 0 }
+    } else if (['image', 'video', 'file'].includes(type)) {
+      const path = String(a.path || '')
+      if (!path.startsWith(`${conversationId}/`) || path.includes('..')) return Response.json({ error: 'Invalid attachment' }, { status: 400 })
+      attachment = { type, path, name: String(a.name || '').slice(0, 120), mime: String(a.mime || '').slice(0, 80) }
+    }
+  }
+  if ((!body && !attachment) || body.length > 4000) return Response.json({ error: 'Message must be 1–4000 characters' }, { status: 400 })
 
   // Insert as the user, so row-level security decides whether they may post here.
   const asUser = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
@@ -31,7 +47,7 @@ export async function POST(req: Request) {
 
   const { data: msg, error: insErr } = await asUser
     .from('messages')
-    .insert({ conversation_id: conversationId, sender_id: user.id, body })
+    .insert({ conversation_id: conversationId, sender_id: user.id, body, attachment })
     .select('id, created_at')
     .single()
   if (insErr || !msg) return Response.json({ error: insErr?.message || 'Could not send' }, { status: 403 })
@@ -67,7 +83,7 @@ export async function POST(req: Request) {
         (subs || []).map(async (s) => {
           const status = await sendWebPush(s, {
             title,
-            body: body.length > 160 ? `${body.slice(0, 157)}...` : body,
+            body: body ? (body.length > 160 ? `${body.slice(0, 157)}...` : body) : ATTACH_LABEL[String(attachment?.type)] || 'Sent an attachment',
             url: '/messages',
             tag: `conv-${conversationId}`,
           })
