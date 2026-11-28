@@ -1,12 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Folder as FolderIcon, FolderPlus, Layers, PlayCircle, Plus, Search } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { inputClass } from '@/components/ui'
 import { SubTabs } from '@/components/office/roster/shared'
-import { folderPath, subtree, type Drill, type Folder, type Progression } from '@/lib/library'
-import FolderTree, { type Place } from './FolderTree'
+import type { Drill, Folder, Progression } from '@/lib/library'
+import LibraryTree, { type TreeItem } from './LibraryTree'
 import DrillSheet from './DrillSheet'
 import ProgressionSheet from './ProgressionSheet'
 import ImportPanel from './ImportPanel'
@@ -23,9 +21,8 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
   const [folders, setFolders] = useState<Folder[]>([])
   const [drills, setDrills] = useState<Drill[]>([])
   const [progs, setProgs] = useState<(Progression & { n: number })[]>([])
-  const [place, setPlace] = useState<Place>('all')
-  const [query, setQuery] = useState('')
-  const [showHidden, setShowHidden] = useState(false)
+  const [newFolderId, setNewFolderId] = useState<number | null>(null)
+  const [startEdit, setStartEdit] = useState(false)
   const [openDrill, setOpenDrill] = useState<Drill | 'new' | null>(null)
   const [openProg, setOpenProg] = useState<Progression | 'new' | null>(null)
   const [version, setVersion] = useState(0)
@@ -55,53 +52,11 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
     onChanged()
   }, [onChanged])
 
-  useEffect(() => setPlace('all'), [sub])
 
   const kind = sub === 'progressions' ? 'progression' : 'drill'
-  const items: { id: number; name: string; folder_id: number | null; is_active: boolean }[] = kind === 'drill' ? drills : progs
-  const visible = items.filter((x) => showHidden || x.is_active)
-  const counts = useMemo(() => {
-    const m = new Map<number | 'unfiled' | 'all', number>()
-    visible.forEach((x) => m.set(x.folder_id ?? 'unfiled', (m.get(x.folder_id ?? 'unfiled') || 0) + 1))
-    m.set('all', visible.length)
-    return m
-  }, [visible])
-
-  // Like a file browser: the top level shows folders + unfiled items; a folder shows its subfolders + items directly inside it.
-  const inPlace = (x: { folder_id: number | null }) => (place === 'all' || place === 'unfiled' ? x.folder_id == null : x.folder_id === place)
-  const kindFolders = folders.filter((f) => f.kind === kind)
-  const folderCount = (id: number) => {
-    const ids = subtree(kindFolders, id)
-    return visible.filter((x) => x.folder_id != null && ids.has(x.folder_id)).length
-  }
-  const parentOf = typeof place === 'number' ? folders.find((f) => f.id === place)?.parent_id ?? null : null
-  const q = query.trim().toLowerCase()
-  const list = visible
-    .filter((x) => (q ? true : inPlace(x)))
-    .filter((x) => !q || x.name.toLowerCase().includes(q) || (kind === 'drill' && (x as Drill).tags.some((t) => t.toLowerCase().includes(q))))
-  const childFolders = typeof place === 'number' ? folders.filter((f) => f.kind === kind && f.parent_id === place) : place === 'all' && !q ? folders.filter((f) => f.kind === kind && f.parent_id == null) : []
-
-  // New folder inside the folder you're looking at (top level from All / Unfiled), then open it
-  const newFolder = async () => {
-    const parent = typeof place === 'number' ? place : null
-    const where = parent ? ` inside "${folders.find((f) => f.id === parent)?.name}"` : ''
-    const name = window.prompt(`New folder name${where}`)?.trim()
-    if (!name) return
-    const siblings = folders.filter((f) => f.kind === kind && f.parent_id === parent).length
-    const { data, error } = await createClient().from('library_folders').insert({ kind, parent_id: parent, name, sort_order: siblings }).select('*').single()
-    if (error || !data) return window.alert(error?.message || 'Could not make the folder')
-    setFolders((fs) => [...fs, data as Folder])
-    setQuery('')
-    setPlace((data as Folder).id)
-  }
-  const moveItem = async (folderId: number | null, id: number) => {
-    const table = kind === 'drill' ? 'exercises' : 'progressions'
-    await createClient().from(table).update({ folder_id: folderId }).eq('id', id)
-    if (kind === 'drill') setDrills((ds) => ds.map((d) => (d.id === id ? { ...d, folder_id: folderId } : d)))
-    else setProgs((ps) => ps.map((p) => (p.id === id ? { ...p, folder_id: folderId } : p)))
-  }
-
-  const crumbs = typeof place === 'number' ? folderPath(folders, place).split(' / ') : [place === 'all' ? (kind === 'drill' ? 'All Drills' : 'All Progressions') : 'Unfiled']
+  const treeItems: TreeItem[] = kind === 'drill'
+    ? drills.map((d) => ({ id: d.id, name: d.name, folder_id: d.folder_id, is_active: d.is_active !== false, sub: d.tags.slice(0, 3).join(', '), video: !!d.video_url }))
+    : progs.map((p) => ({ id: p.id, name: p.name, folder_id: p.folder_id, is_active: p.is_active, sub: `${p.n} drills` }))
 
   return (
     <div>
@@ -125,129 +80,29 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
       ) : sub === 'import' ? (
         <ImportPanel drills={drills} onChanged={refresh} />
       ) : (
-        <div className="lg:grid lg:grid-cols-[250px_1fr] lg:gap-4 items-start">
-          <aside className="hidden lg:block bg-white rounded-3xl border border-slate-200 p-2 sticky top-4 max-h-[calc(100vh-140px)] overflow-y-auto">
-            <FolderTree kind={kind} folders={folders} counts={counts} place={place} onPlace={setPlace} onDrop={moveItem} onChanged={refresh} />
-          </aside>
-
-          <div className="space-y-3 min-w-0">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search all ${kind === 'drill' ? 'drills (name or tag)' : 'progressions'}`} className={`${inputClass} pl-9`} />
-              </div>
-              <button
-                type="button"
-                onClick={newFolder}
-                title={typeof place === 'number' ? 'New folder inside this folder' : 'New folder'}
-                className="px-3 rounded-xl bg-white border border-slate-200 text-[#1746b8] text-sm font-extrabold flex items-center gap-1.5 shrink-0 cursor-pointer"
-              >
-                <FolderPlus className="w-4 h-4" /> New Folder
-              </button>
-              <button
-                type="button"
-                onClick={() => (kind === 'drill' ? setOpenDrill('new') : setOpenProg('new'))}
-                className="px-4 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold flex items-center gap-1.5 shrink-0 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" /> New
-              </button>
-            </div>
-
-            {/* Phone: folder path + subfolders as chips */}
-            <div className="lg:hidden flex flex-wrap items-center gap-1 text-xs font-extrabold">
-              <button type="button" onClick={() => setPlace('all')} className="text-[#1746b8] cursor-pointer">All</button>
-              {typeof place === 'number' &&
-                folderPath(folders, place)
-                  .split(' / ')
-                  .map((n, i, arr) => {
-                    let f = folders.find((x) => x.id === place)
-                    for (let k = arr.length - 1; k > i && f; k--) f = folders.find((x) => x.id === f!.parent_id)
-                    return (
-                      <span key={i} className="flex items-center gap-1">
-                        <ChevronRight className="w-3 h-3 text-slate-400" />
-                        <button type="button" onClick={() => f && setPlace(f.id)} className="text-[#1746b8] cursor-pointer">{n}</button>
-                      </span>
-                    )
-                  })}
-              {place === 'unfiled' && (
-                <span className="flex items-center gap-1">
-                  <ChevronRight className="w-3 h-3 text-slate-400" /> Unfiled
-                </span>
-              )}
-            </div>
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 px-1">
-              <span className="hidden lg:inline">{q ? `Results for "${query}"` : crumbs.join(' / ')}</span>
-              <label className="flex items-center gap-1.5 cursor-pointer">
-                <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} className="accent-[#1746b8]" /> Show Hidden
-              </label>
-              <span>{q ? `${list.length} found` : `${childFolders.length ? `${childFolders.length} folder${childFolders.length === 1 ? '' : 's'} · ` : ''}${list.length} ${kind === 'drill' ? 'drills' : 'progressions'}`}</span>
-            </div>
-            <p className="hidden lg:block text-[11px] font-semibold text-slate-400 px-1 -mt-2">Drag a row onto a folder on the left to move it.</p>
-
-            <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-              {!q && typeof place === 'number' && (
-                <button type="button" onClick={() => setPlace(parentOf ?? 'all')} className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-extrabold text-[#1746b8] hover:bg-slate-50 cursor-pointer">
-                  <ChevronLeft className="w-4 h-4" /> {parentOf ? folders.find((f) => f.id === parentOf)?.name : kind === 'drill' ? 'All Drills' : 'All Progressions'}
-                </button>
-              )}
-              {!q &&
-                childFolders.map((f) => (
-                  <button
-                    key={`f${f.id}`}
-                    type="button"
-                    onClick={() => setPlace(f.id)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      const id = Number(e.dataTransfer.getData('text/plain'))
-                      if (id) moveItem(f.id, id)
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-slate-50 cursor-pointer"
-                  >
-                    <FolderIcon className="w-5 h-5 shrink-0 text-amber-500 fill-amber-100" />
-                    <span className="flex-1 min-w-0 text-sm font-extrabold text-slate-900 truncate">{f.name}</span>
-                    <span className="text-[11px] font-bold text-slate-400">{folderCount(f.id)}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
-                  </button>
-                ))}
-              {!q && place === 'all' && childFolders.length > 0 && list.length > 0 && (
-                <div className="px-3 pt-2.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 bg-slate-50">Unfiled</div>
-              )}
-              {list.slice(0, 300).map((x) => {
-                const d = kind === 'drill' ? (x as Drill) : null
-                const p = kind === 'progression' ? (x as Progression & { n: number }) : null
-                return (
-                  <button
-                    key={x.id}
-                    type="button"
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData('text/plain', String(x.id))}
-                    onClick={() => (d ? setOpenDrill(d) : setOpenProg(p))}
-                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left hover:bg-slate-50 cursor-pointer ${x.is_active ? '' : 'opacity-50'}`}
-                  >
-                    {d ? (
-                      <PlayCircle className={`w-5 h-5 shrink-0 ${d.video_url ? 'text-[#1746b8]' : 'text-slate-200'}`} aria-label={d.video_url ? 'Has video' : 'No Video'} />
-                    ) : (
-                      <Layers className="w-5 h-5 shrink-0 text-[#1746b8]" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-slate-900 truncate">{x.name}</div>
-                      <div className="text-[11px] font-semibold text-slate-400 truncate">
-                        {d ? [q ? folderPath(folders, d.folder_id) : null, d.tags.slice(0, 3).join(', ')].filter(Boolean).join(' · ') : `${p!.n} drills${q ? ` · ${folderPath(folders, p!.folder_id) || 'Unfiled'}` : ''}`}
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
-                  </button>
-                )
-              })}
-              {list.length > 300 && <p className="px-4 py-3 text-xs font-semibold text-slate-500">Showing 300 of {list.length}. Pick a folder or search to narrow it down.</p>}
-              {list.length === 0 && (q || childFolders.length === 0) && <p className="px-4 py-6 text-center text-xs font-semibold text-slate-500">{q ? 'No matches.' : 'This folder is empty.'}</p>}
-            </div>
-          </div>
-        </div>
+        <LibraryTree
+          key={kind}
+          kind={kind}
+          folders={folders}
+          items={treeItems}
+          onOpen={(id, edit) => {
+            setStartEdit(edit)
+            if (kind === 'drill') setOpenDrill(drills.find((d) => d.id === id) || null)
+            else setOpenProg(progs.find((p) => p.id === id) || null)
+          }}
+          onNew={(folderId) => {
+            setNewFolderId(folderId)
+            setStartEdit(true)
+            if (kind === 'drill') setOpenDrill('new')
+            else setOpenProg('new')
+          }}
+          onFoldersChanged={refresh}
+          onItemsChanged={refresh}
+        />
       )}
 
-      {openDrill && <DrillSheet drill={openDrill === 'new' ? null : openDrill} folders={folders} onClose={() => setOpenDrill(null)} onChanged={refresh} />}
-      {openProg && <ProgressionSheet progression={openProg === 'new' ? null : openProg} drills={drills} folders={folders} onClose={() => setOpenProg(null)} onChanged={refresh} />}
+      {openDrill && <DrillSheet key={openDrill === 'new' ? 'new' : openDrill.id} drill={openDrill === 'new' ? null : openDrill} defaultFolder={newFolderId} startEditing={startEdit} folders={folders} onClose={() => setOpenDrill(null)} onChanged={refresh} />}
+      {openProg && <ProgressionSheet key={openProg === 'new' ? 'new' : openProg.id} progression={openProg === 'new' ? null : openProg} defaultFolder={newFolderId} startEditing={startEdit} drills={drills} folders={folders} onClose={() => setOpenProg(null)} onChanged={refresh} />}
     </div>
   )
 }

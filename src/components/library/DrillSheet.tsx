@@ -23,11 +23,11 @@ export async function uploadDrillVideo(drillId: number, file: File) {
 }
 
 /** One drill: its video plays right here, plus how-to, defaults and editing. */
-export default function DrillSheet({ drill, folders, onClose, onChanged }: { drill: Drill | null; folders: Folder[]; onClose: () => void; onChanged: () => void }) {
+export default function DrillSheet({ drill, folders, onClose, onChanged, defaultFolder = null, startEditing = false }: { drill: Drill | null; folders: Folder[]; onClose: () => void; onChanged: () => void; defaultFolder?: number | null; startEditing?: boolean }) {
   const isNew = !drill
   const [f, setF] = useState({
     name: drill?.name || '',
-    folder_id: drill?.folder_id ?? null,
+    folder_id: drill ? drill.folder_id ?? null : defaultFolder,
     video_url: drill?.video_url || '',
     notes: drill?.notes || '',
     tags: (drill?.tags || []).join(', '),
@@ -40,7 +40,7 @@ export default function DrillSheet({ drill, folders, onClose, onChanged }: { dri
   })
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [editing, setEditing] = useState(isNew)
+  const [editing, setEditing] = useState(isNew || startEditing)
   const drillFolders = folders.filter((x) => x.kind === 'drill').map((x) => ({ id: x.id, label: folderPath(folders, x.id) })).sort((a, b) => a.label.localeCompare(b.label))
 
   const save = async () => {
