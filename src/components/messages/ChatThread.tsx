@@ -7,7 +7,9 @@ import { createClient } from '@/lib/supabase'
 import { callApi } from '@/lib/api'
 
 type Attachment = { type: 'image' | 'video' | 'file' | 'gif'; path?: string; url?: string; name?: string; mime?: string; w?: number; h?: number }
-type Msg = { id: number; sender_id: string; body: string; created_at: string; attachment: Attachment | null }
+type Reaction = { profile_id: string; emoji: string }
+type Msg = { id: number; sender_id: string; body: string; created_at: string; attachment: Attachment | null; message_reactions?: Reaction[] }
+const REACTIONS = ['❤️', '👍', '👎', '😂', '‼️', '❓', '🔥', '⚾']
 const MAX_MB = 50
 type Read = { profile_id: string; last_read_at: string }
 
@@ -62,6 +64,31 @@ export default function ChatThread({
   const [gifOpen, setGifOpen] = useState(false)
   const [viewing, setViewing] = useState<Msg | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  // Press and hold (or right-click) a message: reaction bar + actions, like iMessage
+  const [menuFor, setMenuFor] = useState<Msg | null>(null)
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const held = useRef(false)
+  const holdProps = (m: Msg) =>
+    readOnly
+      ? {}
+      : {
+          onPointerDown: () => {
+            held.current = false
+            if (holdTimer.current) clearTimeout(holdTimer.current)
+            holdTimer.current = setTimeout(() => {
+              held.current = true
+              if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate?.(10)
+              setMenuFor(m)
+            }, 450)
+          },
+          onPointerUp: () => holdTimer.current && clearTimeout(holdTimer.current),
+          onPointerLeave: () => holdTimer.current && clearTimeout(holdTimer.current),
+          onPointerCancel: () => holdTimer.current && clearTimeout(holdTimer.current),
+          onContextMenu: (e: React.MouseEvent) => {
+            e.preventDefault()
+            setMenuFor(m)
+          },
+        }
   const bottomRef = useRef<HTMLDivElement>(null)
   const lastCount = useRef(0)
 
@@ -69,7 +96,7 @@ export default function ChatThread({
     const supabase = createClient()
     const { data } = await supabase
       .from('messages')
-      .select('id, sender_id, body, created_at, attachment')
+      .select('id, sender_id, body, created_at, attachment, message_reactions(profile_id, emoji)')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
       .limit(150)
@@ -156,6 +183,22 @@ export default function ChatThread({
     setViewing(null)
     load()
   }
+  const react = async (m: Msg, emoji: string) => {
+    setMenuFor(null)
+    const sb = createClient()
+    const mineNow = (m.message_reactions || []).find((r) => r.profile_id === myId)
+    // Optimistic: show it right away
+    setMessages((list) =>
+      list.map((x) =>
+        x.id !== m.id
+          ? x
+          : { ...x, message_reactions: [...(x.message_reactions || []).filter((r) => r.profile_id !== myId), ...(mineNow?.emoji === emoji ? [] : [{ profile_id: myId, emoji }])] }
+      )
+    )
+    if (mineNow?.emoji === emoji) await sb.from('message_reactions').delete().eq('message_id', m.id).eq('profile_id', myId)
+    else await sb.from('message_reactions').upsert({ message_id: m.id, profile_id: myId, emoji }, { onConflict: 'message_id,profile_id' })
+    load()
+  }
   const canDelete = (m: Msg) => !readOnly && (m.sender_id === myId || isCoach)
 
   // Read receipts under my latest message: who has read the chat since it was sent
@@ -210,7 +253,7 @@ export default function ChatThread({
                     )
                   if (!src) return <div className="w-48 h-36 rounded-2xl bg-slate-200 animate-pulse" />
                   return (
-                    <button type="button" onClick={() => setViewing(m)} className="max-w-[70%] rounded-2xl overflow-hidden border border-slate-200 bg-white cursor-pointer">
+                    <button type="button" {...holdProps(m)} onClick={() => !held.current && setViewing(m)} className="max-w-[70%] rounded-2xl overflow-hidden border border-slate-200 bg-white cursor-pointer select-none [-webkit-touch-callout:none]">
                       {a.type === 'video' ? (
                         <video src={src} className="max-h-72 w-full object-cover" muted playsInline preload="metadata" />
                       ) : (
@@ -222,13 +265,33 @@ export default function ChatThread({
                 })()}
                 {m.body && <button
                   type="button"
-                  onClick={() => canDelete(m) && remove(m)}
-                  className={`max-w-[80%] text-left px-3.5 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
+                  {...holdProps(m)}
+                  className={`max-w-[80%] text-left px-3.5 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words select-none [-webkit-touch-callout:none] ${
                     mine ? 'bg-[#1746b8] text-white rounded-br-md' : 'bg-white border border-slate-200 text-slate-900 rounded-bl-md'
                   }`}
                 >
                   {m.body}
                 </button>}
+                {(m.message_reactions || []).length > 0 && (() => {
+                  const groups = new Map<string, string[]>()
+                  m.message_reactions!.forEach((r) => groups.set(r.emoji, [...(groups.get(r.emoji) || []), r.profile_id]))
+                  return (
+                    <div className={`-mt-1.5 z-10 flex gap-0.5 ${mine ? 'mr-2' : 'ml-2'}`}>
+                      {[...groups].map(([emoji, who]) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => !readOnly && react(m, emoji)}
+                          title={who.map((id) => (id === myId ? 'You' : names.get(id) ?? 'Teammate')).join(', ')}
+                          className={`h-6 px-1.5 rounded-full border text-xs flex items-center gap-0.5 shadow-sm cursor-pointer ${who.includes(myId) ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}
+                        >
+                          {emoji}
+                          {who.length > 1 && <span className="text-[10px] font-extrabold text-slate-600">{who.length}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                })()}
                 <span className="text-[9px] font-semibold text-slate-400 px-2 mt-0.5">{stamp(m.created_at)}</span>
                 {mine && m.id === lastMineId && receipt(m)}
               </div>
@@ -287,6 +350,47 @@ export default function ChatThread({
         </div>
         {error && <p className="max-w-xl mx-auto px-4 pb-2 text-xs font-bold text-red-600">{error}</p>}
       </div>
+      )}
+      {menuFor && (
+        <div className="fixed inset-0 z-[75] flex items-center justify-center p-4" role="dialog" aria-modal>
+          <button type="button" aria-label="Close" onClick={() => setMenuFor(null)} className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm cursor-default" />
+          <div className="relative w-full max-w-sm space-y-2">
+            <div className="mx-auto w-fit flex gap-1 bg-white rounded-full px-2 py-1.5 shadow-xl">
+              {REACTIONS.map((e) => {
+                const on = (menuFor.message_reactions || []).some((r) => r.profile_id === myId && r.emoji === e)
+                return (
+                  <button key={e} type="button" onClick={() => react(menuFor, e)} aria-label={`React ${e}`} className={`w-10 h-10 rounded-full text-2xl flex items-center justify-center cursor-pointer transition-transform active:scale-125 ${on ? 'bg-blue-100' : 'hover:bg-slate-100'}`}>
+                    {e}
+                  </button>
+                )
+              })}
+            </div>
+            <div className={`flex ${menuFor.sender_id === myId ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] px-3.5 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-xl ${menuFor.sender_id === myId ? 'bg-[#1746b8] text-white' : 'bg-white text-slate-900'}`}>
+                {menuFor.body || (menuFor.attachment ? ({ image: '📷 Photo', video: '🎬 Video', gif: 'GIF', file: `📎 ${menuFor.attachment.name || 'File'}` } as Record<string, string>)[menuFor.attachment.type] : '')}
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden divide-y divide-slate-100">
+              {menuFor.body && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(menuFor.body).catch(() => {})
+                    setMenuFor(null)
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm font-bold text-slate-800 cursor-pointer"
+                >
+                  Copy
+                </button>
+              )}
+              {canDelete(menuFor) && (
+                <button type="button" onClick={() => { const m = menuFor; setMenuFor(null); remove(m) }} className="w-full px-4 py-3 text-left text-sm font-bold text-red-600 cursor-pointer">
+                  Delete
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
       {gifOpen && <GifPicker onPick={pickGif} onClose={() => setGifOpen(false)} />}
       {viewing?.attachment && (() => {
