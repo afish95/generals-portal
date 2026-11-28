@@ -19,7 +19,11 @@ export default function ProgressionSheet({
   folders,
   onClose,
   onChanged,
+  defaultFolder = null,
+  startEditing = false,
 }: {
+  defaultFolder?: number | null
+  startEditing?: boolean
   progression: Progression | null
   drills: Drill[]
   folders: Folder[]
@@ -30,8 +34,8 @@ export default function ProgressionSheet({
   const [slots, setSlots] = useState<Slot[] | null>(isNew ? [] : null)
   const [name, setName] = useState(progression?.name || '')
   const [desc, setDesc] = useState(progression?.description || '')
-  const [folderId, setFolderId] = useState<number | null>(progression?.folder_id ?? null)
-  const [editing, setEditing] = useState(isNew)
+  const [folderId, setFolderId] = useState<number | null>(progression ? progression.folder_id ?? null : defaultFolder)
+  const [editing, setEditing] = useState(isNew || startEditing)
   const [assigning, setAssigning] = useState(false)
   const [find, setFind] = useState('')
   const [busy, setBusy] = useState(false)
