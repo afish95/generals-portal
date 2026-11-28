@@ -89,15 +89,15 @@ export function SheetFrame({ title, subtitle, onClose, children }: { title: stri
   return (
     <div className="fixed inset-0 lg:left-[220px] z-50 bg-[#f3f5f9] overflow-y-auto">
       <div className="bg-gradient-to-b from-[#1746b8] to-[#1e54d4] text-white sticky top-0 z-10" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button type="button" onClick={onClose} className="px-3 h-10 rounded-2xl bg-white/15 border border-white/20 text-sm font-extrabold cursor-pointer">Done</button>
+        <div className="max-w-2xl mx-auto px-4 py-2 flex items-center gap-3">
+          <button type="button" onClick={onClose} className="px-3 h-9 rounded-xl bg-white/15 border border-white/20 text-sm font-extrabold cursor-pointer">Done</button>
           <div className="min-w-0">
             <div className="text-base font-extrabold leading-tight truncate">{title}</div>
             {subtitle && <div className="text-[11px] text-blue-100/90 font-medium truncate">{subtitle}</div>}
           </div>
         </div>
       </div>
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 pb-28">{children}</div>
+      <div className="max-w-2xl mx-auto px-3 py-3 space-y-3 pb-28">{children}</div>
     </div>
   )
 }

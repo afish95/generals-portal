@@ -181,7 +181,7 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
                     draggable
                     onDragStart={(e) => e.dataTransfer.setData('text/plain', String(x.id))}
                     onClick={() => (d ? setOpenDrill(d) : setOpenProg(p))}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 cursor-pointer ${x.is_active ? '' : 'opacity-50'}`}
+                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left hover:bg-slate-50 cursor-pointer ${x.is_active ? '' : 'opacity-50'}`}
                   >
                     {d ? (
                       <PlayCircle className={`w-5 h-5 shrink-0 ${d.video_url ? 'text-[#1746b8]' : 'text-slate-200'}`} aria-label={d.video_url ? 'Has video' : 'No Video'} />

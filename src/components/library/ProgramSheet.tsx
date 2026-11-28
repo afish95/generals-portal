@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarPlus, Copy, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
-import { inputClass, SectionLabel } from '@/components/ui'
+import { inputSm as inputClass, SectionLabel } from '@/components/ui'
 import { SheetFrame } from '@/components/office/roster/shared'
 import type { Group } from '@/lib/training'
 import { DOW_SHORT, INTENT_LABEL, INTENT_STYLE, INTENTS, KIND_INFO, PROGRAM_KINDS, type Intent, type ProgramKind, type Program, type ProgramAddon, type ProgramDay } from '@/lib/programs'
@@ -172,10 +172,10 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
 
   return (
     <SheetFrame title={name || 'New Program'} subtitle={`${K.label} · ${weeks} week${weeks === 1 ? '' : 's'} · ${throwDays(1)} ${K.days} in week 1`} onClose={onClose}>
-      <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100">
+      <section className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2">
+        <div className="grid grid-cols-3 gap-1 p-0.5 rounded-lg bg-slate-100">
           {PROGRAM_KINDS.map((k) => (
-            <button key={k} type="button" onClick={() => setKind(k)} className={`py-2 rounded-lg text-xs font-extrabold cursor-pointer ${kind === k ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
+            <button key={k} type="button" onClick={() => setKind(k)} className={`py-1.5 rounded-md text-xs font-extrabold cursor-pointer ${kind === k ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
               {KIND_INFO[k].label}
             </button>
           ))}
@@ -184,7 +184,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
         <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Short note (optional)" className={inputClass} />
         <input value={phase} onChange={(e) => setPhase(e.target.value)} placeholder="Phase (e.g. Velocity, Build-Up, In-Season)" className={inputClass} />
         <textarea value={goals} onChange={(e) => setGoals(e.target.value)} rows={3} placeholder={'Weekly goals, one per line (e.g. Complete 1 velo session / Hit 5x / Throw 5x)'} className={inputClass} />
-        <p className="text-[11px] font-semibold text-slate-400">Players see the phase and goals on My Training. Day counts are added automatically.</p>
+        <p className="text-[10px] font-semibold text-slate-400">Players see the phase and goals on My Training. Day counts are added automatically.</p>
         <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
           Cycle
           <select value={weeks} onChange={(e) => { const w = Number(e.target.value); setWeeks(w); if (week > w) setWeek(1) }} className={`${inputClass} w-auto`}>
@@ -196,7 +196,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
         </label>
       </section>
 
-      <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
+      <section className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2">
         <div className="flex items-center justify-between">
           <SectionLabel>Week Layout</SectionLabel>
           {weeks > 1 && (
@@ -208,7 +208,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
         {weeks > 1 && (
           <div className="flex gap-1 overflow-x-auto pb-1">
             {Array.from({ length: weeks }, (_, i) => i + 1).map((w) => (
-              <button key={w} type="button" onClick={() => setWeek(w)} className={`px-3 py-1.5 rounded-full text-xs font-extrabold shrink-0 cursor-pointer ${week === w ? 'bg-[#1746b8] text-white' : 'bg-slate-100 text-slate-600'}`}>
+              <button key={w} type="button" onClick={() => setWeek(w)} className={`px-2.5 py-1 rounded-full text-xs font-extrabold shrink-0 cursor-pointer ${week === w ? 'bg-[#1746b8] text-white' : 'bg-slate-100 text-slate-600'}`}>
                 Wk {w}
               </button>
             ))}
@@ -217,17 +217,17 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
         {days === null ? (
           <div className="h-40 rounded-2xl bg-slate-50 animate-pulse" />
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {[1, 2, 3, 4, 5, 6, 7].map((dow) => {
               const d = dayOf(dow)
               const open = openDow === dow && d
               return (
-                <div key={dow} className={`rounded-2xl border border-slate-200 border-l-4 ${d ? INTENT_STYLE[d.intent].stripe : 'border-l-slate-200'}`}>
-                  <div className="flex items-center gap-2 px-3 py-2">
-                    <button type="button" onClick={() => d && setOpenDow(open ? null : dow)} className="w-10 text-left text-sm font-extrabold text-slate-900 cursor-pointer">{DOW_SHORT[dow]}</button>
+                <div key={dow} className={`rounded-xl border border-slate-200 border-l-4 ${d ? INTENT_STYLE[d.intent].stripe : 'border-l-slate-200'}`}>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1">
+                    <button type="button" onClick={() => d && setOpenDow(open ? null : dow)} className="w-8 text-left text-xs font-extrabold text-slate-900 cursor-pointer">{DOW_SHORT[dow]}</button>
                     <div className="flex gap-1">
                       {INTENTS.map((it) => (
-                        <button key={it} type="button" onClick={() => { setIntent(dow, d?.intent === it ? null : it); if (d?.intent !== it) setOpenDow(dow) }} className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold border cursor-pointer ${d?.intent === it ? INTENT_STYLE[it].solid + ' border-transparent' : 'bg-white text-slate-400 border-slate-200'}`}>
+                        <button key={it} type="button" onClick={() => { setIntent(dow, d?.intent === it ? null : it); if (d?.intent !== it) setOpenDow(dow) }} className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold border cursor-pointer ${d?.intent === it ? INTENT_STYLE[it].solid + ' border-transparent' : 'bg-white text-slate-400 border-slate-200'}`}>
                           {INTENT_LABEL[it]}
                         </button>
                       ))}
@@ -237,7 +237,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
                     </button>
                   </div>
                   {open && d && (
-                    <div className="px-3 pb-3 space-y-2">
+                    <div className="px-2.5 pb-2 space-y-1.5">
                       <label className="block text-[11px] font-bold text-slate-500">
                         Workout
                         <select
@@ -256,9 +256,9 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
                         </select>
                       </label>
                       {d.template_id ? (
-                        <div className="rounded-xl bg-slate-50 p-2.5 space-y-1">
+                        <div className="rounded-lg bg-slate-50 px-2 py-1.5 space-y-0.5">
                           {tItems.filter((i) => i.template_id === d.template_id).map((i) => (
-                            <div key={i.id} className="text-xs font-semibold text-slate-700">
+                            <div key={i.id} className="text-[11px] leading-4 font-semibold text-slate-700 truncate">
                               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mr-1.5">{i.label || 'Workout'}</span>
                               {progName.get(i.progression_id) || 'Progression'}
                             </div>
@@ -298,7 +298,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
         )}
       </section>
 
-      <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
+      <section className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2">
         <SectionLabel>Player Plan Work</SectionLabel>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-slate-500">Add each player’s plan drills on</span>
@@ -317,7 +317,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
               {focusGroups.map((g) => {
                 const a = addons.find((x) => x.group_id === g.id)
                 return (
-                  <div key={g.id} className="rounded-2xl border border-violet-200 bg-violet-50/40 p-2.5 space-y-1.5">
+                  <div key={g.id} className="rounded-xl border border-violet-200 bg-violet-50/40 p-2 space-y-1">
                     <div className="text-xs font-extrabold text-violet-800">{g.name.replace('Focus · ', '')} <span className="font-semibold text-violet-500">· {g.n}</span></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       {sel(a?.progression_id ?? null, (v) => setAddon(g.id, { progression_id: v }), 'No Extra Drills')}
@@ -337,7 +337,7 @@ export default function ProgramSheet({ program, progressions, onClose, onChanged
       </section>
 
       <div className="flex gap-2">
-        <button type="button" onClick={save} disabled={busy} className="flex-1 py-3 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-40 cursor-pointer">
+        <button type="button" onClick={save} disabled={busy} className="flex-1 py-2.5 rounded-xl bg-[#1746b8] text-white text-sm font-extrabold disabled:opacity-40 cursor-pointer">
           {busy ? 'Saving…' : 'Save'}
         </button>
         {savedId && (

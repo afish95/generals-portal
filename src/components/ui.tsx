@@ -79,5 +79,8 @@ export function EmptyState({ title, body }: { title: string; body?: string }) {
   )
 }
 
+export const inputSm =
+  'gen-field-sm w-full px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400'
+
 export const inputClass =
   'gen-field w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-base text-slate-900 placeholder:text-slate-400'
