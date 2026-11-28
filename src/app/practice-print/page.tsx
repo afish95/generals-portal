@@ -56,7 +56,7 @@ export default function PracticePrintPage() {
       <article className={`bg-white mx-auto w-full max-w-[8.5in] shadow-xl print:shadow-none p-[0.5in] print:p-0 text-slate-900 ${dense ? 'text-[10px]' : 'text-[11.5px]'}`}>
         <header className="flex items-center gap-3 border-b-4 border-[#1746b8] pb-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/icon-192.png" alt="" className="w-12 h-12 rounded-lg" />
+          <img src="/icons/icon-192.png?v=2" alt="" className="w-12 h-12 rounded-lg" />
           <div className="flex-1">
             <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#1746b8]">Generals Baseball · Practice Plan</div>
             <h1 className="text-xl font-black leading-tight">{sheet.title}</h1>

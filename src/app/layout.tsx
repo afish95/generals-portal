@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/apple-touch-icon.png",
+    icon: "/icons/icon-192.png?v=2",
+    apple: "/icons/apple-touch-icon.png?v=2",
   },
 };
 
