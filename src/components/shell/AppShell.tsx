@@ -316,14 +316,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         >
           <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-[#1746b8] to-[#1e54d4] shadow-md gen-head-bar" />
           <div className="relative max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
-            <Link href="/calendar" aria-label="Calendar" className={iconBtn(calendarActive)}>
-              {!calendarActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}
-              <Calendar className="relative w-5 h-5" />
+            <Link href="/" aria-label="Home" className={`${compact ? "pointer-events-none" : "pointer-events-auto"} w-[94px] shrink-0 flex items-center gen-head-text`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/g-mark.png?v=1" alt="Generals Baseball" className="w-12 h-12 object-contain drop-shadow-sm" />
             </Link>
             <div className="min-w-0 flex-1 text-center gen-head-text">
               <div className="flex items-center justify-center gap-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icons/logo-512.png?v=2" alt="" className="w-4 h-4 rounded" />
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Generals Baseball</span>
                 <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-400/25 text-blue-100">
                   {isCoach ? 'Coach' : isParent ? 'Parent' : 'Active'}
@@ -351,6 +349,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               )}
             </div>
+            <div className="w-[94px] shrink-0 flex items-center justify-end gap-1.5">
+            <Link href="/calendar" aria-label="Calendar" className={iconBtn(calendarActive)}>
+              {!calendarActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}
+              <Calendar className="relative w-5 h-5" />
+            </Link>
             <Link href="/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'} className={`relative ${iconBtn(messagesActive)}`}>
               {!messagesActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}
               <MessageCircle className="relative w-5 h-5" />
@@ -360,6 +363,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </span>
               )}
             </Link>
+            </div>
           </div>
           {viewing && viewed && (
             <div className="relative bg-amber-400 text-amber-950 pointer-events-auto gen-head-amber">
