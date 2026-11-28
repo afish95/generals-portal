@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Folder as FolderIcon, Layers, PlayCircle, Plus, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Folder as FolderIcon, FolderPlus, Layers, PlayCircle, Plus, Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { inputClass } from '@/components/ui'
 import { SubTabs } from '@/components/office/roster/shared'
@@ -81,6 +81,19 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
     .filter((x) => !q || x.name.toLowerCase().includes(q) || (kind === 'drill' && (x as Drill).tags.some((t) => t.toLowerCase().includes(q))))
   const childFolders = typeof place === 'number' ? folders.filter((f) => f.kind === kind && f.parent_id === place) : place === 'all' && !q ? folders.filter((f) => f.kind === kind && f.parent_id == null) : []
 
+  // New folder inside the folder you're looking at (top level from All / Unfiled), then open it
+  const newFolder = async () => {
+    const parent = typeof place === 'number' ? place : null
+    const where = parent ? ` inside "${folders.find((f) => f.id === parent)?.name}"` : ''
+    const name = window.prompt(`New folder name${where}`)?.trim()
+    if (!name) return
+    const siblings = folders.filter((f) => f.kind === kind && f.parent_id === parent).length
+    const { data, error } = await createClient().from('library_folders').insert({ kind, parent_id: parent, name, sort_order: siblings }).select('*').single()
+    if (error || !data) return window.alert(error?.message || 'Could not make the folder')
+    setFolders((fs) => [...fs, data as Folder])
+    setQuery('')
+    setPlace((data as Folder).id)
+  }
   const moveItem = async (folderId: number | null, id: number) => {
     const table = kind === 'drill' ? 'exercises' : 'progressions'
     await createClient().from(table).update({ folder_id: folderId }).eq('id', id)
@@ -123,6 +136,14 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search all ${kind === 'drill' ? 'drills (name or tag)' : 'progressions'}`} className={`${inputClass} pl-9`} />
               </div>
+              <button
+                type="button"
+                onClick={newFolder}
+                title={typeof place === 'number' ? 'New folder inside this folder' : 'New folder'}
+                className="px-3 rounded-xl bg-white border border-slate-200 text-[#1746b8] text-sm font-extrabold flex items-center gap-1.5 shrink-0 cursor-pointer"
+              >
+                <FolderPlus className="w-4 h-4" /> New Folder
+              </button>
               <button
                 type="button"
                 onClick={() => (kind === 'drill' ? setOpenDrill('new') : setOpenProg('new'))}
