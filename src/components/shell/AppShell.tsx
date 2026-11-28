@@ -276,7 +276,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className="min-w-0 flex-1 text-center gen-head-text">
               <div className="flex items-center justify-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icons/icon-192.png?v=2" alt="" className="w-4 h-4 rounded" />
+                <img src="/icons/logo-512.png?v=2" alt="" className="w-4 h-4 rounded" />
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Generals Baseball</span>
                 <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-400/25 text-blue-100">
                   {isCoach ? 'Coach' : 'Active'}
@@ -401,7 +401,7 @@ function DesktopSidebar({ pathname, unread, name, onViewAs, onSignOut }: { pathn
     <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[220px] flex-col bg-[#113694] text-white px-3 py-5">
       <div className="flex items-center gap-2.5 px-2 mb-7">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icons/icon-192.png?v=2" alt="" className="w-9 h-9 rounded-xl" />
+        <img src="/icons/logo-512.png?v=2" alt="" className="w-9 h-9 rounded-xl" />
         <div className="leading-tight">
           <div className="text-sm font-extrabold">Generals</div>
           <div className="text-[11px] font-semibold text-blue-200">Coach Portal</div>

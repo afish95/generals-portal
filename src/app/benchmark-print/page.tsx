@@ -53,7 +53,7 @@ export default function BenchmarkPrintPage() {
       <article className="bg-white mx-auto w-full max-w-[8.5in] shadow-xl print:shadow-none p-[0.5in] print:p-0 text-slate-900">
         <header className="flex items-center gap-3 border-b-4 border-[#1746b8] pb-3 mb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/icon-192.png?v=2" alt="" className="w-10 h-10 rounded-lg" />
+          <img src="/icons/logo-512.png?v=2" alt="" className="w-10 h-10 rounded-lg" />
           <PlayerPhoto id={who.id} name={who.full_name} size={64} />
           <div className="flex-1">
             <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#1746b8]">Generals Baseball · {kind === 'hitter' ? 'Hitter' : 'Pitcher'} Benchmark Report</div>
