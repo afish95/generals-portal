@@ -8,6 +8,7 @@ import { useProfile } from '@/components/shell/AppShell'
 import { PageTitle } from '@/components/ui'
 import NotificationSetup from '@/components/NotificationSetup'
 import ThoughtOfWeek from '@/components/ThoughtOfWeek'
+import SocialLinks from '@/components/SocialLinks'
 import InviteParentCard from '@/components/parent/InviteParentCard'
 
 export default function OtherPage() {
@@ -48,6 +49,7 @@ export default function OtherPage() {
       </section>
       )}
       <ThoughtOfWeek />
+      <SocialLinks />
       {viewAs.active ? (
         <button type="button" onClick={viewAs.exit} className="w-full py-3 rounded-2xl bg-amber-400 text-amber-950 text-sm font-extrabold cursor-pointer">
           Exit Player View
