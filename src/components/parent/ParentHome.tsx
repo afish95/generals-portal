@@ -26,7 +26,7 @@ export function NoPlayer() {
 
 /** Parent Home: what's next, how the week is going, and team news. No health data. */
 export default function ParentHome() {
-  const { profile, family } = useProfile()
+  const { profile, family, viewAs } = useProfile()
   const child = family.child
   const today = localDate()
   const events = useChildEvents(child?.id, today, addDays(today, 21))
@@ -67,7 +67,7 @@ export default function ParentHome() {
     <div className="space-y-4">
       <div>
         <div className="text-xs font-bold text-slate-500">{now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Hi, {profile.full_name.split(' ')[0]}</h1>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Hi, {viewAs.active ? profile.full_name : profile.full_name.split(' ')[0]}</h1>
       </div>
 
       <section className="space-y-2">
@@ -86,7 +86,7 @@ export default function ParentHome() {
                   <Link key={e.id} href="/calendar" className="flex items-center gap-3 px-3 py-2">
                     <div className="w-12 text-[11px] font-extrabold text-slate-500">{new Date(e.event_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}</div>
                     <div className="flex-1 min-w-0 text-xs font-bold text-slate-800 truncate">{e.title}</div>
-                    <div className="text-[11px] font-semibold text-slate-500">{e.start_time || ''}</div>
+                    <div className="text-[11px] font-semibold text-slate-500">{e.start_time || 'TBA'}</div>
                   </Link>
                 ))}
               </div>
@@ -120,7 +120,7 @@ export default function ParentHome() {
           })}
         </div>
         <p className="text-xs text-slate-500">
-          {perfect} perfect {perfect === 1 ? 'day' : 'days'} this week. A perfect day means {first} finished everything on the plan. {STREAK_GOAL} in a row earns a streak award.
+          {perfect} perfect {perfect === 1 ? 'day' : 'days'} this week. A perfect day means {first} did everything on the daily plan; {STREAK_GOAL} in a row earns a streak award.
         </p>
         {prs.length > 0 && (
           <div className="pt-2 border-t border-slate-100 space-y-1.5">
@@ -141,7 +141,7 @@ export default function ParentHome() {
         <MessageCircle className="w-5 h-5" />
         <div className="flex-1">
           <div className="text-sm font-extrabold">Message a Coach</div>
-          <div className="text-[11px] text-blue-100">Questions about schedule, playing time or anything else.</div>
+          <div className="text-[11px] text-blue-100">Questions for the coaching staff.</div>
         </div>
         <ChevronRight className="w-4 h-4" />
       </Link>

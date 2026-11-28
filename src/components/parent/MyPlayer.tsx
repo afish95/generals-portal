@@ -5,9 +5,14 @@ import { Target, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useProfile } from '@/components/shell/AppShell'
 import { NoPlayer } from './ParentHome'
+import { STAT_EXERCISES } from '@/lib/trainingMetrics'
+import { POSITION_LABEL } from '@/components/office/roster/shared'
 
 type Gc = { stat_type: string; season_year: number; season_type: string | null; stats: Record<string, number | string> }
-type Pr = { exercise_id: number; value: number; reps: number | null; achieved_at: string; exercise: { name: string } | null }
+type Log = { exercise_id: number; value: number | null; logged_at: string }
+type Best = { id: number; label: string; unit: string; value: number; date: string }
+const LOWER_BETTER = new Set(['time_to_first', 'pop_time'])
+const SEASON_LABEL: Record<string, string> = { Spring: 'Spring Varsity', JV: 'Spring JV', Summer: 'Summer' }
 type Focus = { id: number; title: string; metric_label: string | null; baseline: number | null; goal: number | null; status: string; target_date: string | null }
 
 const BAT: [string, string][] = [['AVG', 'AVG'], ['OBP', 'OBP'], ['OPS', 'OPS'], ['H', 'Hits'], ['RBI', 'RBI'], ['SB', 'SB']]
@@ -21,12 +26,12 @@ const fmt = (k: string, v: number | string | undefined) => {
   return String(n)
 }
 
-/** My Player: game stats, training bests and what coaches have them working on. No health or check-in data. */
+/** My Player: game stats, training bests (all-time best per stat) and what coaches have them working on. No health or check-in data. */
 export default function MyPlayer() {
   const { family } = useProfile()
   const child = family.child
   const [gc, setGc] = useState<Gc[] | null>(null)
-  const [prs, setPrs] = useState<Pr[]>([])
+  const [logs, setLogs] = useState<Log[]>([])
   const [focus, setFocus] = useState<Focus[]>([])
 
   useEffect(() => {
@@ -35,12 +40,12 @@ export default function MyPlayer() {
     const sb = createClient()
     Promise.all([
       sb.from('gc_season_stats').select('stat_type, season_year, season_type, stats').eq('player_id', child.id).order('season_year', { ascending: false }),
-      sb.from('pr_events').select('exercise_id, value, reps, achieved_at, exercise:exercises(name)').eq('athlete_id', child.id).order('achieved_at', { ascending: false }).limit(200),
+      sb.from('set_logs').select('exercise_id, value, logged_at').eq('athlete_id', child.id).in('exercise_id', STAT_EXERCISES.map((x) => x.exerciseId)).not('value', 'is', null).limit(2000),
       sb.from('player_focus').select('id, title, metric_label, baseline, goal, status, target_date').eq('athlete_id', child.id).order('sort_order'),
     ]).then(([{ data: g }, { data: p }, { data: f }]) => {
       if (cancelled) return
       setGc((g as Gc[]) || [])
-      setPrs((p as unknown as Pr[]) || [])
+      setLogs((p as Log[]) || [])
       setFocus((f as Focus[]) || [])
     })
     return () => {
@@ -53,12 +58,20 @@ export default function MyPlayer() {
     if (!gc?.length) return null
     const top = gc[0]
     const rows = gc.filter((r) => r.season_year === top.season_year && r.season_type === top.season_type)
-    return { label: `${top.season_type || ''} ${top.season_year}`.trim(), bat: rows.find((r) => r.stat_type === 'batting')?.stats, pit: rows.find((r) => r.stat_type === 'pitching')?.stats }
+    return { label: `${SEASON_LABEL[top.season_type || ''] || top.season_type || ''} ${top.season_year}`.trim(), bat: rows.find((r) => r.stat_type === 'batting')?.stats, pit: rows.find((r) => r.stat_type === 'pitching')?.stats }
   }, [gc])
+  // All-time best per training stat (fastest for times)
   const bests = useMemo(() => {
-    const seen = new Set<number>()
-    return prs.filter((p) => (seen.has(p.exercise_id) ? false : (seen.add(p.exercise_id), true))).slice(0, 8)
-  }, [prs])
+    const out: Best[] = []
+    for (const x of STAT_EXERCISES) {
+      const mine = logs.filter((l) => l.exercise_id === x.exerciseId && l.value != null && Number(l.value) > 0)
+      if (!mine.length) continue
+      const low = LOWER_BETTER.has(x.metric)
+      const b = mine.reduce((a, c) => (low ? Number(c.value) < Number(a.value) : Number(c.value) > Number(a.value)) ? c : a)
+      out.push({ id: x.exerciseId, label: x.label, unit: x.unit, value: Number(b.value), date: b.logged_at })
+    }
+    return out
+  }, [logs])
 
   if (!child) return <NoPlayer />
   const first = child.full_name.split(' ')[0]
@@ -82,7 +95,7 @@ export default function MyPlayer() {
         <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">My Player</div>
         <div className="text-2xl font-extrabold tracking-tight">{child.full_name}</div>
         <div className="text-xs text-blue-100 font-medium">
-          {[child.position_group, child.grad_year ? `Class of ${child.grad_year}` : null].filter(Boolean).join(' · ') || 'Generals Baseball'}
+          {[POSITION_LABEL[child.position_group || ''] || child.position_group, child.grad_year ? `Class of ${child.grad_year}` : null].filter(Boolean).join(' · ') || 'Generals Baseball'}
         </div>
       </section>
 
@@ -128,15 +141,15 @@ export default function MyPlayer() {
       <section className="bg-white rounded-3xl border border-slate-200/90 p-4 shadow-xs space-y-2">
         <h2 className="text-sm font-extrabold text-slate-900">Training Bests</h2>
         {bests.length === 0 ? (
-          <p className="text-xs text-slate-500">Personal records from training show up here.</p>
+          <p className="text-xs text-slate-500">Best velo, exit velo and other training numbers show up here once logged.</p>
         ) : (
           <div className="divide-y divide-slate-100">
             {bests.map((p) => (
-              <div key={p.exercise_id} className="flex items-center gap-2 py-1.5">
+              <div key={p.id} className="flex items-center gap-2 py-1.5">
                 <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span className="flex-1 min-w-0 truncate text-xs font-bold text-slate-800">{p.exercise?.name || 'Exercise'}</span>
-                <span className="text-xs font-extrabold text-slate-900">{Number(p.value)}{p.reps ? ` × ${p.reps}` : ''}</span>
-                <span className="text-[10px] text-slate-400 w-12 text-right">{new Date(p.achieved_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span className="flex-1 min-w-0 truncate text-xs font-bold text-slate-800">{p.label}</span>
+                <span className="text-xs font-extrabold text-slate-900">{p.value} <span className="text-[10px] font-bold text-slate-500">{p.unit}</span></span>
+                <span className="text-[10px] text-slate-400 w-16 text-right">{new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}</span>
               </div>
             ))}
           </div>
