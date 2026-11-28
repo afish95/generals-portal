@@ -14,11 +14,14 @@ import BodyWeightCard from '@/components/wellness/BodyWeightCard'
 import ViewAsPicker from '@/components/shell/ViewAsPicker'
 import StreakCard from '@/components/points/StreakCard'
 import FocusLine from '@/components/plan/FocusLine'
+import ParentHome from '@/components/parent/ParentHome'
 
 export default function HomePage() {
-  const { profile, isCoach, viewAs } = useProfile()
+  const { profile, isCoach, isParent, viewAs } = useProfile()
   const [pointsKey, setPointsKey] = useState(0)
   const [day, setDay] = useState(localDate())
+
+  if (isParent) return <ParentHome />
 
   if (isCoach) {
     return (

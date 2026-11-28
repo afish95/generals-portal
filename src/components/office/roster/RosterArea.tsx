@@ -9,8 +9,10 @@ import GroupsPanel from './GroupsPanel'
 import SandboxPanel from './SandboxPanel'
 import ImportExportPanel from './ImportExportPanel'
 import LoginsPanel from './LoginsPanel'
+import AllSignIns from './AllSignIns'
+import ParentAccountsPanel from './ParentAccountsPanel'
 
-type Sub = 'players' | 'coaches' | 'groups' | 'sandbox' | 'transfer' | 'logins'
+type Sub = 'players' | 'coaches' | 'parents' | 'groups' | 'sandbox' | 'transfer' | 'logins'
 
 /** Coach Office → Roster: players, coaches, groups & tags, and the sandbox roster builder. */
 export default function RosterArea({ initial = 'players', onChanged }: { initial?: Sub; onChanged: () => void }) {
@@ -56,6 +58,7 @@ export default function RosterArea({ initial = 'players', onChanged }: { initial
         tabs={[
           { key: 'players', label: 'Players', count: players.filter((p) => p.is_active && !p.is_demo).length },
           { key: 'coaches', label: 'Coaches', count: coaches.length },
+          { key: 'parents', label: 'Parents' },
           { key: 'groups', label: 'Groups & Tags', count: groups.length },
           { key: 'sandbox', label: 'Sandbox' },
           { key: 'logins', label: 'Logins', count: people.filter((p) => p.is_active && !p.is_demo && p.has_login === false).length },
@@ -70,10 +73,15 @@ export default function RosterArea({ initial = 'players', onChanged }: { initial
         <PeoplePanel role="player" people={players} groups={groups} members={members} onChanged={reload} />
       ) : sub === 'coaches' ? (
         <PeoplePanel role="coach" people={coaches} groups={groups} members={members} onChanged={reload} />
+      ) : sub === 'parents' ? (
+        <ParentAccountsPanel players={players} />
       ) : sub === 'groups' ? (
         <GroupsPanel people={people} groups={groups} members={members} onChanged={reload} />
       ) : sub === 'logins' ? (
-        <LoginsPanel people={people} onChanged={reload} />
+        <>
+          <LoginsPanel people={people} onChanged={reload} />
+          <AllSignIns people={people} />
+        </>
       ) : sub === 'transfer' ? (
         <ImportExportPanel people={people} groups={groups} members={members} onChanged={reload} />
       ) : (

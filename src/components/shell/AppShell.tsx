@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { House, MessageCircle, Calendar, Target, TrendingUp, LayoutGrid, ClipboardList, Eye, X } from 'lucide-react'
+import { House, MessageCircle, Calendar, Target, TrendingUp, LayoutGrid, ClipboardList, Eye, X, CalendarDays, UserRound } from 'lucide-react'
 import { createClient, READ_ONLY_EVENT, setReadOnlyMode } from '@/lib/supabase'
 import type { Profile } from '@/lib/training'
 import { PrCelebrationHost } from '@/components/training/PrCelebration'
@@ -20,7 +20,11 @@ export type ViewAs = {
 }
 /** Sub-page tabs a page shows in the desktop top bar (coach desktop layout) */
 export type Subnav = { tabs: { key: string; label: string }[]; active: string; onChange: (key: string) => void }
-type ShellContext = { profile: Profile; isCoach: boolean; viewAs: ViewAs; setSubnav: (s: Subnav | null) => void }
+/** For parent accounts: the players they follow and which one is showing */
+export type Family = { kids: Profile[]; child: Profile | null; pick: (id: string) => void }
+type ShellContext = { profile: Profile; isCoach: boolean; isParent: boolean; family: Family; viewAs: ViewAs; setSubnav: (s: Subnav | null) => void }
+const KID_KEY = 'generals.child'
+const PARENT_PATHS = ['/calendar', '/family', '/messages', '/other']
 const VIEW_KEY = 'generals.viewAs'
 const PROFILE_COLS = 'id, username, full_name, role, position_group, grad_year, is_active, is_demo, has_login'
 const ProfileContext = createContext<ShellContext | null>(null)
@@ -35,6 +39,12 @@ const PLAYER_TABS = [
   { href: '/', label: 'Home', icon: House },
   { href: '/training', label: 'Training', icon: Target },
   { href: '/stats', label: 'Stats', icon: TrendingUp },
+  { href: '/other', label: 'Other', icon: LayoutGrid },
+]
+const PARENT_TABS = [
+  { href: '/', label: 'Home', icon: House },
+  { href: '/calendar', label: 'Schedule', icon: CalendarDays },
+  { href: '/family', label: 'My Player', icon: UserRound },
   { href: '/other', label: 'Other', icon: LayoutGrid },
 ]
 const COACH_TABS = [
@@ -81,6 +91,41 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       sub.subscription.unsubscribe()
     }
   }, [router])
+
+  // ----- Parent accounts: the players they follow -----
+  const isParent = profile?.role === 'parent'
+  const [kids, setKids] = useState<Profile[]>([])
+  const [childId, setChildId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!isParent || !profile) return
+    const supabase = createClient()
+    supabase
+      .from('player_guardians')
+      .select('player_id')
+      .eq('guardian_id', profile.id)
+      .then(async ({ data }) => {
+        const ids = ((data as { player_id: string }[]) || []).map((g) => g.player_id)
+        if (!ids.length) return setKids([])
+        const { data: ps } = await supabase.from('profiles').select(PROFILE_COLS).in('id', ids).eq('is_active', true).order('full_name')
+        const list = (ps as Profile[]) || []
+        setKids(list)
+        let saved: string | null = null
+        try {
+          saved = localStorage.getItem(KID_KEY)
+        } catch {}
+        setChildId(list.find((k) => k.id === saved)?.id || list[0]?.id || null)
+      })
+  }, [isParent, profile])
+  const pickChild = useCallback((id: string) => {
+    setChildId(id)
+    try {
+      localStorage.setItem(KID_KEY, id)
+    } catch {}
+  }, [])
+  const child = kids.find((k) => k.id === childId) || null
+  useEffect(() => {
+    if (isParent && pathname !== '/' && !PARENT_PATHS.some((p) => pathname.startsWith(p))) router.replace('/')
+  }, [isParent, pathname, router])
 
   // ----- Coach "view as player" (read-only preview) -----
   const realIsCoach = profile?.role === 'coach'
@@ -211,7 +256,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [status, viewing])
 
   const isCoach = realIsCoach && !viewing
-  const tabs = isCoach ? COACH_TABS : PLAYER_TABS
+  const tabs = isCoach ? COACH_TABS : isParent ? PARENT_TABS : PLAYER_TABS
 
   if (status === 'inactive') {
     return (
@@ -241,6 +286,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       value={{
         profile: viewing && viewed ? viewed : profile,
         isCoach,
+        isParent,
+        family: { kids, child, pick: pickChild },
         viewAs: { active: viewing, realProfile: profile, players, start: startViewAs, exit: exitViewAs },
         setSubnav,
       }}
@@ -279,13 +326,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <img src="/icons/logo-512.png?v=2" alt="" className="w-4 h-4 rounded" />
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Generals Baseball</span>
                 <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-400/25 text-blue-100">
-                  {isCoach ? 'Coach' : 'Active'}
+                  {isCoach ? 'Coach' : isParent ? 'Parent' : 'Active'}
                 </span>
               </div>
               <div className="text-lg font-extrabold leading-tight tracking-tight truncate">{(viewing && viewed ? viewed : profile).full_name}</div>
+              {isParent ? (
+                kids.length > 1 ? (
+                  <select
+                    value={child?.id || ''}
+                    onChange={(e) => pickChild(e.target.value)}
+                    aria-label="Switch Player"
+                    className="pointer-events-auto max-w-full bg-transparent text-xs text-blue-100 font-bold truncate cursor-pointer outline-none text-center"
+                  >
+                    {kids.map((k) => (
+                      <option key={k.id} value={k.id} className="text-slate-900">Following {k.full_name} ▾</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-xs text-blue-100/90 font-medium truncate">{child ? `Following ${child.full_name}` : 'Parent'}</div>
+                )
+              ) : (
               <div className="text-xs text-blue-100/90 font-medium truncate">
                 {isCoach ? 'Coaching Staff' : (viewing && viewed ? viewed : profile).position_group || 'Player'} &bull; #{(viewing && viewed ? viewed : profile).username}
               </div>
+              )}
             </div>
             <Link href="/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'} className={`relative ${iconBtn(messagesActive)}`}>
               {!messagesActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}

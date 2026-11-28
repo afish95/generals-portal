@@ -56,6 +56,8 @@ export default function MessagesPage() {
   const coachTools = isCoach && !viewAs.active
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('tab') === 'announcements') setTab('announcements')
+    const c = Number(new URLSearchParams(window.location.search).get('c'))
+    if (c) setOpenId(c)
   }, [])
 
   useEffect(() => {

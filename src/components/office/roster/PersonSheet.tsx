@@ -8,6 +8,7 @@ import { inputClass, SectionLabel } from '@/components/ui'
 import AthleteSheet from '@/components/coach/AthleteSheet'
 import PlayerPhoto from '@/components/PlayerPhoto'
 import { GROUP_CATEGORIES, type Group, type Profile } from '@/lib/training'
+import ParentsPanel from './ParentsPanel'
 import { NoLoginBadge, SheetFrame, TagChip, catOf, type Member } from './shared'
 
 const SIZES = ['', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
@@ -229,6 +230,8 @@ export default function PersonSheet({
           {saving ? 'Saving…' : saved ? 'Saved' : 'Save details'}
         </button>
       </section>
+
+      {!isCoach && <ParentsPanel playerId={person.id} playerName={person.full_name} />}
 
       <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-2">
         <SectionLabel>App Login</SectionLabel>

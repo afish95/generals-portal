@@ -140,10 +140,24 @@ export async function POST(req: Request) {
     return Response.json({ ok: true, id: created.user.id, username, password: password ?? null })
   }
 
+  // Disconnect a parent from a player. A parent left with no players loses their account.
+  if (action === 'remove_parent') {
+    const parentId = String(body.id || '')
+    const playerId = String(body.player_id || '')
+    const { data: parent } = await admin.from('profiles').select('role').eq('id', parentId).single()
+    if (!parent || parent.role !== 'parent') return Response.json({ error: 'Parent not found' }, { status: 404 })
+    await admin.from('player_guardians').delete().eq('guardian_id', parentId).eq('player_id', playerId)
+    const { count } = await admin.from('player_guardians').select('player_id', { count: 'exact', head: true }).eq('guardian_id', parentId)
+    if (!count) await admin.auth.admin.deleteUser(parentId)
+    return Response.json({ ok: true, deleted: !count })
+  }
+
   const id = String(body.id || '')
   if (!id) return Response.json({ error: 'Missing player' }, { status: 400 })
   const { data: target } = await admin.from('profiles').select('role, username, has_login').eq('id', id).single()
-  if (!target || (target.role !== 'player' && target.role !== 'coach')) return Response.json({ error: 'Person not found' }, { status: 404 })
+  if (!target || !['player', 'coach', 'parent'].includes(target.role)) return Response.json({ error: 'Person not found' }, { status: 404 })
+  // Parent accounts: coaches can reset the password and turn access off or on; nothing else.
+  if (target.role === 'parent' && !['reset_password', 'set_active'].includes(action)) return Response.json({ error: 'Not available for parent accounts' }, { status: 400 })
   if (target.role === 'coach' && id === auth.userId && action !== 'update') return Response.json({ error: 'Use your own account settings for that' }, { status: 400 })
 
   // Give someone who is on the roster (no login yet) a username and a temporary password
@@ -207,7 +221,7 @@ export async function DELETE(req: Request) {
   if (!id) return Response.json({ error: 'Missing player' }, { status: 400 })
   if (id === auth.userId) return Response.json({ error: 'You can’t delete your own account here' }, { status: 400 })
   const { data: target } = await auth.admin.from('profiles').select('role').eq('id', id).single()
-  if (!target || (target.role !== 'player' && target.role !== 'coach')) return Response.json({ error: 'Person not found' }, { status: 404 })
+  if (!target || !['player', 'coach', 'parent'].includes(target.role)) return Response.json({ error: 'Person not found' }, { status: 404 })
   const { error } = await auth.admin.auth.admin.deleteUser(id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
