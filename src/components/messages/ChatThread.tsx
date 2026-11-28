@@ -9,7 +9,14 @@ import { callApi } from '@/lib/api'
 type Attachment = { type: 'image' | 'video' | 'file' | 'gif'; path?: string; url?: string; name?: string; mime?: string; w?: number; h?: number }
 type Reaction = { profile_id: string; emoji: string }
 type Msg = { id: number; sender_id: string; body: string; created_at: string; attachment: Attachment | null; message_reactions?: Reaction[] }
-const REACTIONS = ['❤️', '👍', '👎', '😂', '‼️', '❓', '🔥', '⚾']
+const REACTIONS = ['❤️', '👍', '😂', '‼️', '🔥', '⚾']
+/** First emoji in what was typed (handles skin tones, flags and combined emoji) */
+function firstEmoji(text: string): string | null {
+  const parts = typeof Intl !== 'undefined' && 'Segmenter' in Intl
+    ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)].map((x) => x.segment)
+    : Array.from(text)
+  return parts.find((g) => /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(g)) || null
+}
 const MAX_MB = 50
 type Read = { profile_id: string; last_read_at: string }
 
@@ -66,6 +73,7 @@ export default function ChatThread({
   const fileRef = useRef<HTMLInputElement>(null)
   // Press and hold (or right-click) a message: reaction bar + actions, like iMessage
   const [menuFor, setMenuFor] = useState<Msg | null>(null)
+  const [picking, setPicking] = useState(false)
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const held = useRef(false)
   const holdProps = (m: Msg) =>
@@ -185,6 +193,7 @@ export default function ChatThread({
   }
   const react = async (m: Msg, emoji: string) => {
     setMenuFor(null)
+    setPicking(false)
     const sb = createClient()
     const mineNow = (m.message_reactions || []).find((r) => r.profile_id === myId)
     // Optimistic: show it right away
@@ -353,7 +362,7 @@ export default function ChatThread({
       )}
       {menuFor && (
         <div className="fixed inset-0 z-[75] flex items-center justify-center p-4" role="dialog" aria-modal>
-          <button type="button" aria-label="Close" onClick={() => setMenuFor(null)} className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm cursor-default" />
+          <button type="button" aria-label="Close" onClick={() => { setMenuFor(null); setPicking(false) }} className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm cursor-default" />
           <div className="relative w-full max-w-sm space-y-2">
             <div className="mx-auto w-fit flex gap-1 bg-white rounded-full px-2 py-1.5 shadow-xl">
               {REACTIONS.map((e) => {
@@ -364,7 +373,36 @@ export default function ChatThread({
                   </button>
                 )
               })}
+              {(() => {
+                const mineR = (menuFor.message_reactions || []).find((r) => r.profile_id === myId)
+                const custom = mineR && !REACTIONS.includes(mineR.emoji) ? mineR.emoji : null
+                return custom ? (
+                  <button type="button" onClick={() => react(menuFor, custom)} aria-label={`Remove ${custom}`} className="w-10 h-10 rounded-full text-2xl flex items-center justify-center bg-blue-100 cursor-pointer">{custom}</button>
+                ) : null
+              })()}
+              <button type="button" onClick={() => setPicking(true)} aria-label="Pick Any Emoji" className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 text-xl font-bold flex items-center justify-center cursor-pointer">
+                +
+              </button>
             </div>
+            {picking && (
+              <div className="mx-auto w-fit bg-white rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2">
+                <input
+                  autoFocus
+                  inputMode="text"
+                  enterKeyHint="done"
+                  aria-label="Type or pick an emoji"
+                  placeholder="Tap 😀 on your keyboard"
+                  onChange={(e) => {
+                    const em = firstEmoji(e.target.value)
+                    if (em) {
+                      setPicking(false)
+                      react(menuFor, em)
+                    } else e.target.value = ''
+                  }}
+                  className="w-52 text-center text-2xl outline-none placeholder:text-sm placeholder:text-slate-400"
+                />
+              </div>
+            )}
             <div className={`flex ${menuFor.sender_id === myId ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] px-3.5 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-xl ${menuFor.sender_id === myId ? 'bg-[#1746b8] text-white' : 'bg-white text-slate-900'}`}>
                 {menuFor.body || (menuFor.attachment ? ({ image: '📷 Photo', video: '🎬 Video', gif: 'GIF', file: `📎 ${menuFor.attachment.name || 'File'}` } as Record<string, string>)[menuFor.attachment.type] : '')}
