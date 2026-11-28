@@ -24,6 +24,7 @@ type Row = {
   itemId: number
   name: string
   groupId: number | null
+  sources: number[] | null
   label: string
   start: string
   end: string
@@ -81,7 +82,7 @@ export default function AssignmentsTab({ exercises, onOpenLibrary }: { exercises
     const sb = createClient()
     Promise.all([
       sb.from('program_assignments').select('*').order('start_date', { ascending: false }),
-      sb.from('progression_assignments').select('id, progression_id, group_id, target_label, pattern, weekdays, start_date, end_date, status').order('start_date', { ascending: false }),
+      sb.from('progression_assignments').select('id, progression_id, group_id, target_label, pattern, weekdays, start_date, end_date, status, source_group_ids').order('start_date', { ascending: false }),
       sb.from('programs').select('id, name, weeks, kind').order('name'),
       sb.from('progressions').select('id, name, is_active').order('name'),
       sb.from('program_days').select('program_id, week, dow'),
@@ -97,12 +98,13 @@ export default function AssignmentsTab({ exercises, onOpenLibrary }: { exercises
         return wk1.length ? `${wk1.length}x / Week · ${wk1.map((d) => ISO_DOW[d]).join(' / ')}` : 'No days set'
       }
       const list: Row[] = [
-        ...((pa.data as { id: number; program_id: number; group_id: number | null; target_label: string | null; start_date: string; weeks: number; status: 'active' | 'stopped' }[]) || []).map((a) => ({
+        ...((pa.data as { id: number; program_id: number; group_id: number | null; target_label: string | null; start_date: string; weeks: number; status: 'active' | 'stopped'; source_group_ids: number[] | null }[]) || []).map((a) => ({
           kind: 'program' as const,
           id: a.id,
           itemId: a.program_id,
           name: progs.find((x) => x.id === a.program_id)?.name || 'Program',
           groupId: a.group_id,
+          sources: a.source_group_ids,
           label: a.target_label || '',
           start: a.start_date,
           end: endOf(a.start_date, a.weeks),
@@ -110,12 +112,13 @@ export default function AssignmentsTab({ exercises, onOpenLibrary }: { exercises
           weeks: a.weeks,
           freq: `${KIND_INFO[(progs.find((x) => x.id === a.program_id)?.kind || 'throwing') as ProgramKind].label} · ${freqOf(a.program_id)}`,
         })),
-        ...((pr.data as { id: number; progression_id: number; group_id: number | null; target_label: string | null; pattern: Pattern; weekdays: number[]; start_date: string; end_date: string; status: 'active' | 'stopped' }[]) || []).map((a) => ({
+        ...((pr.data as { id: number; progression_id: number; group_id: number | null; target_label: string | null; pattern: Pattern; weekdays: number[]; start_date: string; end_date: string; status: 'active' | 'stopped'; source_group_ids: number[] | null }[]) || []).map((a) => ({
           kind: 'progression' as const,
           id: a.id,
           itemId: a.progression_id,
           name: prls.find((x) => x.id === a.progression_id)?.name || 'Progression',
           groupId: a.group_id,
+          sources: a.source_group_ids,
           label: a.target_label || '',
           start: a.start_date,
           end: a.end_date,
@@ -145,7 +148,8 @@ export default function AssignmentsTab({ exercises, onOpenLibrary }: { exercises
   const whoText = (r: Row) => {
     const g = groupName(r.groupId)
     const n = r.groupId != null ? members[r.groupId]?.length || 0 : 0
-    return `${isAdhoc(g) ? r.label : g?.name || r.label} · ${n} player${n === 1 ? '' : 's'}`
+    const who = r.sources?.length ? r.sources.map((id) => groupName(id)?.name).filter(Boolean).join(' + ') : isAdhoc(g) ? r.label : g?.name || r.label
+    return `${who} · ${n} player${n === 1 ? '' : 's'}`
   }
   const q = find.trim().toLowerCase()
   const shown = rows
@@ -412,11 +416,12 @@ function AssignmentSheet({
   nextMon.setDate(nextMon.getDate() + ((8 - nextMon.getDay()) % 7 || 7))
   const pickable = groups.filter((g) => !g.name.startsWith('Demo') && !isAdhoc(g))
   const curGroup = groups.find((g) => g.id === row?.groupId)
-  const startPlayers = row?.groupId != null && isAdhoc(curGroup) ? members[row.groupId] || [] : []
+  const startPlayers = row?.groupId != null && isAdhoc(curGroup) && !row.sources?.length ? members[row.groupId] || [] : []
+  const startGroups = row ? (row.sources?.length ? row.sources : !isAdhoc(curGroup) && row.groupId != null ? [row.groupId] : []) : []
 
   const [itemId, setItemId] = useState<number>(row?.itemId || 0)
   const [mode, setMode] = useState<'group' | 'players'>(startPlayers.length ? 'players' : 'group')
-  const [groupId, setGroupId] = useState<number | null>(row && !isAdhoc(curGroup) ? row.groupId : null)
+  const [groupIds, setGroupIds] = useState<Set<number>>(new Set(startGroups))
   const [picked, setPicked] = useState<Set<string>>(new Set(startPlayers))
   const [findP, setFindP] = useState('')
   const [start, setStart] = useState(row?.start || ymd(nextMon))
@@ -433,40 +438,46 @@ function AssignmentSheet({
   const progEnd = endOf(start, weeks)
   const dates = kind === 'progression' ? datesFor(start, end, pattern, weekdays) : []
   const samePlayers = startPlayers.length === picked.size && startPlayers.every((id) => picked.has(id))
-  const label = mode === 'group' ? groups.find((g) => g.id === groupId)?.name || '' : firstNames([...picked], players)
-  const ready = !!itemId && (mode === 'group' ? groupId != null : picked.size > 0) && (kind === 'program' || dates.length > 0)
+  const label = mode === 'group' ? groups.filter((g) => groupIds.has(g.id)).map((g) => g.name).join(' + ') : firstNames([...picked], players)
+  const ready = !!itemId && (mode === 'group' ? groupIds.size > 0 : picked.size > 0) && (kind === 'program' || dates.length > 0)
 
   const save = async () => {
     if (!ready) return
     setBusy(true)
     setError(null)
     const sb = createClient()
-    const keepGroup = mode === 'players' && row && samePlayers ? row.groupId : null
-    const pGroup = mode === 'group' ? groupId : keepGroup
-    const pAthletes = mode === 'players' && !keepGroup ? [...picked] : []
-    const pLabel = keepGroup ? row!.label : label
+    const keep = !!(mode === 'players' && row && samePlayers)
+    const pGroups = mode === 'group' ? [...groupIds] : []
+    const pAthletes = mode === 'players' && !keep ? [...picked] : []
+    const pLabel = keep ? row!.label : label
     let res
     if (kind === 'program') {
       res = row
-        ? await sb.rpc('update_program_assignment', { p_assignment: row.id, p_group: pGroup, p_athletes: pAthletes, p_label: pLabel, p_start: start, p_weeks: weeks })
-        : await sb.rpc('assign_program', { p_program: itemId, p_group: pGroup, p_athletes: pAthletes, p_label: pLabel, p_start: start, p_weeks: weeks })
+        ? await sb.rpc('update_program_assignment_v2', { p_assignment: row.id, p_groups: pGroups, p_athletes: pAthletes, p_label: pLabel, p_start: start, p_weeks: weeks, p_keep_group: keep })
+        : await sb.rpc('assign_program_v2', { p_program: itemId, p_groups: pGroups, p_athletes: pAthletes, p_label: pLabel, p_start: start, p_weeks: weeks })
     } else {
-      const args = { p_group: pGroup, p_athletes: pAthletes, p_label: pLabel, p_pattern: pattern, p_weekdays: pattern === 'weekdays' ? weekdays : [], p_start: start, p_end: end, p_dates: dates }
+      const args = { p_groups: pGroups, p_athletes: pAthletes, p_label: pLabel, p_pattern: pattern, p_weekdays: pattern === 'weekdays' ? weekdays : [], p_start: start, p_end: end, p_dates: dates }
       res = row
-        ? await sb.rpc('update_progression_assignment', { p_assignment: row.id, ...args })
-        : await sb.rpc('assign_progression', { p_progression: itemId, ...args })
+        ? await sb.rpc('update_progression_assignment_v2', { p_assignment: row.id, ...args, p_keep_group: keep })
+        : await sb.rpc('assign_progression_v2', { p_progression: itemId, ...args })
     }
     if (res.error) {
       setBusy(false)
       return setError(res.error.message)
     }
     if (notify) {
+      const pGroup = pGroups.length === 1 ? pGroups[0] : null
+      let recipients = pAthletes
+      if (pGroups.length > 1) {
+        const { data: gm } = await sb.from('group_members').select('athlete_id').in('group_id', pGroups)
+        recipients = [...new Set(((gm as { athlete_id: string }[]) || []).map((m) => m.athlete_id))]
+      } else if (keep && row?.groupId) recipients = members[row.groupId] || []
       await notifyPlayers({
         title: row ? `${itemName} updated` : itemName,
         body: kind === 'program' ? `${weeks} weeks · starts ${short(start)}` : `${patternText(pattern, weekdays)} · ${short(start)} – ${short(end)}`,
         url: '/',
         groupId: pGroup ?? undefined,
-        recipientIds: pGroup ? undefined : pAthletes,
+        recipientIds: pGroup ? undefined : recipients,
         kind: 'assignment',
       })
     }
@@ -513,14 +524,14 @@ function AssignmentSheet({
         <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-100">
           {(['group', 'players'] as const).map((m) => (
             <button key={m} type="button" onClick={() => setMode(m)} className={`py-2 rounded-lg text-xs font-extrabold cursor-pointer ${mode === m ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
-              {m === 'group' ? 'Group' : 'Pick Players'}
+              {m === 'group' ? 'Groups' : 'Pick Players'}
             </button>
           ))}
         </div>
         {mode === 'group' ? (
           <div className="flex flex-wrap gap-1.5">
             {pickable.map((g) => (
-              <TagChip key={g.id} group={g} active={groupId === g.id} onClick={() => setGroupId(g.id)} />
+              <TagChip key={g.id} group={g} active={groupIds.has(g.id)} onClick={() => setGroupIds((s) => { const n = new Set(s); if (n.has(g.id)) n.delete(g.id); else n.add(g.id); return n })} />
             ))}
           </div>
         ) : (
