@@ -114,6 +114,14 @@ select {
   height: 2.75rem;
   line-height: 1.25;
 }
+/* Compact fields for builders (workouts, progressions, programs). */
+.gen-field-sm {
+  height: 2.25rem;
+  line-height: 1.25;
+}
+textarea.gen-field-sm {
+  height: auto;
+}
 textarea.gen-field {
   height: auto;
 }

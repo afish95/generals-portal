@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp, ChevronRight, Layers, Plus, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
-import { inputClass, SectionLabel } from '@/components/ui'
+import { inputSm, SectionLabel } from '@/components/ui'
+import { prescription } from '@/lib/library'
 import { SheetFrame } from '@/components/office/roster/shared'
 import { INTENT_LABEL, INTENT_STYLE, INTENTS, type Intent } from '@/lib/programs'
 
@@ -72,13 +73,13 @@ export default function WorkoutTemplates({ progressions }: { progressions: Opt[]
           </button>
         ))}
       </div>
-      <section className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+      <section className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
         {list === null && <div className="h-24 animate-pulse" />}
         {list && shown.length === 0 && <p className="p-5 text-sm text-slate-500">No workouts yet. A workout is a stack of progressions, like Pre-Throw → Throwing → Post-Throw.</p>}
         {shown.map((t) => {
           const its = items.filter((i) => i.template_id === t.id)
           return (
-            <button key={t.id} type="button" onClick={() => setOpen(t)} className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-slate-50 cursor-pointer">
+            <button key={t.id} type="button" onClick={() => setOpen(t)} className="w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-slate-50 cursor-pointer">
               <span className={`w-1.5 self-stretch rounded-full ${t.intent ? INTENT_STYLE[t.intent].dot : 'bg-amber-400'}`} />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-extrabold text-slate-900 truncate">{t.name}</div>
@@ -127,6 +128,8 @@ export function TemplateSheet({
   const [scriptId, setScriptId] = useState<number | null>(template?.script_id ?? null)
   const [rows, setRows] = useState<TemplateItem[]>([...initialItems].sort((a, b) => a.position - b.position))
   const [scripts, setScripts] = useState<Opt[]>([])
+  const [drillsOf, setDrillsOf] = useState<Record<number, { block: string | null; name: string; rx: string }[]>>({})
+  const [showDrills, setShowDrills] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -138,6 +141,26 @@ export function TemplateSheet({
       .order('sort_order')
       .then(({ data }) => setScripts(((data as { id: number; title: string }[]) || []).map((s) => ({ id: s.id, name: s.title }))))
   }, [])
+
+  // Drills inside each progression, so the whole workout is visible at once.
+  const progKey = [...new Set(rows.map((r) => r.progression_id).filter(Boolean))].sort().join(',')
+  useEffect(() => {
+    const ids = progKey ? progKey.split(',').map(Number).filter((id) => !(id in drillsOf)) : []
+    if (!ids.length) return
+    createClient()
+      .from('progression_items')
+      .select('progression_id, position, block, label, sets, reps, seconds, exercise:exercises(name)')
+      .in('progression_id', ids)
+      .order('position')
+      .then(({ data }) => {
+        const m: Record<number, { block: string | null; name: string; rx: string }[]> = {}
+        ids.forEach((id) => (m[id] = []))
+        for (const r of (data as unknown as { progression_id: number; block: string | null; label: string | null; sets: string | null; reps: string | null; seconds: string | null; exercise: { name: string } | null }[]) || [])
+          m[r.progression_id].push({ block: r.block?.split(/\s/)[0] || null, name: r.exercise?.name || r.label || 'Drill', rx: prescription(r) })
+        setDrillsOf((d) => ({ ...d, ...m }))
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progKey])
 
   const pickIntent = (it: Intent) => {
     const next = intent === it ? null : it
@@ -206,11 +229,11 @@ export function TemplateSheet({
 
   return (
     <SheetFrame title={template ? template.name : 'New Workout'} subtitle="A stack of progressions, done in order" onClose={() => onClose(false)}>
-      <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Workout name (e.g. Throwing Day – Medium (W1))" className={inputClass} />
-        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-slate-100">
+      <section className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Workout name (e.g. Throwing Day – Medium (W1))" className={inputSm} />
+        <div className="grid grid-cols-4 gap-1 p-0.5 rounded-lg bg-slate-100">
           {TEMPLATE_KINDS.map((k) => (
-            <button key={k.key} type="button" onClick={() => setKind(k.key)} className={`py-2 rounded-lg text-[11px] font-extrabold cursor-pointer ${kind === k.key ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
+            <button key={k.key} type="button" onClick={() => setKind(k.key)} className={`py-1.5 rounded-md text-[11px] font-extrabold cursor-pointer ${kind === k.key ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}>
               {k.label}
             </button>
           ))}
@@ -218,49 +241,67 @@ export function TemplateSheet({
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-bold text-slate-500 w-14">Intent</span>
           {INTENTS.map((it) => (
-            <button key={it} type="button" onClick={() => pickIntent(it)} className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold border cursor-pointer ${intent === it ? INTENT_STYLE[it].solid + ' border-transparent' : 'bg-white text-slate-400 border-slate-200'}`}>
+            <button key={it} type="button" onClick={() => pickIntent(it)} className={`px-2.5 py-1 rounded-md text-[11px] font-extrabold border cursor-pointer ${intent === it ? INTENT_STYLE[it].solid + ' border-transparent' : 'bg-white text-slate-400 border-slate-200'}`}>
               {INTENT_LABEL[it]}
             </button>
           ))}
         </div>
-        {kind === 'throwing' && <p className="text-[11px] text-slate-400">Picking an intent fills Activation before and the matching post-throw (Low → Recovery/Mobility, Med → Scap Emphasis, High → Full Armor). Put W2 in the name to use the week 2 versions.</p>}
+        {kind === 'throwing' && <p className="text-[10px] leading-snug text-slate-400">Intent fills Activation + the matching post-throw. Put W2 in the name for week 2 versions.</p>}
       </section>
 
-      <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-2">
-        <SectionLabel>Progressions</SectionLabel>
+      <section className="bg-white rounded-2xl border border-slate-200 p-3 space-y-1.5">
+        <div className="flex items-center">
+          <SectionLabel>Progressions</SectionLabel>
+          {rows.length > 0 && (
+            <button type="button" onClick={() => setShowDrills((v) => !v)} className="ml-auto text-[11px] font-extrabold text-[#1746b8] cursor-pointer">
+              {showDrills ? 'Hide Drills' : 'Show Drills'}
+            </button>
+          )}
+        </div>
         {rows.length === 0 && <p className="text-xs text-slate-400">Add progressions in the order players do them.</p>}
         {rows.map((r, i) => (
-          <div key={i} className="rounded-2xl border border-slate-200 p-2.5 space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <span className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-extrabold flex items-center justify-center shrink-0">{i + 1}</span>
+          <div key={i} className="rounded-xl border border-slate-200 px-2 py-1.5">
+            <div className="flex items-center gap-1">
+              <span className="w-5 h-5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-extrabold flex items-center justify-center shrink-0">{i + 1}</span>
               <input
                 value={r.label || ''}
                 onChange={(e) => setRows((rs) => rs.map((x, k) => (k === i ? { ...x, label: e.target.value } : x)))}
-                placeholder="Section (e.g. Pre-Throw)"
-                className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold"
+                placeholder="Section"
+                className="w-24 shrink-0 px-1.5 py-1 rounded-md border border-slate-200 text-[11px] font-bold"
               />
-              <button type="button" onClick={() => move(i, -1)} className="p-1 text-slate-400 cursor-pointer" aria-label="Move up"><ArrowUp className="w-4 h-4" /></button>
-              <button type="button" onClick={() => move(i, 1)} className="p-1 text-slate-400 cursor-pointer" aria-label="Move down"><ArrowDown className="w-4 h-4" /></button>
-              <button type="button" onClick={() => setRows((rs) => rs.filter((_, k) => k !== i).map((x, k) => ({ ...x, position: k })))} className="p-1 text-red-400 cursor-pointer" aria-label="Remove"><Trash2 className="w-4 h-4" /></button>
+              <select value={r.progression_id || ''} onChange={(e) => setRows((rs) => rs.map((x, k) => (k === i ? { ...x, progression_id: Number(e.target.value) } : x)))} className={`${inputSm} flex-1 min-w-0 text-xs`}>
+                <option value="">Pick a progression…</option>
+                {progressions.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <button type="button" onClick={() => move(i, -1)} className="p-0.5 text-slate-400 cursor-pointer" aria-label="Move up"><ArrowUp className="w-3.5 h-3.5" /></button>
+              <button type="button" onClick={() => move(i, 1)} className="p-0.5 text-slate-400 cursor-pointer" aria-label="Move down"><ArrowDown className="w-3.5 h-3.5" /></button>
+              <button type="button" onClick={() => setRows((rs) => rs.filter((_, k) => k !== i).map((x, k) => ({ ...x, position: k })))} className="p-0.5 text-red-400 cursor-pointer" aria-label="Remove"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
-            <select value={r.progression_id || ''} onChange={(e) => setRows((rs) => rs.map((x, k) => (k === i ? { ...x, progression_id: Number(e.target.value) } : x)))} className={inputClass}>
-              <option value="">Pick a progression…</option>
-              {progressions.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            {showDrills && r.progression_id > 0 && (drillsOf[r.progression_id] || []).length > 0 && (
+              <ul className="mt-1 pl-6 space-y-px">
+                {drillsOf[r.progression_id].map((d, k) => (
+                  <li key={k} className="flex items-center gap-1.5 text-[11px] leading-4">
+                    <span className="w-6 shrink-0 text-[9px] font-extrabold text-slate-400">{d.block || ''}</span>
+                    <span className="flex-1 min-w-0 truncate font-semibold text-slate-700">{d.name}</span>
+                    <span className="shrink-0 text-slate-400">{d.rx}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         ))}
-        <button type="button" onClick={() => setRows((rs) => [...rs, { position: rs.length, label: '', progression_id: 0 }])} className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-xs font-extrabold text-[#1746b8] flex items-center justify-center gap-1.5 cursor-pointer">
+        <button type="button" onClick={() => setRows((rs) => [...rs, { position: rs.length, label: '', progression_id: 0 }])} className="w-full py-2 rounded-lg border border-dashed border-slate-300 text-xs font-extrabold text-[#1746b8] flex items-center justify-center gap-1.5 cursor-pointer">
           <Layers className="w-4 h-4" /> Add Progression
         </button>
       </section>
 
-      <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-2">
+      <section className="bg-white rounded-2xl border border-slate-200 p-3 space-y-1.5">
         <SectionLabel>Extras</SectionLabel>
-        <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Note for players (optional)" className={inputClass} />
+        <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Note for players (optional)" className={inputSm} />
         {kind === 'throwing' && (
-          <select value={scriptId ?? ''} onChange={(e) => setScriptId(e.target.value ? Number(e.target.value) : null)} className={inputClass}>
+          <select value={scriptId ?? ''} onChange={(e) => setScriptId(e.target.value ? Number(e.target.value) : null)} className={inputSm}>
             <option value="">No Bullpen</option>
             {scripts.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
@@ -270,7 +311,7 @@ export function TemplateSheet({
       </section>
 
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}
-      <button type="button" onClick={save} disabled={busy} className="w-full py-3 rounded-xl bg-emerald-600 text-white text-sm font-extrabold disabled:opacity-40 cursor-pointer">
+      <button type="button" onClick={save} disabled={busy} className="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-extrabold disabled:opacity-40 cursor-pointer">
         {busy ? 'Saving…' : 'Save Workout'}
       </button>
       {template && (

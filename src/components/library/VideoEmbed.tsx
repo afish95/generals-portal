@@ -39,23 +39,26 @@ export function DrillReveal({
   notes,
   meta,
   className = '',
+  compact = false,
 }: {
   name: string
   videoUrl?: string | null
   notes?: string | null
   meta?: string | null
   className?: string
+  compact?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const has = !!(videoUrl || notes)
   return (
     <div className={className}>
-      <button type="button" onClick={() => has && setOpen((o) => !o)} className={`flex items-center gap-1.5 text-left ${has ? 'cursor-pointer' : 'cursor-default'}`}>
-        <span className="text-sm font-extrabold text-slate-900">{name}</span>
-        {videoUrl && <PlayCircle className="w-4 h-4 text-[#1746b8] shrink-0" aria-label="Has video" />}
-        {has && <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition ${open ? 'rotate-180' : ''}`} />}
+      <button type="button" onClick={() => has && setOpen((o) => !o)} className={`${compact ? 'w-full' : ''} flex items-center gap-1.5 text-left ${has ? 'cursor-pointer' : 'cursor-default'}`}>
+        <span className={`${compact ? 'text-[13px] truncate' : 'text-sm'} font-extrabold text-slate-900`}>{name}</span>
+        {videoUrl && <PlayCircle className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-[#1746b8] shrink-0`} aria-label="Has video" />}
+        {has && !compact && <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition ${open ? 'rotate-180' : ''}`} />}
+        {compact && meta && <span className="ml-auto pl-2 shrink-0 text-[11px] font-semibold text-slate-500">{meta}</span>}
       </button>
-      {meta && <div className="text-xs font-semibold text-slate-500">{meta}</div>}
+      {meta && !compact && <div className="text-xs font-semibold text-slate-500">{meta}</div>}
       {open && (
         <div className="mt-2 space-y-2">
           <VideoEmbed url={videoUrl} title={name} />

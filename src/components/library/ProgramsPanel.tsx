@@ -59,11 +59,11 @@ export default function ProgramsPanel({ progressions, onChanged, openProgramId }
       ) : programs.length === 0 ? (
         <p className="text-center text-xs font-semibold text-slate-500 py-6">No programs yet.</p>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
           {programs.filter((p) => kindFilter === 'all' || (p.kind || 'throwing') === kindFilter).map((p) => {
             const wk = days.filter((d) => d.program_id === p.id)
             return (
-              <button key={p.id} type="button" onClick={() => setOpen(p)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 cursor-pointer">
+              <button key={p.id} type="button" onClick={() => setOpen(p)} className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-slate-50 cursor-pointer">
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold text-slate-900 truncate">{p.name}</div>
                   <div className="flex items-center gap-1 mt-1">
