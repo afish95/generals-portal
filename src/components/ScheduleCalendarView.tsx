@@ -240,7 +240,7 @@ export default function ScheduleCalendarView({
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[10px] font-bold text-slate-500 mb-3 px-1 whitespace-nowrap">
-          {(['game', 'practice', 'lift', 'program', 'training'] as const).map((k) => (
+          {(eventsOnly ? (['game', 'practice', 'lift', 'program'] as const) : (['game', 'practice', 'lift', 'program', 'training'] as const)).map((k) => (
             <span key={k} className="flex items-center gap-1">
               <span className={`w-2 h-2 rounded-full inline-block ${KIND_STYLE[k].dot}`} />
               {KIND_STYLE[k].label}
@@ -311,7 +311,7 @@ export default function ScheduleCalendarView({
       ) : renderDay ? (
         <div className="space-y-2 lg:sticky lg:top-24">
           <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 px-1">
-            Day Plan · {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            {eventsOnly ? 'Schedule' : 'Day Plan'} · {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </h3>
           {renderDay(selectedDate)}
         </div>

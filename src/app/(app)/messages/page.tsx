@@ -39,7 +39,7 @@ function useIsDesktop() {
 }
 
 export default function MessagesPage() {
-  const { profile, isCoach, viewAs } = useProfile()
+  const { profile, isCoach, isParent, viewAs } = useProfile()
   const desktop = useIsDesktop()
   const [tab, setTab] = useState<'chats' | 'announcements'>('chats')
   const [convos, setConvos] = useState<Convo[] | null>(null)
@@ -205,10 +205,14 @@ export default function MessagesPage() {
               <div className="h-40 m-2 rounded-2xl bg-slate-100 animate-pulse" />
             ) : (
               <>
-                {sectionHead('Channels', coachTools ? () => setSheet('channel') : undefined)}
-                <div className="space-y-0.5">{channels.map(row)}</div>
-                {channels.length === 0 && <p className="px-3 py-2 text-xs text-slate-500">No channels yet.</p>}
-                {sectionHead('Direct Messages', viewAs.active ? undefined : () => setSheet('dm'))}
+                {!isParent && (
+                  <>
+                    {sectionHead('Channels', coachTools ? () => setSheet('channel') : undefined)}
+                    <div className="space-y-0.5">{channels.map(row)}</div>
+                    {channels.length === 0 && <p className="px-3 py-2 text-xs text-slate-500">No channels yet.</p>}
+                  </>
+                )}
+                {sectionHead(isParent ? 'Coaches' : 'Direct Messages', viewAs.active ? undefined : () => setSheet('dm'))}
                 <div className="space-y-0.5">{dms.map(row)}</div>
                 {dms.length === 0 && <p className="px-3 py-2 text-xs text-slate-500">{isCoach ? 'No DMs yet.' : 'Tap + to message a coach.'}</p>}
               </>
