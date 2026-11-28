@@ -15,7 +15,9 @@ export type ViewAs = {
   /** The signed-in coach, even while viewing as a player */
   realProfile: Profile
   players: Profile[]
-  start: (playerId: string) => void
+  /** Which preview: the player's own app, or their parent's app */
+  mode: 'player' | 'parent'
+  start: (playerId: string, mode?: 'player' | 'parent') => void
   exit: () => void
 }
 /** Sub-page tabs a page shows in the desktop top bar (coach desktop layout) */
@@ -26,6 +28,9 @@ type ShellContext = { profile: Profile; isCoach: boolean; isParent: boolean; fam
 const KID_KEY = 'generals.child'
 const PARENT_PATHS = ['/calendar', '/family', '/messages', '/other']
 const VIEW_KEY = 'generals.viewAs'
+const MODE_KEY = 'generals.viewAsMode'
+/** Stand-in id for the parent preview (owns no data, so Messages shows empty) */
+const PREVIEW_PARENT_ID = '00000000-0000-0000-0000-000000000000'
 const PROFILE_COLS = 'id, username, full_name, role, position_group, grad_year, is_active, is_demo, has_login'
 const ProfileContext = createContext<ShellContext | null>(null)
 
@@ -93,11 +98,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [router])
 
   // ----- Parent accounts: the players they follow -----
-  const isParent = profile?.role === 'parent'
+  const realIsParent = profile?.role === 'parent'
   const [kids, setKids] = useState<Profile[]>([])
   const [childId, setChildId] = useState<string | null>(null)
   useEffect(() => {
-    if (!isParent || !profile) return
+    if (!realIsParent || !profile) return
     const supabase = createClient()
     supabase
       .from('player_guardians')
@@ -115,21 +120,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         } catch {}
         setChildId(list.find((k) => k.id === saved)?.id || list[0]?.id || null)
       })
-  }, [isParent, profile])
+  }, [realIsParent, profile])
   const pickChild = useCallback((id: string) => {
     setChildId(id)
     try {
       localStorage.setItem(KID_KEY, id)
     } catch {}
   }, [])
-  const child = kids.find((k) => k.id === childId) || null
-  useEffect(() => {
-    if (isParent && pathname !== '/' && !PARENT_PATHS.some((p) => pathname.startsWith(p))) router.replace('/')
-  }, [isParent, pathname, router])
 
   // ----- Coach "view as player" (read-only preview) -----
   const realIsCoach = profile?.role === 'coach'
   const [viewAsId, setViewAsId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'player' | 'parent'>('player')
   const [viewed, setViewed] = useState<Profile | null>(null)
   const [players, setPlayers] = useState<Profile[]>([])
   const [toast, setToast] = useState(false)
@@ -139,6 +141,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (!realIsCoach) return
     try {
       setViewAsId(sessionStorage.getItem(VIEW_KEY))
+      setViewMode(sessionStorage.getItem(MODE_KEY) === 'parent' ? 'parent' : 'player')
     } catch {}
     createClient()
       .from('profiles')
@@ -166,6 +169,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [viewAsId, players])
 
   const viewing = !!(realIsCoach && viewAsId && viewed)
+  const parentPreview = viewing && viewMode === 'parent'
+  const isParent = realIsParent || parentPreview
+  const famKids = parentPreview && viewed ? [viewed] : kids
+  const child = parentPreview ? viewed : kids.find((k) => k.id === childId) || null
+  const shown: Profile | null =
+    parentPreview && viewed
+      ? { ...viewed, id: PREVIEW_PARENT_ID, role: 'parent', username: 'parent', full_name: `${viewed.full_name.split(' ')[0]}’s Parent` }
+      : viewing && viewed
+        ? viewed
+        : profile
+  useEffect(() => {
+    if (isParent && pathname !== '/' && !PARENT_PATHS.some((p) => pathname.startsWith(p))) router.replace('/')
+  }, [isParent, pathname, router])
   // Must be set before any child creates a database client
   setReadOnlyMode(viewing)
 
@@ -184,11 +200,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [])
 
   const startViewAs = useCallback(
-    (id: string) => {
+    (id: string, mode: 'player' | 'parent' = 'player') => {
       try {
         sessionStorage.setItem(VIEW_KEY, id)
+        sessionStorage.setItem(MODE_KEY, mode)
       } catch {}
       setViewAsId(id)
+      setViewMode(mode)
       router.push('/')
     },
     [router]
@@ -196,8 +214,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const exitViewAs = useCallback(() => {
     try {
       sessionStorage.removeItem(VIEW_KEY)
+      sessionStorage.removeItem(MODE_KEY)
     } catch {}
     setViewAsId(null)
+    setViewMode('player')
     setReadOnlyMode(false)
     router.push('/')
   }, [router])
@@ -208,7 +228,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (status !== 'ready') return
     let cancelled = false
     const check = () =>
-      (viewing && viewAsId ? createClient().rpc('conversations_for', { p_user: viewAsId }) : createClient().rpc('my_conversations'))
+      (viewing && viewAsId ? createClient().rpc('conversations_for', { p_user: parentPreview ? PREVIEW_PARENT_ID : viewAsId }) : createClient().rpc('my_conversations'))
         .then(({ data }) => {
           if (!cancelled) setUnread(((data as { unread: number }[]) || []).reduce((n, c) => n + Number(c.unread || 0), 0))
         })
@@ -218,7 +238,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       cancelled = true
       clearInterval(t)
     }
-  }, [status, pathname, viewing, viewAsId])
+  }, [status, pathname, viewing, viewAsId, parentPreview])
 
   // Header collapses as you scroll: progress (0 → 1 over the first 90px) follows the scroll directly,
   // so a fast flick collapses it fast and a slow scroll collapses it slowly. Written to a CSS variable (no re-renders).
@@ -284,11 +304,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ProfileContext.Provider
       value={{
-        profile: viewing && viewed ? viewed : profile,
+        profile: shown || profile,
         isCoach,
         isParent,
-        family: { kids, child, pick: pickChild },
-        viewAs: { active: viewing, realProfile: profile, players, start: startViewAs, exit: exitViewAs },
+        family: { kids: famKids, child, pick: pickChild },
+        viewAs: { active: viewing, realProfile: profile, players, mode: viewMode, start: startViewAs, exit: exitViewAs },
         setSubnav,
       }}
     >
@@ -315,30 +335,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-[#1746b8] to-[#1e54d4] shadow-md gen-head-bar" />
-          <div className="relative max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
-            <Link href="/calendar" aria-label="Calendar" className={iconBtn(calendarActive)}>
-              {!calendarActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}
-              <Calendar className="relative w-5 h-5" />
+          <div className="relative max-w-xl mx-auto px-4 py-3.5 flex items-center gap-3">
+            <Link href="/" aria-label="Home" className={`${compact ? "pointer-events-none" : "pointer-events-auto"} shrink-0 flex items-center gen-head-text`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/g-mark.png?v=1" alt="Generals Baseball" className="w-12 h-12 object-contain" />
             </Link>
-            <div className="min-w-0 flex-1 text-center gen-head-text">
-              <div className="flex items-center justify-center gap-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icons/logo-512.png?v=2" alt="" className="w-4 h-4 rounded" />
+            <div className="min-w-0 flex-1 text-left gen-head-text">
+              <div className="flex items-center gap-2">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Generals Baseball</span>
                 <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-400/25 text-blue-100">
                   {isCoach ? 'Coach' : isParent ? 'Parent' : 'Active'}
                 </span>
               </div>
-              <div className="text-lg font-extrabold leading-tight tracking-tight truncate">{(viewing && viewed ? viewed : profile).full_name}</div>
+              <div className="text-lg font-extrabold leading-tight tracking-tight truncate">{(shown || profile).full_name}</div>
               {isParent ? (
-                kids.length > 1 ? (
+                famKids.length > 1 ? (
                   <select
                     value={child?.id || ''}
                     onChange={(e) => pickChild(e.target.value)}
                     aria-label="Switch Player"
-                    className="pointer-events-auto max-w-full bg-transparent text-xs text-blue-100 font-bold truncate cursor-pointer outline-none text-center"
+                    className="pointer-events-auto max-w-full bg-transparent text-xs text-blue-100 font-bold truncate cursor-pointer outline-none text-left -ml-0.5"
                   >
-                    {kids.map((k) => (
+                    {famKids.map((k) => (
                       <option key={k.id} value={k.id} className="text-slate-900">Following {k.full_name} ▾</option>
                     ))}
                   </select>
@@ -351,6 +369,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               )}
             </div>
+            <div className="shrink-0 flex items-center justify-end gap-2.5">
+            <Link href="/calendar" aria-label="Calendar" className={iconBtn(calendarActive)}>
+              {!calendarActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}
+              <Calendar className="relative w-5 h-5" />
+            </Link>
             <Link href="/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'} className={`relative ${iconBtn(messagesActive)}`}>
               {!messagesActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}
               <MessageCircle className="relative w-5 h-5" />
@@ -360,16 +383,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </span>
               )}
             </Link>
+            </div>
           </div>
           {viewing && viewed && (
             <div className="relative bg-amber-400 text-amber-950 pointer-events-auto gen-head-amber">
               <div className="max-w-xl mx-auto px-4 py-2 flex items-center gap-2">
                 <Eye className="w-4 h-4 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider leading-none">Player View · Read-Only</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider leading-none">{parentPreview ? 'Parent View' : 'Player View'} · Read-Only</div>
                   <select
                     value={viewed.id}
-                    onChange={(e) => startViewAs(e.target.value)}
+                    onChange={(e) => startViewAs(e.target.value, viewMode)}
                     aria-label="Switch Player"
                     className="mt-0.5 max-w-full bg-transparent text-sm font-extrabold truncate cursor-pointer outline-none"
                   >
@@ -392,7 +416,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         <main
-          key={viewing && viewed ? `view-${viewed.id}` : 'self'}
+          key={viewing && viewed ? `view-${viewMode}-${viewed.id}` : 'self'}
           className={isCoach ? 'max-w-xl mx-auto px-4 pt-5 pb-[calc(env(safe-area-inset-bottom)+104px)] lg:max-w-none lg:mx-0 lg:ml-[220px] lg:px-0 lg:pt-0 lg:pb-12' : 'max-w-xl mx-auto px-4 pt-5 pb-[calc(env(safe-area-inset-bottom)+104px)]'}
         >
           {isCoach && <DesktopTopBar pathname={pathname} subnav={subnav} />}

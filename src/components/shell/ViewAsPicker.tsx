@@ -4,38 +4,38 @@ import { useState } from 'react'
 import { Eye } from 'lucide-react'
 import { useProfile } from './AppShell'
 
-/** Coach Home: switch to a read-only preview of any player's app. */
+/** Coach Home: switch to a read-only preview of any player's app, or their parent's app. */
 export default function ViewAsPicker() {
   const { viewAs } = useProfile()
-  const [mode, setMode] = useState<'coach' | 'player'>('coach')
+  const [mode, setMode] = useState<'coach' | 'player' | 'parent'>('coach')
   const pitchers = viewAs.players.filter((p) => p.position_group === 'pitcher')
   const others = viewAs.players.filter((p) => p.position_group !== 'pitcher')
 
   return (
-    <section className="bg-white rounded-3xl border border-slate-200/90 p-4 shadow-xs space-y-3">
-      <div className="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-slate-100">
-        {(['coach', 'player'] as const).map((m) => (
+    <section className="bg-white rounded-3xl border border-slate-200/90 p-2 shadow-xs space-y-2">
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-slate-100">
+        {(['coach', 'player', 'parent'] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
-            className={`py-2 rounded-xl text-xs font-extrabold cursor-pointer ${mode === m ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}
+            className={`py-1.5 rounded-xl text-xs font-extrabold cursor-pointer ${mode === m ? 'bg-white text-[#1746b8] shadow-sm' : 'text-slate-500'}`}
           >
-            {m === 'coach' ? 'Coach View' : 'Player View'}
+            {m === 'coach' ? 'Coach View' : m === 'player' ? 'Player View' : 'Parent View'}
           </button>
         ))}
       </div>
-      {mode === 'player' && (
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 rounded-2xl border border-slate-200 px-3 py-2.5">
+      {mode !== 'coach' && (
+        <div className="space-y-1.5 px-1 pb-1">
+          <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2">
             <Eye className="w-4 h-4 text-[#1746b8] shrink-0" />
             <select
               value=""
-              onChange={(e) => e.target.value && viewAs.start(e.target.value)}
+              onChange={(e) => e.target.value && viewAs.start(e.target.value, mode === 'parent' ? 'parent' : 'player')}
               className="flex-1 bg-transparent text-sm font-extrabold text-slate-900 outline-none cursor-pointer"
-              aria-label="Choose a player"
+              aria-label={mode === 'parent' ? "Choose a player's parent" : "Choose a player"}
             >
-              <option value="">Choose a Player…</option>
+              <option value="">{mode === 'parent' ? 'Parent of…' : 'Choose a Player…'}</option>
               {pitchers.length > 0 && (
                 <optgroup label="Pitchers">
                   {pitchers.map((p) => (
@@ -52,8 +52,8 @@ export default function ViewAsPicker() {
               )}
             </select>
           </label>
-          <p className="text-[11px] font-semibold text-slate-500 px-1">
-            See the whole app exactly as that player does. It&apos;s read-only: nothing you tap changes their logs or check-ins.
+          <p className="text-[11px] font-semibold text-slate-500">
+            {mode === 'parent' ? 'See what that player’s parents see. Read-only.' : 'See the app exactly as that player does. Read-only.'}
           </p>
         </div>
       )}
