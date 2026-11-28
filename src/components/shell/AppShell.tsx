@@ -7,6 +7,7 @@ import { House, MessageCircle, Calendar, Target, TrendingUp, LayoutGrid, Clipboa
 import { createClient, READ_ONLY_EVENT, setReadOnlyMode } from '@/lib/supabase'
 import type { Profile } from '@/lib/training'
 import { PrCelebrationHost } from '@/components/training/PrCelebration'
+import PullToRefresh from '@/components/PullToRefresh'
 
 export type ViewAs = {
   /** True while a coach is previewing the app as a player (read-only) */
@@ -246,6 +247,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     >
       <div className="min-h-screen bg-[#f3f5f9] text-slate-900">
         <PrCelebrationHost />
+        <PullToRefresh />
         {isCoach && (
           <DesktopSidebar
             pathname={pathname}
