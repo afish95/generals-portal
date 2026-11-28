@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronRight, Layers, PlayCircle, Plus, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Folder as FolderIcon, Layers, PlayCircle, Plus, Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { inputClass } from '@/components/ui'
 import { SubTabs } from '@/components/office/roster/shared'
@@ -67,8 +67,14 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
     return m
   }, [visible])
 
-  const inPlace = (x: { folder_id: number | null }) =>
-    place === 'all' ? true : place === 'unfiled' ? x.folder_id == null : x.folder_id != null && subtree(folders.filter((f) => f.kind === kind), place).has(x.folder_id)
+  // Like a file browser: the top level shows folders + unfiled items; a folder shows its subfolders + items directly inside it.
+  const inPlace = (x: { folder_id: number | null }) => (place === 'all' || place === 'unfiled' ? x.folder_id == null : x.folder_id === place)
+  const kindFolders = folders.filter((f) => f.kind === kind)
+  const folderCount = (id: number) => {
+    const ids = subtree(kindFolders, id)
+    return visible.filter((x) => x.folder_id != null && ids.has(x.folder_id)).length
+  }
+  const parentOf = typeof place === 'number' ? folders.find((f) => f.id === place)?.parent_id ?? null : null
   const q = query.trim().toLowerCase()
   const list = visible
     .filter((x) => (q ? true : inPlace(x)))
@@ -148,29 +154,43 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
                 </span>
               )}
             </div>
-            {childFolders.length > 0 && (
-              <div className="lg:hidden flex flex-wrap gap-1.5">
-                {childFolders.map((f) => (
-                  <button key={f.id} type="button" onClick={() => setPlace(f.id)} className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-extrabold text-slate-700 cursor-pointer">
-                    📁 {f.name}
-                  </button>
-                ))}
-                {place === 'all' && (
-                  <button type="button" onClick={() => setPlace('unfiled')} className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-extrabold text-slate-500 cursor-pointer">Unfiled</button>
-                )}
-              </div>
-            )}
-
             <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 px-1">
               <span className="hidden lg:inline">{q ? `Results for "${query}"` : crumbs.join(' / ')}</span>
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} className="accent-[#1746b8]" /> Show Hidden
               </label>
-              <span>{list.length} {kind === 'drill' ? 'drills' : 'progressions'}</span>
+              <span>{q ? `${list.length} found` : `${childFolders.length ? `${childFolders.length} folder${childFolders.length === 1 ? '' : 's'} · ` : ''}${list.length} ${kind === 'drill' ? 'drills' : 'progressions'}`}</span>
             </div>
             <p className="hidden lg:block text-[11px] font-semibold text-slate-400 px-1 -mt-2">Drag a row onto a folder on the left to move it.</p>
 
-            <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+              {!q && typeof place === 'number' && (
+                <button type="button" onClick={() => setPlace(parentOf ?? 'all')} className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-extrabold text-[#1746b8] hover:bg-slate-50 cursor-pointer">
+                  <ChevronLeft className="w-4 h-4" /> {parentOf ? folders.find((f) => f.id === parentOf)?.name : kind === 'drill' ? 'All Drills' : 'All Progressions'}
+                </button>
+              )}
+              {!q &&
+                childFolders.map((f) => (
+                  <button
+                    key={`f${f.id}`}
+                    type="button"
+                    onClick={() => setPlace(f.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      const id = Number(e.dataTransfer.getData('text/plain'))
+                      if (id) moveItem(f.id, id)
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-slate-50 cursor-pointer"
+                  >
+                    <FolderIcon className="w-5 h-5 shrink-0 text-amber-500 fill-amber-100" />
+                    <span className="flex-1 min-w-0 text-sm font-extrabold text-slate-900 truncate">{f.name}</span>
+                    <span className="text-[11px] font-bold text-slate-400">{folderCount(f.id)}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                  </button>
+                ))}
+              {!q && place === 'all' && childFolders.length > 0 && list.length > 0 && (
+                <div className="px-3 pt-2.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 bg-slate-50">Unfiled</div>
+              )}
               {list.slice(0, 300).map((x) => {
                 const d = kind === 'drill' ? (x as Drill) : null
                 const p = kind === 'progression' ? (x as Progression & { n: number }) : null
@@ -191,7 +211,7 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-bold text-slate-900 truncate">{x.name}</div>
                       <div className="text-[11px] font-semibold text-slate-400 truncate">
-                        {d ? [q || place === 'all' ? folderPath(folders, d.folder_id) : null, d.tags.slice(0, 3).join(', ')].filter(Boolean).join(' · ') : `${p!.n} drills${q || place === 'all' ? ` · ${folderPath(folders, p!.folder_id) || 'Unfiled'}` : ''}`}
+                        {d ? [q ? folderPath(folders, d.folder_id) : null, d.tags.slice(0, 3).join(', ')].filter(Boolean).join(' · ') : `${p!.n} drills${q ? ` · ${folderPath(folders, p!.folder_id) || 'Unfiled'}` : ''}`}
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
@@ -199,7 +219,7 @@ export default function DrillLibrary({ onChanged, initialSub, only, openProgramI
                 )
               })}
               {list.length > 300 && <p className="px-4 py-3 text-xs font-semibold text-slate-500">Showing 300 of {list.length}. Pick a folder or search to narrow it down.</p>}
-              {list.length === 0 && <p className="px-4 py-6 text-center text-xs font-semibold text-slate-500">Nothing here yet.</p>}
+              {list.length === 0 && (q || childFolders.length === 0) && <p className="px-4 py-6 text-center text-xs font-semibold text-slate-500">{q ? 'No matches.' : 'This folder is empty.'}</p>}
             </div>
           </div>
         </div>
