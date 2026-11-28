@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Shield, Lock, User, AlertCircle } from 'lucide-react'
+import { Lock, User, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -53,9 +53,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center px-4 py-12">
       <div className="max-w-md w-full mx-auto">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-700 text-white shadow-lg shadow-blue-700/20 mb-4 border-2 border-slate-300">
-            <Shield className="w-8 h-8" />
-          </div>
+          <img src="/icons/logo-512.png?v=2" alt="Generals Baseball" className="inline-block w-24 h-24 rounded-3xl shadow-lg shadow-blue-700/25 mb-4" />
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
             GENERALS BASEBALL
           </h1>
