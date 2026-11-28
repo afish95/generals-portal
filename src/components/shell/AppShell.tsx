@@ -315,13 +315,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-[#1746b8] to-[#1e54d4] shadow-md gen-head-bar" />
-          <div className="relative max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
-            <Link href="/" aria-label="Home" className={`${compact ? "pointer-events-none" : "pointer-events-auto"} w-[94px] shrink-0 flex items-center gen-head-text`}>
+          <div className="relative max-w-xl mx-auto px-4 py-3.5 flex items-center gap-3">
+            <Link href="/" aria-label="Home" className={`${compact ? "pointer-events-none" : "pointer-events-auto"} shrink-0 flex items-center gen-head-text`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/g-mark.png?v=1" alt="Generals Baseball" className="w-12 h-12 object-contain drop-shadow-sm" />
+              <img src="/icons/g-mark.png?v=1" alt="Generals Baseball" className="w-12 h-12 object-contain" />
             </Link>
-            <div className="min-w-0 flex-1 text-center gen-head-text">
-              <div className="flex items-center justify-center gap-2">
+            <div className="min-w-0 flex-1 text-left gen-head-text">
+              <div className="flex items-center gap-2">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Generals Baseball</span>
                 <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-400/25 text-blue-100">
                   {isCoach ? 'Coach' : isParent ? 'Parent' : 'Active'}
@@ -334,7 +334,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     value={child?.id || ''}
                     onChange={(e) => pickChild(e.target.value)}
                     aria-label="Switch Player"
-                    className="pointer-events-auto max-w-full bg-transparent text-xs text-blue-100 font-bold truncate cursor-pointer outline-none text-center"
+                    className="pointer-events-auto max-w-full bg-transparent text-xs text-blue-100 font-bold truncate cursor-pointer outline-none text-left -ml-0.5"
                   >
                     {kids.map((k) => (
                       <option key={k.id} value={k.id} className="text-slate-900">Following {k.full_name} ▾</option>
@@ -349,7 +349,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               )}
             </div>
-            <div className="w-[94px] shrink-0 flex items-center justify-end gap-1.5">
+            <div className="shrink-0 flex items-center justify-end gap-1.5">
             <Link href="/calendar" aria-label="Calendar" className={iconBtn(calendarActive)}>
               {!calendarActive && <span aria-hidden className="absolute -inset-px rounded-2xl bg-[#1746b8] shadow-lg gen-head-fill" />}
               <Calendar className="relative w-5 h-5" />
