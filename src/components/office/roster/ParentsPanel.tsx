@@ -35,7 +35,7 @@ export default function ParentsPanel({ playerId, playerName }: { playerId: strin
   const remove = async (p: Parent) => {
     if (!confirm(`Disconnect ${p.parent?.full_name || 'this parent'} from ${first}?`)) return
     const res = await callApi('/api/players', { body: { action: 'remove_parent', id: p.guardian_id, player_id: playerId } })
-    if (res.error) setNote(res.error)
+    if (!res.ok) setNote(res.error)
     load()
   }
   const message = async (p: Parent) => {
