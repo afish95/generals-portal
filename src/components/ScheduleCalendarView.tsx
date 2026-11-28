@@ -31,7 +31,10 @@ export default function ScheduleCalendarView({
   initialEvents,
   renderDay,
   athleteId,
+  eventsOnly = false,
 }: {
+  /** Parents: team events only (no workouts or training logs) */
+  eventsOnly?: boolean
   today: string
   initialEvents: CalendarEvent[]
   /** Player whose workouts and logs to show (defaults to the signed-in user; coaches see every group when omitted) */
@@ -67,7 +70,9 @@ export default function ScheduleCalendarView({
 
     // Throwing & hitting workouts the signed-in user can see (players: their groups; coaches: all)
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: workoutRows } = await supabase
+    const { data: workoutRows } = eventsOnly
+      ? { data: [] }
+      : await supabase
       .from('workouts')
       .select('id, title, workout_date, group_id, sort_order, intent')
       .gte('workout_date', start)
@@ -130,7 +135,7 @@ export default function ScheduleCalendarView({
       .lte('event_date', end)
       .order('event_date', { ascending: true })
     if (eventRows) setEvents((eventRows as CalendarEvent[]).filter((e) => !e.is_cancelled))
-  }, [currentMonth, supabase, athleteId])
+  }, [currentMonth, supabase, athleteId, eventsOnly])
 
   useEffect(() => {
     loadRangeData()

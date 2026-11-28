@@ -140,6 +140,18 @@ export async function POST(req: Request) {
     return Response.json({ ok: true, id: created.user.id, username, password: password ?? null })
   }
 
+  // Disconnect a parent from a player. A parent left with no players loses their account.
+  if (action === 'remove_parent') {
+    const parentId = String(body.id || '')
+    const playerId = String(body.player_id || '')
+    const { data: parent } = await admin.from('profiles').select('role').eq('id', parentId).single()
+    if (!parent || parent.role !== 'parent') return Response.json({ error: 'Parent not found' }, { status: 404 })
+    await admin.from('player_guardians').delete().eq('guardian_id', parentId).eq('player_id', playerId)
+    const { count } = await admin.from('player_guardians').select('player_id', { count: 'exact', head: true }).eq('guardian_id', parentId)
+    if (!count) await admin.auth.admin.deleteUser(parentId)
+    return Response.json({ ok: true, deleted: !count })
+  }
+
   const id = String(body.id || '')
   if (!id) return Response.json({ error: 'Missing player' }, { status: 400 })
   const { data: target } = await admin.from('profiles').select('role, username, has_login').eq('id', id).single()

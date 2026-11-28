@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -49,6 +50,18 @@ export default function LoginPage() {
     router.refresh()
   }
 
+  // Parents sign in with their own email, so they can reset by email. Players and coaches ask a coach.
+  const forgot = async () => {
+    setError(null)
+    const e = username.trim().toLowerCase()
+    if (!e.includes('@')) {
+      setNotice('Players and coaches: ask Coach Fisher to reset your password. Parents: type your email above, then tap Forgot Password.')
+      return
+    }
+    await supabase.auth.resetPasswordForEmail(e, { redirectTo: `${window.location.origin}/reset` })
+    setNotice(`If ${e} has a parent account, a reset link is on its way.`)
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center px-4 py-12">
       <div className="max-w-md w-full mx-auto">
@@ -73,7 +86,7 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Username
+                Username or Email
               </label>
               <div className="relative">
                 <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-3" />
@@ -82,7 +95,7 @@ export default function LoginPage() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. gsorensen or coachfisher"
+                  placeholder="first.last, or your email (parents)"
                   className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition"
                 />
               </div>
@@ -112,11 +125,15 @@ export default function LoginPage() {
             >
               {loading ? 'Signing In...' : 'Enter Portal'}
             </button>
+            <button type="button" onClick={forgot} className="w-full text-xs font-bold text-blue-700 cursor-pointer">
+              Forgot Password?
+            </button>
+            {notice && <p className="text-xs text-slate-500 text-center">{notice}</p>}
           </form>
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-6">
-          portal.generalsbaseball.org &bull; Roster &amp; Staff Access Only
+          portal.generalsbaseball.org &bull; Players, Parents &amp; Staff
         </p>
       </div>
     </div>
